@@ -5,12 +5,27 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import AuthNavigator from './AuthNavigator';
-import RoleSelectionScreen from '../screens/auth/RoleSelectionScreen';
+import FarmerHomeScreen from '../screens/farmer/FarmerHomeScreen';
+import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
+import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+
+  const getHomeScreen = () => {
+    switch (user?.role) {
+      case 'farmer':
+        return FarmerHomeScreen;
+      case 'transporter':
+        return TransporterHomeScreen;
+      case 'buyer':
+        return BuyerHomeScreen;
+      default:
+        return FarmerHomeScreen;
+    }
+  };
 
   return (
     <NavigationContainer>
@@ -18,7 +33,7 @@ export default function AppNavigator() {
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : (
-          <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+          <Stack.Screen name="Home" component={getHomeScreen()} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
