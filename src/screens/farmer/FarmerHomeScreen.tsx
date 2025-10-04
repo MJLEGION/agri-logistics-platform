@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 
-export default function FarmerHomeScreen() {
+export default function FarmerHomeScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
 
@@ -16,13 +16,19 @@ export default function FarmerHomeScreen() {
         <Text style={styles.role}>Farmer Dashboard</Text>
       </View>
 
-      <TouchableOpacity style={styles.actionCard}>
+      <TouchableOpacity 
+        style={styles.actionCard}
+        onPress={() => navigation.navigate('ListCrop')}
+      >
         <Text style={styles.cardIcon}>📝</Text>
         <Text style={styles.cardTitle}>List New Crop</Text>
         <Text style={styles.cardDesc}>Add crops available for sale</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionCard}>
+      <TouchableOpacity 
+        style={styles.actionCard}
+        onPress={() => navigation.navigate('MyListings')}
+      >
         <Text style={styles.cardIcon}>📦</Text>
         <Text style={styles.cardTitle}>My Listings</Text>
         <Text style={styles.cardDesc}>View your active crop listings</Text>

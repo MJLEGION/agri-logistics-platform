@@ -4,6 +4,7 @@ import { persistStore, persistReducer } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers } from 'redux';
 import authReducer from './slices/authSlice';
+import cropsReducer from './slices/cropsSlice';
 
 const persistConfig = {
   key: 'root',
@@ -13,6 +14,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  crops: cropsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
