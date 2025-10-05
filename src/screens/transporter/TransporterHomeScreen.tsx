@@ -30,6 +30,11 @@ export default function TransporterHomeScreen({ navigation }: any) {
         <Text style={styles.cardTitle}>Optimize Route</Text>
         <Text style={styles.cardDesc}>Get best delivery routes</Text>
       </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.actionCard}
+         onPress={() => navigation.navigate('ActiveTrips')}
+        ></TouchableOpacity>
 
       <TouchableOpacity style={styles.actionCard}>
         <Text style={styles.cardIcon}>🚛</Text>

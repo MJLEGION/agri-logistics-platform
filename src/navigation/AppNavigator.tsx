@@ -14,6 +14,7 @@ import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
 import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
+import ActiveTripsScreen from '../screens/transporter/ActiveTripsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,9 @@ export default function AppNavigator() {
                 <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
                 <Stack.Screen name="EditCrop" component={EditCropScreen} />
                 <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
+                <Stack.Screen name="Home" component={TransporterHomeScreen} />
+                <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
+                <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
               </>
             )}
             {user?.role === 'transporter' && (
