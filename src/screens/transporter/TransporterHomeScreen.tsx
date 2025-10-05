@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 
-export default function TransporterHomeScreen() {
+export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
 
@@ -16,11 +16,14 @@ export default function TransporterHomeScreen() {
         <Text style={styles.role}>Transporter Dashboard</Text>
       </View>
 
-      <TouchableOpacity style={styles.actionCard}>
+      <TouchableOpacity 
+        style={styles.actionCard}
+        onPress={() => navigation.navigate('AvailableLoads')}
+        >
         <Text style={styles.cardIcon}>📍</Text>
         <Text style={styles.cardTitle}>Available Loads</Text>
         <Text style={styles.cardDesc}>Find crops near you to transport</Text>
-      </TouchableOpacity>
+        </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionCard}>
         <Text style={styles.cardIcon}>🗺️</Text>

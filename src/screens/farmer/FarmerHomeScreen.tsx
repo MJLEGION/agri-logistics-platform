@@ -34,11 +34,14 @@ export default function FarmerHomeScreen({ navigation }: any) {
         <Text style={styles.cardDesc}>View your active crop listings</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>🚚</Text>
-        <Text style={styles.cardTitle}>Active Orders</Text>
-        <Text style={styles.cardDesc}>Track your ongoing deliveries</Text>
-      </TouchableOpacity>
+      <TouchableOpacity 
+           style={styles.actionCard}
+             onPress={() => navigation.navigate('ActiveOrders')}
+          >
+          <Text style={styles.cardIcon}>🚚</Text>
+          <Text style={styles.cardTitle}>Active Orders</Text>
+          <Text style={styles.cardDesc}>Track your ongoing deliveries</Text>
+          </TouchableOpacity>
 
       <TouchableOpacity 
         style={styles.logoutButton}

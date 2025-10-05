@@ -8,7 +8,11 @@ import AuthNavigator from './AuthNavigator';
 import FarmerHomeScreen from '../screens/farmer/FarmerHomeScreen';
 import ListCropScreen from '../screens/farmer/ListCropScreen';
 import MyListingsScreen from '../screens/farmer/MyListingsScreen';
+import CropDetailsScreen from '../screens/farmer/CropDetailsScreen';
+import EditCropScreen from '../screens/farmer/EditCropScreen';
+import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
+import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
 import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -28,10 +32,16 @@ export default function AppNavigator() {
                 <Stack.Screen name="Home" component={FarmerHomeScreen} />
                 <Stack.Screen name="ListCrop" component={ListCropScreen} />
                 <Stack.Screen name="MyListings" component={MyListingsScreen} />
+                <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
+                <Stack.Screen name="EditCrop" component={EditCropScreen} />
+                <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
               </>
             )}
             {user?.role === 'transporter' && (
-              <Stack.Screen name="Home" component={TransporterHomeScreen} />
+              <>
+                <Stack.Screen name="Home" component={TransporterHomeScreen} />
+                <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
+              </>
             )}
             {user?.role === 'buyer' && (
               <Stack.Screen name="Home" component={BuyerHomeScreen} />
