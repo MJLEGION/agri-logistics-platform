@@ -1,31 +1,30 @@
-// src/screens/auth/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '../../store/slices/authSlice';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
+import { RootState } from '../../store';
 
 export default function LoginScreen({ route, navigation }: any) {
   const { role } = route.params;
   const dispatch = useDispatch();
   const { theme } = useTheme();
+  const { isLoading, error } = useSelector((state: RootState) => state.auth);
+  
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!phone || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
-    const mockUser = {
-      id: '1',
-      name: 'Test User',
-      phone,
-      role,
-    };
-
-    dispatch(setCredentials({ user: mockUser, token: 'mock-token' }));
+    try {
+      await dispatch(login({ phone, password, role })).unwrap();
+    } catch (err) {
+      Alert.alert('Error', err || 'Login failed');
+    }
   };
 
   return (
@@ -33,6 +32,10 @@ export default function LoginScreen({ route, navigation }: any) {
       <Text style={[styles.title, { color: theme.text }]}>
         {role.charAt(0).toUpperCase() + role.slice(1)} Login
       </Text>
+
+      {error && (
+        <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+      )}
 
       <TextInput
         style={[styles.input, { 
@@ -63,8 +66,13 @@ export default function LoginScreen({ route, navigation }: any) {
       <TouchableOpacity 
         style={[styles.button, { backgroundColor: theme.primary }]} 
         onPress={handleLogin}
+        disabled={isLoading}
       >
-        <Text style={styles.buttonText}>Login</Text>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Login</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Register', { role })}>
@@ -92,6 +100,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 30,
+    textAlign: 'center',
+  },
+  error: {
+    marginBottom: 10,
     textAlign: 'center',
   },
   input: {
