@@ -1,6 +1,6 @@
 // src/screens/transporter/AvailableLoadsScreen.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { updateOrder } from '../../store/slices/ordersSlice';
@@ -19,27 +19,19 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   );
 
   const handleAcceptLoad = (order: any) => {
-    Alert.alert(
-      'Accept Transport Job',
-      `Accept transport for ${getCropName(order.cropId)}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: () => {
-            const updatedOrder = {
-              ...order,
-              transporterId: user?.id,
-              status: 'in_progress' as const,
-            };
-            
-            dispatch(updateOrder(updatedOrder));
-            alert('Transport job accepted!');
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    const confirmed = confirm(`Accept transport for ${getCropName(order.cropId)}?`);
+    
+    if (confirmed) {
+      const updatedOrder = {
+        ...order,
+        transporterId: user?.id,
+        status: 'in_progress' as const,
+      };
+      
+      dispatch(updateOrder(updatedOrder));
+      alert('Transport job accepted!');
+      navigation.goBack();
+    }
   };
 
   const getCropName = (cropId: string) => {
