@@ -47,7 +47,10 @@ export default function TransporterHomeScreen({ navigation }: any) {
           </Card>
 
           <Card>
-            <TouchableOpacity style={styles.actionCard}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => alert('Route optimization feature coming soon!')}
+            >
               <Text style={styles.cardIcon}>🗺️</Text>
               <Text style={[styles.cardTitle, { color: theme.text }]}>
                 Optimize Route
