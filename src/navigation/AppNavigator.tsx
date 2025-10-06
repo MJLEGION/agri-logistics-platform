@@ -13,8 +13,11 @@ import EditCropScreen from '../screens/farmer/EditCropScreen';
 import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
-import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
 import ActiveTripsScreen from '../screens/transporter/ActiveTripsScreen';
+import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
+import BrowseCropsScreen from '../screens/buyer/BrowseCropsScreen';
+import PlaceOrderScreen from '../screens/buyer/PlaceOrderScreen';
+import MyOrdersScreen from '../screens/buyer/MyOrdersScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,19 +39,22 @@ export default function AppNavigator() {
                 <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
                 <Stack.Screen name="EditCrop" component={EditCropScreen} />
                 <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
-                <Stack.Screen name="Home" component={TransporterHomeScreen} />
-                <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
-                <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
               </>
             )}
             {user?.role === 'transporter' && (
               <>
                 <Stack.Screen name="Home" component={TransporterHomeScreen} />
                 <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
+                <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
               </>
             )}
             {user?.role === 'buyer' && (
-              <Stack.Screen name="Home" component={BuyerHomeScreen} />
+              <>
+                <Stack.Screen name="Home" component={BuyerHomeScreen} />
+                <Stack.Screen name="BrowseCrops" component={BrowseCropsScreen} />
+                <Stack.Screen name="PlaceOrder" component={PlaceOrderScreen} />
+                <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
+              </>
             )}
           </>
         )}

@@ -4,80 +4,115 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
+import { ThemeToggle } from '../../components/common/ThemeToggle';
 
 export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome, {user?.name}!</Text>
-        <Text style={styles.role}>Transporter Dashboard</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView>
+        <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={[styles.greeting, { color: theme.card }]}>
+                Welcome, {user?.name}!
+              </Text>
+              <Text style={[styles.role, { color: theme.card, opacity: 0.8 }]}>
+                Transporter Dashboard
+              </Text>
+            </View>
+            <ThemeToggle />
+          </View>
+        </View>
 
-      <TouchableOpacity 
-        style={styles.actionCard}
-        onPress={() => navigation.navigate('AvailableLoads')}
-        >
-        <Text style={styles.cardIcon}>📍</Text>
-        <Text style={styles.cardTitle}>Available Loads</Text>
-        <Text style={styles.cardDesc}>Find crops near you to transport</Text>
-        </TouchableOpacity>
+        <View style={styles.content}>
+          <Card>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('AvailableLoads')}
+            >
+              <Text style={styles.cardIcon}>📍</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                Available Loads
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Find crops near you to transport
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>🗺️</Text>
-        <Text style={styles.cardTitle}>Optimize Route</Text>
-        <Text style={styles.cardDesc}>Get best delivery routes</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={styles.actionCard}
-         onPress={() => navigation.navigate('ActiveTrips')}
-        ></TouchableOpacity>
+          <Card>
+            <TouchableOpacity style={styles.actionCard}>
+              <Text style={styles.cardIcon}>🗺️</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                Optimize Route
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Get best delivery routes
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>🚛</Text>
-        <Text style={styles.cardTitle}>Active Trips</Text>
-        <Text style={styles.cardDesc}>Manage ongoing deliveries</Text>
-      </TouchableOpacity>
+          <Card>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('ActiveTrips')}
+            >
+              <Text style={styles.cardIcon}>🚛</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                Active Trips
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Manage ongoing deliveries
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={() => dispatch(logout())}
-      >
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <TouchableOpacity 
+            style={[styles.logoutButton, { backgroundColor: theme.error }]}
+            onPress={() => dispatch(logout())}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2196F3',
     padding: 20,
     paddingTop: 50,
+    paddingBottom: 30,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   role: {
     fontSize: 16,
-    color: '#BBDEFB',
     marginTop: 5,
   },
+  content: {
+    padding: 15,
+  },
   actionCard: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 20,
-    borderRadius: 12,
     alignItems: 'center',
+    paddingVertical: 10,
   },
   cardIcon: {
     fontSize: 48,
@@ -86,19 +121,16 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   cardDesc: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
   logoutButton: {
-    backgroundColor: '#f44336',
-    margin: 15,
+    marginTop: 10,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
   },
   logoutText: {

@@ -4,72 +4,115 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-nati
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
+import { ThemeToggle } from '../../components/common/ThemeToggle';
 
 export default function BuyerHomeScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome, {user?.name}!</Text>
-        <Text style={styles.role}>Buyer Dashboard</Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView>
+        <View style={[styles.header, { backgroundColor: theme.secondary }]}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={[styles.greeting, { color: theme.card }]}>
+                Welcome, {user?.name}!
+              </Text>
+              <Text style={[styles.role, { color: theme.card, opacity: 0.8 }]}>
+                Buyer Dashboard
+              </Text>
+            </View>
+            <ThemeToggle />
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>🔍</Text>
-        <Text style={styles.cardTitle}>Browse Crops</Text>
-        <Text style={styles.cardDesc}>Find fresh produce near you</Text>
-      </TouchableOpacity>
+        <View style={styles.content}>
+          <Card>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('BrowseCrops')}
+            >
+              <Text style={styles.cardIcon}>🔍</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                Browse Crops
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Find fresh produce near you
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>🛒</Text>
-        <Text style={styles.cardTitle}>Place Order</Text>
-        <Text style={styles.cardDesc}>Buy crops from farmers</Text>
-      </TouchableOpacity>
+          <Card>
+            <TouchableOpacity style={styles.actionCard}>
+              <Text style={styles.cardIcon}>🛒</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                Place Order
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Buy crops from farmers
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity style={styles.actionCard}>
-        <Text style={styles.cardIcon}>📋</Text>
-        <Text style={styles.cardTitle}>My Orders</Text>
-        <Text style={styles.cardDesc}>Track your purchases</Text>
-      </TouchableOpacity>
+          <Card>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('MyOrders')}
+            >
+              <Text style={styles.cardIcon}>📋</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>
+                My Orders
+              </Text>
+              <Text style={[styles.cardDesc, { color: theme.textSecondary }]}>
+                Track your purchases
+              </Text>
+            </TouchableOpacity>
+          </Card>
 
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={() => dispatch(logout())}
-      >
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <TouchableOpacity 
+            style={[styles.logoutButton, { backgroundColor: theme.error }]}
+            onPress={() => dispatch(logout())}
+          >
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#FF9800',
     padding: 20,
     paddingTop: 50,
+    paddingBottom: 30,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   role: {
     fontSize: 16,
-    color: '#FFE0B2',
     marginTop: 5,
   },
+  content: {
+    padding: 15,
+  },
   actionCard: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 20,
-    borderRadius: 12,
     alignItems: 'center',
+    paddingVertical: 10,
   },
   cardIcon: {
     fontSize: 48,
@@ -78,19 +121,16 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   cardDesc: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
   logoutButton: {
-    backgroundColor: '#f44336',
-    margin: 15,
+    marginTop: 10,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
   },
   logoutText: {

@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { addOrder } from '../../store/slices/ordersSlice';
+import { addOrder, updateOrder } from '../../store/slices/ordersSlice';
 import { updateCrop } from '../../store/slices/cropsSlice';
 
 export default function AvailableLoadsScreen({ navigation }: any) {
@@ -11,11 +11,6 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const { crops } = useSelector((state: RootState) => state.crops);
   const { orders } = useSelector((state: RootState) => state.orders);
   const dispatch = useDispatch();
-
-  // Get crops that are matched (have orders) but no transporter assigned
-  const assignedCropIds = orders
-    .filter(order => order.transporterId)
-    .map(order => order.cropId);
 
   const availableLoads = orders.filter(
     order => order.status === 'accepted' && !order.transporterId
@@ -30,16 +25,14 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         {
           text: 'Accept',
           onPress: () => {
-            // Update order with transporter ID
             const updatedOrder = {
               ...order,
               transporterId: user?.id,
               status: 'in_progress' as const,
             };
             
-            // Update the order in Redux (you'll need to add updateOrder action)
-            // For now, just show success
-            Alert.alert('Success', 'Transport job accepted!');
+            dispatch(updateOrder(updatedOrder));
+            alert('Transport job accepted!');
             navigation.goBack();
           },
         },
@@ -56,18 +49,21 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   };
 
   const calculateDistance = (order: any) => {
-    // Mock distance calculation - in real app, use Google Maps Distance Matrix API
     const lat1 = order.pickupLocation.latitude;
     const lon1 = order.pickupLocation.longitude;
     const lat2 = order.deliveryLocation.latitude;
     const lon2 = order.deliveryLocation.longitude;
     
-    // Simple distance formula (not accurate, just for demo)
     const distance = Math.sqrt(
       Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2)
-    ) * 111; // Rough km conversion
+    ) * 111;
     
-    return distance.toFixed(1);
+    return distance;
+  };
+
+  const calculateEarnings = (order: any) => {
+    const distance = calculateDistance(order);
+    return Math.round(distance * 1000); // 1000 RWF per km
   };
 
   return (
@@ -94,11 +90,17 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
             const crop = getCropDetails(item.cropId);
+            const distance = calculateDistance(item);
+            const earnings = calculateEarnings(item);
+            
             return (
               <View style={styles.loadCard}>
                 <View style={styles.loadHeader}>
                   <Text style={styles.cropName}>{getCropName(item.cropId)}</Text>
-                  <Text style={styles.price}>{item.totalPrice.toLocaleString()} RWF</Text>
+                  <View style={styles.earningsBox}>
+                    <Text style={styles.earningsLabel}>You Earn</Text>
+                    <Text style={styles.earnings}>{earnings.toLocaleString()} RWF</Text>
+                  </View>
                 </View>
 
                 <View style={styles.detailRow}>
@@ -108,7 +110,12 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>Distance:</Text>
-                  <Text style={styles.value}>~{calculateDistance(item)} km</Text>
+                  <Text style={styles.value}>~{distance.toFixed(1)} km</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.label}>Rate:</Text>
+                  <Text style={styles.value}>1,000 RWF/km</Text>
                 </View>
 
                 <View style={styles.locationSection}>
@@ -196,11 +203,23 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
   },
-  price: {
-    fontSize: 18,
+  earningsBox: {
+    backgroundColor: '#E8F5E9',
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  earningsLabel: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 2,
+  },
+  earnings: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: '#2E7D32',
   },
   detailRow: {
     flexDirection: 'row',
