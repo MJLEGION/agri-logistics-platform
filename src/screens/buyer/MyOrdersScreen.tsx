@@ -3,11 +3,14 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
 
 export default function MyOrdersScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const { orders } = useSelector((state: RootState) => state.orders);
   const { crops } = useSelector((state: RootState) => state.crops);
+  const { theme } = useTheme();
 
   const myOrders = orders.filter(order => order.buyerId === user?.id);
 
@@ -17,33 +20,33 @@ export default function MyOrdersScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#FF9800';
-      case 'accepted': return '#4CAF50';
-      case 'in_progress': return '#2196F3';
-      case 'completed': return '#607D8B';
-      case 'cancelled': return '#f44336';
-      default: return '#666';
+      case 'pending': return theme.warning;
+      case 'accepted': return theme.success;
+      case 'in_progress': return theme.info;
+      case 'completed': return theme.textSecondary;
+      case 'cancelled': return theme.error;
+      default: return theme.textSecondary;
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.secondary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>My Orders</Text>
+        <Text style={[styles.title, { color: theme.card }]}>My Orders</Text>
       </View>
 
       {myOrders.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📋</Text>
-          <Text style={styles.emptyText}>No orders yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No orders yet</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Browse crops to place your first order
           </Text>
           <TouchableOpacity
-            style={styles.browseButton}
+            style={[styles.browseButton, { backgroundColor: theme.secondary }]}
             onPress={() => navigation.navigate('BrowseCrops')}
           >
             <Text style={styles.browseButtonText}>Browse Crops</Text>
@@ -55,43 +58,55 @@ export default function MyOrdersScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.orderCard}>
+            <Card>
               <View style={styles.orderHeader}>
-                <Text style={styles.cropName}>{getCropName(item.cropId)}</Text>
+                <Text style={[styles.cropName, { color: theme.text }]}>
+                  {getCropName(item.cropId)}
+                </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
                 </View>
               </View>
 
               <View style={styles.detailRow}>
-                <Text style={styles.label}>Quantity:</Text>
-                <Text style={styles.value}>{item.quantity}</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{item.quantity}</Text>
               </View>
 
               <View style={styles.detailRow}>
-                <Text style={styles.label}>Total Price:</Text>
-                <Text style={styles.value}>{item.totalPrice.toLocaleString()} RWF</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Total Price:</Text>
+                <Text style={[styles.value, { color: theme.text }]}>
+                  {item.totalPrice.toLocaleString()} RWF
+                </Text>
               </View>
 
               <View style={styles.locationSection}>
                 <View style={styles.locationItem}>
-                  <Text style={styles.locationLabel}>📍 Pickup:</Text>
-                  <Text style={styles.locationText}>{item.pickupLocation.address}</Text>
+                  <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                    📍 Pickup:
+                  </Text>
+                  <Text style={[styles.locationText, { color: theme.text }]}>
+                    {item.pickupLocation.address}
+                  </Text>
                 </View>
                 <View style={styles.locationItem}>
-                  <Text style={styles.locationLabel}>🏁 Delivery:</Text>
-                  <Text style={styles.locationText}>{item.deliveryLocation.address}</Text>
+                  <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                    🏁 Delivery:
+                  </Text>
+                  <Text style={[styles.locationText, { color: theme.text }]}>
+                    {item.deliveryLocation.address}
+                  </Text>
                 </View>
               </View>
 
               {item.transporterId && (
-                <View style={styles.statusInfo}>
-                  <Text style={styles.statusInfoText}>
+                <View style={[styles.statusInfo, { backgroundColor: theme.success + '20' }]}>
+                  <Text style={[styles.statusInfoText, { color: theme.success }]}>
                     {item.status === 'completed' ? '✓ Delivered' : '🚚 In Transit'}
                   </Text>
                 </View>
               )}
-            </View>
+            </Card>
           )}
         />
       )}
@@ -102,22 +117,18 @@ export default function MyOrdersScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#FF9800',
     padding: 20,
     paddingTop: 50,
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   emptyState: {
     flex: 1,
@@ -131,16 +142,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
     marginBottom: 30,
   },
   browseButton: {
-    backgroundColor: '#FF9800',
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
@@ -153,12 +161,6 @@ const styles = StyleSheet.create({
   list: {
     padding: 15,
   },
-  orderCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
-  },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -168,7 +170,6 @@ const styles = StyleSheet.create({
   cropName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -187,11 +188,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
   },
   value: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   locationSection: {
@@ -202,23 +201,19 @@ const styles = StyleSheet.create({
   },
   locationLabel: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 2,
   },
   locationText: {
     fontSize: 14,
-    color: '#333',
   },
   statusInfo: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#E8F5E9',
     borderRadius: 8,
     alignItems: 'center',
   },
   statusInfoText: {
     fontSize: 14,
-    color: '#2E7D32',
     fontWeight: '500',
   },
 });

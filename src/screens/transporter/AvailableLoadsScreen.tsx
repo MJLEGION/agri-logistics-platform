@@ -3,14 +3,16 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { addOrder, updateOrder } from '../../store/slices/ordersSlice';
-import { updateCrop } from '../../store/slices/cropsSlice';
+import { updateOrder } from '../../store/slices/ordersSlice';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const { crops } = useSelector((state: RootState) => state.crops);
   const { orders } = useSelector((state: RootState) => state.orders);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   const availableLoads = orders.filter(
     order => order.status === 'accepted' && !order.transporterId
@@ -63,23 +65,23 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
   const calculateEarnings = (order: any) => {
     const distance = calculateDistance(order);
-    return Math.round(distance * 1000); // 1000 RWF per km
+    return Math.round(distance * 1000);
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Available Loads</Text>
+        <Text style={[styles.title, { color: theme.card }]}>Available Loads</Text>
       </View>
 
       {availableLoads.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={styles.emptyText}>No loads available</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No loads available</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Check back later for transport opportunities
           </Text>
         </View>
@@ -94,48 +96,66 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             const earnings = calculateEarnings(item);
             
             return (
-              <View style={styles.loadCard}>
+              <Card>
                 <View style={styles.loadHeader}>
-                  <Text style={styles.cropName}>{getCropName(item.cropId)}</Text>
-                  <View style={styles.earningsBox}>
-                    <Text style={styles.earningsLabel}>You Earn</Text>
-                    <Text style={styles.earnings}>{earnings.toLocaleString()} RWF</Text>
+                  <Text style={[styles.cropName, { color: theme.text }]}>
+                    {getCropName(item.cropId)}
+                  </Text>
+                  <View style={[styles.earningsBox, { backgroundColor: theme.success + '20' }]}>
+                    <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
+                      You Earn
+                    </Text>
+                    <Text style={[styles.earnings, { color: theme.success }]}>
+                      {earnings.toLocaleString()} RWF
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Quantity:</Text>
-                  <Text style={styles.value}>{item.quantity} {crop?.unit}</Text>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
+                  <Text style={[styles.value, { color: theme.text }]}>
+                    {item.quantity} {crop?.unit}
+                  </Text>
                 </View>
 
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Distance:</Text>
-                  <Text style={styles.value}>~{distance.toFixed(1)} km</Text>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>Distance:</Text>
+                  <Text style={[styles.value, { color: theme.text }]}>
+                    ~{distance.toFixed(1)} km
+                  </Text>
                 </View>
 
                 <View style={styles.detailRow}>
-                  <Text style={styles.label}>Rate:</Text>
-                  <Text style={styles.value}>1,000 RWF/km</Text>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>Rate:</Text>
+                  <Text style={[styles.value, { color: theme.text }]}>1,000 RWF/km</Text>
                 </View>
 
                 <View style={styles.locationSection}>
                   <View style={styles.locationItem}>
-                    <Text style={styles.locationLabel}>📍 Pickup:</Text>
-                    <Text style={styles.locationText}>{item.pickupLocation.address}</Text>
+                    <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                      📍 Pickup:
+                    </Text>
+                    <Text style={[styles.locationText, { color: theme.text }]}>
+                      {item.pickupLocation.address}
+                    </Text>
                   </View>
                   <View style={styles.locationItem}>
-                    <Text style={styles.locationLabel}>🏁 Delivery:</Text>
-                    <Text style={styles.locationText}>{item.deliveryLocation.address}</Text>
+                    <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                      🏁 Delivery:
+                    </Text>
+                    <Text style={[styles.locationText, { color: theme.text }]}>
+                      {item.deliveryLocation.address}
+                    </Text>
                   </View>
                 </View>
 
                 <TouchableOpacity
-                  style={styles.acceptButton}
+                  style={[styles.acceptButton, { backgroundColor: theme.tertiary }]}
                   onPress={() => handleAcceptLoad(item)}
                 >
                   <Text style={styles.acceptButtonText}>Accept Load</Text>
                 </TouchableOpacity>
-              </View>
+              </Card>
             );
           }}
         />
@@ -147,22 +167,18 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2196F3',
     padding: 20,
     paddingTop: 50,
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   emptyState: {
     flex: 1,
@@ -176,22 +192,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
   },
   list: {
     padding: 15,
-  },
-  loadCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
   },
   loadHeader: {
     flexDirection: 'row',
@@ -202,24 +210,20 @@ const styles = StyleSheet.create({
   cropName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     flex: 1,
   },
   earningsBox: {
-    backgroundColor: '#E8F5E9',
     padding: 8,
     borderRadius: 8,
     alignItems: 'center',
   },
   earningsLabel: {
     fontSize: 10,
-    color: '#666',
     marginBottom: 2,
   },
   earnings: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2E7D32',
   },
   detailRow: {
     flexDirection: 'row',
@@ -228,11 +232,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
   },
   value: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   locationSection: {
@@ -244,15 +246,12 @@ const styles = StyleSheet.create({
   },
   locationLabel: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 2,
   },
   locationText: {
     fontSize: 14,
-    color: '#333',
   },
   acceptButton: {
-    backgroundColor: '#2196F3',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',

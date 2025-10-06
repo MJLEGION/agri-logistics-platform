@@ -3,28 +3,29 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
 
 export default function ActiveOrdersScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const { orders } = useSelector((state: RootState) => state.orders);
   const { crops } = useSelector((state: RootState) => state.crops);
+  const { theme } = useTheme();
 
-  // Get farmer's crop IDs
   const farmerCropIds = crops
     .filter(crop => crop.farmerId === user?.id)
     .map(crop => crop.id);
 
-  // Filter orders for farmer's crops
   const farmerOrders = orders.filter(order => farmerCropIds.includes(order.cropId));
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return '#FF9800';
-      case 'accepted': return '#4CAF50';
-      case 'in_progress': return '#2196F3';
-      case 'completed': return '#607D8B';
-      case 'cancelled': return '#f44336';
-      default: return '#666';
+      case 'pending': return theme.warning;
+      case 'accepted': return theme.success;
+      case 'in_progress': return theme.info;
+      case 'completed': return theme.textSecondary;
+      case 'cancelled': return theme.error;
+      default: return theme.textSecondary;
     }
   };
 
@@ -33,19 +34,19 @@ export default function ActiveOrdersScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.primary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Active Orders</Text>
+        <Text style={[styles.title, { color: theme.card }]}>Active Orders</Text>
       </View>
 
       {farmerOrders.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📋</Text>
-          <Text style={styles.emptyText}>No active orders yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No active orders yet</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Orders will appear here when buyers purchase your crops
           </Text>
         </View>
@@ -55,35 +56,43 @@ export default function ActiveOrdersScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.orderCard}>
+            <Card>
               <View style={styles.orderHeader}>
-                <Text style={styles.cropName}>{getCropName(item.cropId)}</Text>
+                <Text style={[styles.cropName, { color: theme.text }]}>
+                  {getCropName(item.cropId)}
+                </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
                 </View>
               </View>
 
               <View style={styles.orderDetail}>
-                <Text style={styles.detailLabel}>Quantity:</Text>
-                <Text style={styles.detailValue}>{item.quantity}</Text>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Quantity:</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{item.quantity}</Text>
               </View>
 
               <View style={styles.orderDetail}>
-                <Text style={styles.detailLabel}>Total Price:</Text>
-                <Text style={styles.detailValue}>{item.totalPrice.toLocaleString()} RWF</Text>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Total Price:</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>
+                  {item.totalPrice.toLocaleString()} RWF
+                </Text>
               </View>
 
               <View style={styles.orderDetail}>
-                <Text style={styles.detailLabel}>Delivery to:</Text>
-                <Text style={styles.detailValue}>{item.deliveryLocation.address}</Text>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Delivery to:</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>
+                  {item.deliveryLocation.address}
+                </Text>
               </View>
 
               {item.transporterId && (
-                <View style={styles.transportInfo}>
-                  <Text style={styles.transportText}>🚚 Transporter assigned</Text>
+                <View style={[styles.transportInfo, { backgroundColor: theme.info + '20' }]}>
+                  <Text style={[styles.transportText, { color: theme.info }]}>
+                    🚚 Transporter assigned
+                  </Text>
                 </View>
               )}
-            </View>
+            </Card>
           )}
         />
       )}
@@ -94,22 +103,18 @@ export default function ActiveOrdersScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2E7D32',
     padding: 20,
     paddingTop: 50,
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   emptyState: {
     flex: 1,
@@ -123,22 +128,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
   },
   list: {
     padding: 15,
-  },
-  orderCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
   },
   orderHeader: {
     flexDirection: 'row',
@@ -149,7 +146,6 @@ const styles = StyleSheet.create({
   cropName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -168,22 +164,18 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
   },
   detailValue: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   transportInfo: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#E3F2FD',
     borderRadius: 8,
   },
   transportText: {
     fontSize: 14,
-    color: '#2196F3',
     fontWeight: '500',
   },
 });

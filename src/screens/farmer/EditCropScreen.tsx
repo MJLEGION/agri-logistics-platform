@@ -5,11 +5,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { updateCrop } from '../../store/slices/cropsSlice';
 import { Crop } from '../../types';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function EditCropScreen({ route, navigation }: any) {
   const { cropId } = route.params;
   const dispatch = useDispatch();
   const { crops } = useSelector((state: RootState) => state.crops);
+  const { theme } = useTheme();
   
   const crop = crops.find(c => c.id === cropId);
 
@@ -21,8 +23,8 @@ export default function EditCropScreen({ route, navigation }: any) {
 
   if (!crop) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Crop not found</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={[styles.errorText, { color: theme.text }]}>Crop not found</Text>
       </View>
     );
   }
@@ -48,93 +50,123 @@ export default function EditCropScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Edit Crop</Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Crop Name *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g., Tomatoes, Maize, Potatoes"
-          value={cropName}
-          onChangeText={setCropName}
-        />
-
-        <Text style={styles.label}>Quantity *</Text>
-        <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.quantityInput]}
-            placeholder="0"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="numeric"
-          />
-          <View style={styles.unitSelector}>
-            {(['kg', 'tons', 'bags'] as const).map((u) => (
-              <TouchableOpacity
-                key={u}
-                style={[styles.unitButton, unit === u && styles.unitButtonActive]}
-                onPress={() => setUnit(u)}
-              >
-                <Text style={[styles.unitText, unit === u && styles.unitTextActive]}>
-                  {u}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ScrollView>
+        <View style={[styles.header, { backgroundColor: theme.info }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={[styles.backButton, { color: theme.card }]}>← Cancel</Text>
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.card }]}>Edit Crop</Text>
         </View>
 
-        <Text style={styles.label}>Price per Unit (RWF)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Optional"
-          value={pricePerUnit}
-          onChangeText={setPricePerUnit}
-          keyboardType="numeric"
-        />
+        <View style={styles.form}>
+          <Text style={[styles.label, { color: theme.text }]}>Crop Name *</Text>
+          <TextInput
+            style={[styles.input, { 
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              color: theme.text,
+            }]}
+            placeholder="e.g., Tomatoes, Maize, Potatoes"
+            placeholderTextColor={theme.textSecondary}
+            value={cropName}
+            onChangeText={setCropName}
+          />
 
-        <Text style={styles.label}>Harvest Date *</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          value={harvestDate}
-          onChangeText={setHarvestDate}
-        />
+          <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
+          <View style={styles.row}>
+            <TextInput
+              style={[styles.input, styles.quantityInput, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="0"
+              placeholderTextColor={theme.textSecondary}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+            />
+            <View style={styles.unitSelector}>
+              {(['kg', 'tons', 'bags'] as const).map((u) => (
+                <TouchableOpacity
+                  key={u}
+                  style={[
+                    styles.unitButton,
+                    { 
+                      backgroundColor: unit === u ? theme.info : theme.card,
+                      borderColor: theme.border,
+                    }
+                  ]}
+                  onPress={() => setUnit(u)}
+                >
+                  <Text style={[
+                    styles.unitText,
+                    { color: unit === u ? theme.card : theme.text }
+                  ]}>
+                    {u}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        <Text style={styles.hint}>* Required fields</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
+          <TextInput
+            style={[styles.input, { 
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              color: theme.text,
+            }]}
+            placeholder="Optional"
+            placeholderTextColor={theme.textSecondary}
+            value={pricePerUnit}
+            onChangeText={setPricePerUnit}
+            keyboardType="numeric"
+          />
 
-        <TouchableOpacity style={styles.updateButton} onPress={handleUpdate}>
-          <Text style={styles.updateText}>Update Crop</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <Text style={[styles.label, { color: theme.text }]}>Harvest Date *</Text>
+          <TextInput
+            style={[styles.input, { 
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              color: theme.text,
+            }]}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor={theme.textSecondary}
+            value={harvestDate}
+            onChangeText={setHarvestDate}
+          />
+
+          <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
+
+          <TouchableOpacity 
+            style={[styles.updateButton, { backgroundColor: theme.info }]} 
+            onPress={handleUpdate}
+          >
+            <Text style={styles.updateText}>Update Crop</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#2196F3',
     padding: 20,
     paddingTop: 50,
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   form: {
     padding: 20,
@@ -142,13 +174,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
     marginTop: 15,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -169,27 +199,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  unitButtonActive: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
   },
   unitText: {
-    color: '#666',
     fontWeight: '600',
-  },
-  unitTextActive: {
-    color: '#fff',
   },
   hint: {
     fontSize: 12,
-    color: '#999',
     marginTop: 10,
   },
   updateButton: {
-    backgroundColor: '#2196F3',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -202,7 +220,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 18,
-    color: '#666',
     textAlign: 'center',
     marginTop: 50,
   },

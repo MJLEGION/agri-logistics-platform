@@ -4,12 +4,15 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { updateOrderStatus } from '../../store/slices/ordersSlice';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
   const { orders } = useSelector((state: RootState) => state.orders);
   const { crops } = useSelector((state: RootState) => state.crops);
   const dispatch = useDispatch();
+  const { theme } = useTheme();
 
   const myTrips = orders.filter(order => order.transporterId === user?.id);
 
@@ -40,26 +43,26 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'in_progress': return '#2196F3';
-      case 'completed': return '#4CAF50';
-      default: return '#666';
+      case 'in_progress': return theme.info;
+      case 'completed': return theme.success;
+      default: return theme.textSecondary;
     }
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
+          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Active Trips</Text>
+        <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
       </View>
 
       {myTrips.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>🚛</Text>
-          <Text style={styles.emptyText}>No active trips</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No active trips</Text>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Accept loads to start transporting
           </Text>
         </View>
@@ -69,38 +72,50 @@ export default function ActiveTripsScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.tripCard}>
+            <Card>
               <View style={styles.tripHeader}>
-                <Text style={styles.cropName}>{getCropName(item.cropId)}</Text>
+                <Text style={[styles.cropName, { color: theme.text }]}>
+                  {getCropName(item.cropId)}
+                </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
                 </View>
               </View>
 
               <View style={styles.detailRow}>
-                <Text style={styles.label}>Quantity:</Text>
-                <Text style={styles.value}>{item.quantity}</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{item.quantity}</Text>
               </View>
 
               <View style={styles.detailRow}>
-                <Text style={styles.label}>Payment:</Text>
-                <Text style={styles.value}>{item.totalPrice.toLocaleString()} RWF</Text>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>Payment:</Text>
+                <Text style={[styles.value, { color: theme.text }]}>
+                  {item.totalPrice.toLocaleString()} RWF
+                </Text>
               </View>
 
               <View style={styles.locationSection}>
                 <View style={styles.locationItem}>
-                  <Text style={styles.locationLabel}>📍 From:</Text>
-                  <Text style={styles.locationText}>{item.pickupLocation.address}</Text>
+                  <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                    📍 From:
+                  </Text>
+                  <Text style={[styles.locationText, { color: theme.text }]}>
+                    {item.pickupLocation.address}
+                  </Text>
                 </View>
                 <View style={styles.locationItem}>
-                  <Text style={styles.locationLabel}>🏁 To:</Text>
-                  <Text style={styles.locationText}>{item.deliveryLocation.address}</Text>
+                  <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
+                    🏁 To:
+                  </Text>
+                  <Text style={[styles.locationText, { color: theme.text }]}>
+                    {item.deliveryLocation.address}
+                  </Text>
                 </View>
               </View>
 
               {item.status !== 'completed' && (
                 <TouchableOpacity
-                  style={styles.actionButton}
+                  style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
                   onPress={() => handleUpdateStatus(item.id, item.status)}
                 >
                   <Text style={styles.actionButtonText}>
@@ -108,7 +123,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
                   </Text>
                 </TouchableOpacity>
               )}
-            </View>
+            </Card>
           )}
         />
       )}
@@ -119,22 +134,18 @@ export default function ActiveTripsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#2196F3',
     padding: 20,
     paddingTop: 50,
   },
   backButton: {
-    color: '#fff',
     fontSize: 16,
     marginBottom: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#fff',
   },
   emptyState: {
     flex: 1,
@@ -148,21 +159,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
   },
   list: {
     padding: 15,
-  },
-  tripCard: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
   },
   tripHeader: {
     flexDirection: 'row',
@@ -173,7 +176,6 @@ const styles = StyleSheet.create({
   cropName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -192,11 +194,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: '#666',
   },
   value: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   locationSection: {
@@ -208,15 +208,12 @@ const styles = StyleSheet.create({
   },
   locationLabel: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 2,
   },
   locationText: {
     fontSize: 14,
-    color: '#333',
   },
   actionButton: {
-    backgroundColor: '#2196F3',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
