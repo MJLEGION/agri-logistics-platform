@@ -13,6 +13,17 @@ export const fetchOrders = createAsyncThunk(
   }
 );
 
+export const fetchAllOrders = createAsyncThunk(
+  'orders/fetchAllOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await orderService.getAllOrders();
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch all orders');
+    }
+  }
+);
+
 export const createOrder = createAsyncThunk(
   'orders/create',
   async (orderData, { rejectWithValue }) => {
@@ -60,7 +71,7 @@ const ordersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch orders
+      // Fetch orders (my orders)
       .addCase(fetchOrders.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -70,6 +81,19 @@ const ordersSlice = createSlice({
         state.orders = action.payload;
       })
       .addCase(fetchOrders.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Fetch all orders
+      .addCase(fetchAllOrders.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllOrders.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orders = action.payload;
+      })
+      .addCase(fetchAllOrders.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })

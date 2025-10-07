@@ -3,11 +3,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { addOrder } from '../../store/slices/ordersSlice';
-import { Order } from '../../types';
+import { createOrder } from '../../store/slices/ordersSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { createOrder } from '../../store/slices/ordersSlice';
 
 export default function PlaceOrderScreen({ route, navigation }: any) {
   const { crop } = route.params;
@@ -45,38 +43,43 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
     return convertQuantity() * crop.pricePerUnit;
   };
 
- const handlePlaceOrder = async () => {
-  if (!quantity || !deliveryAddress) {
-    alert('Please fill all fields');
-    return;
-  }
+  const handlePlaceOrder = async () => {
+    if (!quantity || !deliveryAddress) {
+      alert('Please fill all fields');
+      return;
+    }
 
-  const convertedQty = convertQuantity();
-  if (convertedQty > crop.quantity) {
-    alert(`Only ${crop.quantity} ${crop.unit} available`);
-    return;
-  }
+    const convertedQty = convertQuantity();
+    if (convertedQty > crop.quantity) {
+      alert(`Only ${crop.quantity} ${crop.unit} available`);
+      return;
+    }
 
-  const orderData = {
-    cropId: crop._id || crop.id,
-    quantity: convertedQty,
-    totalPrice: calculateTotal(),
-    pickupLocation: crop.location,
-    deliveryLocation: {
-      latitude: -1.9500,
-      longitude: 30.0588,
-      address: deliveryAddress,
-    },
+    const orderData = {
+      cropId: crop._id || crop.id,
+      quantity: convertedQty,
+      totalPrice: calculateTotal(),
+      pickupLocation: crop.location,
+      deliveryLocation: {
+        latitude: -1.9500,
+        longitude: 30.0588,
+        address: deliveryAddress,
+      },
+    };
+
+    console.log('=== BUYER PLACING ORDER ===');
+    console.log('ORDER DATA:', JSON.stringify(orderData, null, 2));
+
+    try {
+      const result = await dispatch(createOrder(orderData)).unwrap();
+      console.log('ORDER CREATED SUCCESSFULLY:', JSON.stringify(result, null, 2));
+      alert('Order placed successfully!');
+      navigation.navigate('Home');
+    } catch (error: any) {
+      console.log('ORDER CREATION FAILED:', error);
+      alert(error || 'Failed to place order');
+    }
   };
-
-  try {
-    await dispatch(createOrder(orderData)).unwrap();
-    alert('Order placed successfully!');
-    navigation.navigate('Home');
-  } catch (error: any) {
-    alert(error || 'Failed to place order');
-  }
-};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

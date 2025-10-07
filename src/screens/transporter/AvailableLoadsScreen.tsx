@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { fetchOrders, acceptOrder } from '../../store/slices/ordersSlice';
+import { fetchAllOrders, acceptOrder } from '../../store/slices/ordersSlice';
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -14,12 +14,30 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(fetchOrders());
+    const loadData = async () => {
+      try {
+        console.log('=== TRANSPORTER LOADING ORDERS ===');
+        const result = await dispatch(fetchAllOrders()).unwrap();
+        console.log('TOTAL ORDERS FETCHED:', result.length);
+        console.log('ALL ORDERS:', JSON.stringify(result, null, 2));
+      } catch (error) {
+        console.log('ERROR LOADING ORDERS:', error);
+      }
+    };
+    loadData();
   }, [dispatch]);
 
   const availableLoads = orders.filter(
     order => order.status === 'accepted' && !order.transporterId
   );
+
+  console.log('=== FILTERING ORDERS ===');
+  console.log('Total orders in state:', orders.length);
+  console.log('Available loads after filter:', availableLoads.length);
+  console.log('Filter looking for: status="accepted" and no transporterId');
+  if (orders.length > 0) {
+    console.log('First order example:', JSON.stringify(orders[0], null, 2));
+  }
 
   const handleAcceptLoad = async (orderId: string, cropName: string) => {
     const confirmed = confirm(`Accept transport for ${cropName}?`);
@@ -76,6 +94,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           <Text style={[styles.emptyText, { color: theme.text }]}>No loads available</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Check back later for transport opportunities
+          </Text>
+          <Text style={[styles.debugText, { color: theme.textSecondary, marginTop: 20 }]}>
+            Debug: {orders.length} total orders in system
           </Text>
         </View>
       ) : (
@@ -188,6 +209,10 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
+    textAlign: 'center',
+  },
+  debugText: {
+    fontSize: 12,
     textAlign: 'center',
   },
   list: {
