@@ -10,7 +10,11 @@ export const register = async (userData) => {
 };
 
 export const login = async (credentials) => {
-  const response = await api.post('/auth/login', credentials);
+  // Only send phone and password - NOT role
+  const response = await api.post('/auth/login', {
+    phone: credentials.phone,
+    password: credentials.password
+  });
   if (response.data.token) {
     await AsyncStorage.setItem('token', response.data.token);
   }

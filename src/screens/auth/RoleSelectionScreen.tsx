@@ -1,4 +1,3 @@
-// src/screens/auth/RoleSelectionScreen.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { UserRole } from '../../types';
@@ -7,10 +6,6 @@ import { ThemeToggle } from '../../components/common/ThemeToggle';
 
 export default function RoleSelectionScreen({ navigation }: any) {
   const { theme } = useTheme();
-  
-  const handleRoleSelect = (role: UserRole) => {
-    navigation.navigate('Login', { role });
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -23,7 +18,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
           Welcome to Agri-Logistics
         </Text>
         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Select your role to continue
+          Select your role to get started
         </Text>
 
         <TouchableOpacity
@@ -31,7 +26,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
             backgroundColor: theme.card,
             borderColor: theme.primary,
           }]}
-          onPress={() => handleRoleSelect('farmer')}
+          onPress={() => navigation.navigate('Register', { role: 'farmer' })}
         >
           <Text style={styles.roleIcon}>🌾</Text>
           <Text style={[styles.roleText, { color: theme.text }]}>I am a Farmer</Text>
@@ -45,7 +40,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
             backgroundColor: theme.card,
             borderColor: theme.tertiary,
           }]}
-          onPress={() => handleRoleSelect('transporter')}
+          onPress={() => navigation.navigate('Register', { role: 'transporter' })}
         >
           <Text style={styles.roleIcon}>🚚</Text>
           <Text style={[styles.roleText, { color: theme.text }]}>I am a Transporter</Text>
@@ -59,12 +54,21 @@ export default function RoleSelectionScreen({ navigation }: any) {
             backgroundColor: theme.card,
             borderColor: theme.secondary,
           }]}
-          onPress={() => handleRoleSelect('buyer')}
+          onPress={() => navigation.navigate('Register', { role: 'buyer' })}
         >
           <Text style={styles.roleIcon}>🏪</Text>
           <Text style={[styles.roleText, { color: theme.text }]}>I am a Buyer</Text>
           <Text style={[styles.roleDesc, { color: theme.textSecondary }]}>
             Purchase fresh crops
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.loginLink}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={[styles.loginLinkText, { color: theme.primary }]}>
+            Already have an account? Login here
           </Text>
         </TouchableOpacity>
       </View>
@@ -114,5 +118,13 @@ const styles = StyleSheet.create({
   },
   roleDesc: {
     fontSize: 14,
+  },
+  loginLink: {
+    marginTop: 30,
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

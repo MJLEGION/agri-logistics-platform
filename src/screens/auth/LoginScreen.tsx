@@ -5,8 +5,7 @@ import { login } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { RootState } from '../../store';
 
-export default function LoginScreen({ route, navigation }: any) {
-  const { role } = route.params;
+export default function LoginScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const { theme } = useTheme();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
@@ -21,17 +20,18 @@ export default function LoginScreen({ route, navigation }: any) {
     }
 
     try {
-      await dispatch(login({ phone, password, role })).unwrap();
-    } catch (err) {
-      Alert.alert('Error', err || 'Login failed');
+      const result = await dispatch(login({ phone, password })).unwrap();
+      console.log('Login successful:', result);
+      // Navigation happens automatically based on user's actual role from database
+    } catch (err: any) {
+      console.log('Login error:', err);
+      Alert.alert('Login Failed', err || 'Invalid credentials');
     }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>
-        {role.charAt(0).toUpperCase() + role.slice(1)} Login
-      </Text>
+      <Text style={[styles.title, { color: theme.text }]}>Login</Text>
 
       {error && (
         <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
@@ -75,7 +75,7 @@ export default function LoginScreen({ route, navigation }: any) {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Register', { role })}>
+      <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
         <Text style={[styles.linkText, { color: theme.primary }]}>
           Don't have an account? Register
         </Text>

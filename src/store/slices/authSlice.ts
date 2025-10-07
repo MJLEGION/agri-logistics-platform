@@ -28,6 +28,7 @@ const authSlice = createSlice({
   initialState: {
     user: null,
     token: null,
+    isAuthenticated: false,
     isLoading: false,
     error: null,
   },
@@ -35,40 +36,65 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      state.isAuthenticated = false;
       authService.logout();
     },
     setCredentials: (state, action) => {
-      state.user = action.payload.user;
+      state.user = {
+        id: action.payload._id,
+        name: action.payload.name,
+        phone: action.payload.phone,
+        role: action.payload.role,
+      };
       state.token = action.payload.token;
+      state.isAuthenticated = true;
     },
   },
   extraReducers: (builder) => {
     builder
+      // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = {
+          id: action.payload._id,
+          name: action.payload.name,
+          phone: action.payload.phone,
+          role: action.payload.role,
+        };
         state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       })
+      // Login
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = {
+          id: action.payload._id,
+          name: action.payload.name,
+          phone: action.payload.phone,
+          role: action.payload.role,
+        };
         state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+        state.isAuthenticated = false;
       });
   },
 });

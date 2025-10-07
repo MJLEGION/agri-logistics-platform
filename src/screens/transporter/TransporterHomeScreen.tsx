@@ -7,6 +7,20 @@ import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
+import { useEffect } from 'react';
+import { fetchCrops } from '../../store/slices/cropsSlice';
+import { fetchOrders } from '../../store/slices/ordersSlice';
+
+export default function FarmerHomeScreen({ navigation }: any) {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const { theme } = useTheme();
+
+  // Add this useEffect to fetch data when screen loads
+  useEffect(() => {
+    dispatch(fetchCrops());
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
 export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);

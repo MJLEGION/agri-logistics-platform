@@ -1,39 +1,44 @@
-// src/screens/auth/RegisterScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '../../store/slices/authSlice';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { register } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
+import { RootState } from '../../store';
 
 export default function RegisterScreen({ route, navigation }: any) {
   const { role } = route.params;
   const dispatch = useDispatch();
   const { theme } = useTheme();
+  const { isLoading, error } = useSelector((state: RootState) => state.auth);
+  
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    if (!name || !phone || !password) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
+ const handleRegister = async () => {
+  if (!name || !phone || !password) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
 
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      phone,
-      role,
-    };
-
-    dispatch(setCredentials({ user: newUser, token: 'mock-token' }));
-  };
-
+  try {
+    const result = await dispatch(register({ name, phone, password, role })).unwrap();
+    console.log('Registration successful:', result);
+    // Navigation happens automatically via AppNavigator checking isAuthenticated
+  } catch (err: any) {
+    console.log('Registration error:', err);
+    Alert.alert('Registration Failed', err || 'Could not register');
+  }
+};
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>
         Register as {role.charAt(0).toUpperCase() + role.slice(1)}
       </Text>
+
+      {error && (
+        <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+      )}
 
       <TextInput
         style={[styles.input, { 
@@ -76,8 +81,13 @@ export default function RegisterScreen({ route, navigation }: any) {
       <TouchableOpacity 
         style={[styles.button, { backgroundColor: theme.primary }]} 
         onPress={handleRegister}
+        disabled={isLoading}
       >
-        <Text style={styles.buttonText}>Register</Text>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Register</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Login', { role })}>
@@ -106,6 +116,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 30,
     textAlign: 'center',
+  },
+  error: {
+    marginBottom: 10,
+    textAlign: 'center',
+    color: 'red',
   },
   input: {
     borderWidth: 1,
