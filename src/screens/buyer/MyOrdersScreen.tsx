@@ -1,22 +1,25 @@
 // src/screens/buyer/MyOrdersScreen.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { fetchOrders } from '../../store/slices/ordersSlice';
 
 export default function MyOrdersScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { orders } = useSelector((state: RootState) => state.orders);
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const { orders, isLoading } = useSelector((state: RootState) => state.orders);
   const { theme } = useTheme();
+  const dispatch = useDispatch();
 
-  const myOrders = orders.filter(order => order.buyerId === user?.id);
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
-  const getCropName = (cropId: string) => {
-    return crops.find(c => c.id === cropId)?.name || 'Unknown Crop';
-  };
+  const myOrders = orders.filter(order => 
+    order.buyerId === user?.id || order.buyerId?._id === user?.id
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -28,6 +31,14 @@ export default function MyOrdersScreen({ navigation }: any) {
       default: return theme.textSecondary;
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.secondary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -55,13 +66,13 @@ export default function MyOrdersScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={myOrders}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <Card>
               <View style={styles.orderHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
-                  {getCropName(item.cropId)}
+                  {item.cropId?.name || 'Order'}
                 </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>

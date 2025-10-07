@@ -1,17 +1,31 @@
 // src/screens/farmer/MyListingsScreen.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { fetchCrops } from '../../store/slices/cropsSlice';
 
 export default function MyListingsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const { crops, isLoading } = useSelector((state: RootState) => state.crops);
   const { theme } = useTheme();
+  const dispatch = useDispatch();
 
-  const myListings = crops.filter(crop => crop.farmerId === user?.id);
+  useEffect(() => {
+    dispatch(fetchCrops());
+  }, [dispatch]);
+
+  const myListings = crops.filter(crop => crop.farmerId === user?.id || crop.farmerId?._id === user?.id);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -36,10 +50,10 @@ export default function MyListingsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={myListings}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('CropDetails', { cropId: item.id })}>
+            <TouchableOpacity onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}>
               <Card>
                 <View style={styles.cropHeader}>
                   <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
@@ -56,7 +70,7 @@ export default function MyListingsScreen({ navigation }: any) {
                   </Text>
                 )}
                 <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                  Harvest Date: {item.harvestDate}
+                  Harvest Date: {new Date(item.harvestDate).toLocaleDateString()}
                 </Text>
                 <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
                   📍 {item.location.address}

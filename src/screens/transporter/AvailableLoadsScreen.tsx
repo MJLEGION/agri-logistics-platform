@@ -1,45 +1,38 @@
 // src/screens/transporter/AvailableLoadsScreen.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { updateOrder } from '../../store/slices/ordersSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { fetchOrders, acceptOrder } from '../../store/slices/ordersSlice';
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { crops } = useSelector((state: RootState) => state.crops);
-  const { orders } = useSelector((state: RootState) => state.orders);
-  const dispatch = useDispatch();
+  const { orders, isLoading } = useSelector((state: RootState) => state.orders);
   const { theme } = useTheme();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
   const availableLoads = orders.filter(
     order => order.status === 'accepted' && !order.transporterId
   );
 
-  const handleAcceptLoad = (order: any) => {
-    const confirmed = confirm(`Accept transport for ${getCropName(order.cropId)}?`);
+  const handleAcceptLoad = async (orderId: string, cropName: string) => {
+    const confirmed = confirm(`Accept transport for ${cropName}?`);
     
     if (confirmed) {
-      const updatedOrder = {
-        ...order,
-        transporterId: user?.id,
-        status: 'in_progress' as const,
-      };
-      
-      dispatch(updateOrder(updatedOrder));
-      alert('Transport job accepted!');
-      navigation.goBack();
+      try {
+        await dispatch(acceptOrder(orderId)).unwrap();
+        alert('Transport job accepted!');
+        navigation.goBack();
+      } catch (error: any) {
+        alert(error || 'Failed to accept load');
+      }
     }
-  };
-
-  const getCropName = (cropId: string) => {
-    return crops.find(c => c.id === cropId)?.name || 'Unknown Crop';
-  };
-
-  const getCropDetails = (cropId: string) => {
-    return crops.find(c => c.id === cropId);
   };
 
   const calculateDistance = (order: any) => {
@@ -59,6 +52,14 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     const distance = calculateDistance(order);
     return Math.round(distance * 1000);
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.tertiary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -80,10 +81,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={availableLoads}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const crop = getCropDetails(item.cropId);
             const distance = calculateDistance(item);
             const earnings = calculateEarnings(item);
             
@@ -91,7 +91,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
               <Card>
                 <View style={styles.loadHeader}>
                   <Text style={[styles.cropName, { color: theme.text }]}>
-                    {getCropName(item.cropId)}
+                    {item.cropId?.name || 'Order'}
                   </Text>
                   <View style={[styles.earningsBox, { backgroundColor: theme.success + '20' }]}>
                     <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
@@ -106,7 +106,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                 <View style={styles.detailRow}>
                   <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
                   <Text style={[styles.value, { color: theme.text }]}>
-                    {item.quantity} {crop?.unit}
+                    {item.quantity}
                   </Text>
                 </View>
 
@@ -143,7 +143,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
                 <TouchableOpacity
                   style={[styles.acceptButton, { backgroundColor: theme.tertiary }]}
-                  onPress={() => handleAcceptLoad(item)}
+                  onPress={() => handleAcceptLoad(item._id || item.id, item.cropId?.name || 'Order')}
                 >
                   <Text style={styles.acceptButtonText}>Accept Load</Text>
                 </TouchableOpacity>

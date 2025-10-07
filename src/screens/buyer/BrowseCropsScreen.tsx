@@ -1,16 +1,30 @@
 // src/screens/buyer/BrowseCropsScreen.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { fetchCrops } from '../../store/slices/cropsSlice';
 
 export default function BrowseCropsScreen({ navigation }: any) {
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const { crops, isLoading } = useSelector((state: RootState) => state.crops);
   const { theme } = useTheme();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchCrops());
+  }, [dispatch]);
 
   const availableCrops = crops.filter(crop => crop.status === 'listed');
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.secondary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -32,7 +46,7 @@ export default function BrowseCropsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={availableCrops}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => navigation.navigate('PlaceOrder', { crop: item })}>
@@ -55,7 +69,9 @@ export default function BrowseCropsScreen({ navigation }: any) {
 
                 <View style={styles.detailRow}>
                   <Text style={[styles.label, { color: theme.textSecondary }]}>Harvest Date:</Text>
-                  <Text style={[styles.value, { color: theme.text }]}>{item.harvestDate}</Text>
+                  <Text style={[styles.value, { color: theme.text }]}>
+                    {new Date(item.harvestDate).toLocaleDateString()}
+                  </Text>
                 </View>
 
                 <View style={styles.detailRow}>

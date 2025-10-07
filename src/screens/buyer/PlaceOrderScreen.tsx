@@ -7,6 +7,7 @@ import { addOrder } from '../../store/slices/ordersSlice';
 import { Order } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { createOrder } from '../../store/slices/ordersSlice';
 
 export default function PlaceOrderScreen({ route, navigation }: any) {
   const { crop } = route.params;
@@ -44,38 +45,38 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
     return convertQuantity() * crop.pricePerUnit;
   };
 
-  const handlePlaceOrder = () => {
-    if (!quantity || !deliveryAddress) {
-      alert('Please fill all fields');
-      return;
-    }
+ const handlePlaceOrder = async () => {
+  if (!quantity || !deliveryAddress) {
+    alert('Please fill all fields');
+    return;
+  }
 
-    const convertedQty = convertQuantity();
-    if (convertedQty > crop.quantity) {
-      alert(`Only ${crop.quantity} ${crop.unit} available`);
-      return;
-    }
+  const convertedQty = convertQuantity();
+  if (convertedQty > crop.quantity) {
+    alert(`Only ${crop.quantity} ${crop.unit} available`);
+    return;
+  }
 
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      cropId: crop.id,
-      farmerId: crop.farmerId,
-      buyerId: user?.id || '',
-      quantity: convertedQty,
-      totalPrice: calculateTotal(),
-      status: 'accepted',
-      pickupLocation: crop.location,
-      deliveryLocation: {
-        latitude: -1.9500,
-        longitude: 30.0588,
-        address: deliveryAddress,
-      },
-    };
+  const orderData = {
+    cropId: crop._id || crop.id,
+    quantity: convertedQty,
+    totalPrice: calculateTotal(),
+    pickupLocation: crop.location,
+    deliveryLocation: {
+      latitude: -1.9500,
+      longitude: 30.0588,
+      address: deliveryAddress,
+    },
+  };
 
-    dispatch(addOrder(newOrder));
+  try {
+    await dispatch(createOrder(orderData)).unwrap();
     alert('Order placed successfully!');
     navigation.navigate('Home');
-  };
+  } catch (error: any) {
+    alert(error || 'Failed to place order');
+  }
+};
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

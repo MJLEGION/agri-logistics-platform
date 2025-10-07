@@ -1,26 +1,27 @@
 // src/screens/transporter/ActiveTripsScreen.tsx
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
-import { updateOrderStatus } from '../../store/slices/ordersSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { orders } = useSelector((state: RootState) => state.orders);
-  const { crops } = useSelector((state: RootState) => state.crops);
-  const dispatch = useDispatch();
+  const { orders, isLoading } = useSelector((state: RootState) => state.orders);
   const { theme } = useTheme();
+  const dispatch = useDispatch();
 
-  const myTrips = orders.filter(order => order.transporterId === user?.id);
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
-  const getCropName = (cropId: string) => {
-    return crops.find(c => c.id === cropId)?.name || 'Unknown';
-  };
+  const myTrips = orders.filter(order => 
+    order.transporterId === user?.id || order.transporterId?._id === user?.id
+  );
 
-  const handleUpdateStatus = (orderId: string, currentStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'in_progress' ? 'completed' : 'in_progress';
     
     Alert.alert(
@@ -30,10 +31,12 @@ export default function ActiveTripsScreen({ navigation }: any) {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
-          onPress: () => {
-            dispatch(updateOrderStatus({ orderId, status: nextStatus }));
-            if (nextStatus === 'completed') {
-              Alert.alert('Success', 'Delivery marked as completed!');
+          onPress: async () => {
+            try {
+              await dispatch(updateOrder({ id: orderId, data: { status: nextStatus } })).unwrap();
+              Alert.alert('Success', nextStatus === 'completed' ? 'Delivery marked as completed!' : 'Status updated');
+            } catch (error: any) {
+              Alert.alert('Error', error || 'Failed to update status');
             }
           },
         },
@@ -48,6 +51,14 @@ export default function ActiveTripsScreen({ navigation }: any) {
       default: return theme.textSecondary;
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={theme.tertiary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -69,13 +80,13 @@ export default function ActiveTripsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={myTrips}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <Card>
               <View style={styles.tripHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
-                  {getCropName(item.cropId)}
+                  {item.cropId?.name || 'Order'}
                 </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
@@ -116,7 +127,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
               {item.status !== 'completed' && (
                 <TouchableOpacity
                   style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
-                  onPress={() => handleUpdateStatus(item.id, item.status)}
+                  onPress={() => handleUpdateStatus(item._id || item.id, item.status)}
                 >
                   <Text style={styles.actionButtonText}>
                     {item.status === 'in_progress' ? 'Mark as Completed' : 'Start Trip'}

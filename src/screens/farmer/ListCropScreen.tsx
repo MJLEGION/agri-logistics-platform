@@ -1,15 +1,15 @@
 // src/screens/farmer/ListCropScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { addCrop } from '../../store/slices/cropsSlice';
-import { Crop } from '../../types';
+import { createCrop } from '../../store/slices/cropsSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ListCropScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { isLoading } = useSelector((state: RootState) => state.crops);
   const { theme } = useTheme();
   
   const [cropName, setCropName] = useState('');
@@ -18,31 +18,32 @@ export default function ListCropScreen({ navigation }: any) {
   const [pricePerUnit, setPricePerUnit] = useState('');
   const [harvestDate, setHarvestDate] = useState('');
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!cropName || !quantity || !harvestDate) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
-    const newCrop: Crop = {
-      id: Date.now().toString(),
-      farmerId: user?.id || '',
+    const cropData = {
       name: cropName,
       quantity: parseFloat(quantity),
       unit,
+      pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
       harvestDate,
       location: {
         latitude: -1.9403,
         longitude: 29.8739,
         address: 'Kigali, Rwanda',
       },
-      status: 'listed',
-      pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
     };
 
-    dispatch(addCrop(newCrop));
-    Alert.alert('Success', 'Crop listed successfully!');
-    navigation.goBack();
+    try {
+      await dispatch(createCrop(cropData)).unwrap();
+      Alert.alert('Success', 'Crop listed successfully!');
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert('Error', error || 'Failed to list crop');
+    }
   };
 
   return (
@@ -139,8 +140,13 @@ export default function ListCropScreen({ navigation }: any) {
           <TouchableOpacity 
             style={[styles.submitButton, { backgroundColor: theme.primary }]} 
             onPress={handleSubmit}
+            disabled={isLoading}
           >
-            <Text style={styles.submitText}>List Crop</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitText}>List Crop</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
