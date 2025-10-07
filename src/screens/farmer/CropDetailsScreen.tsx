@@ -1,19 +1,18 @@
 // src/screens/farmer/CropDetailsScreen.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { deleteCrop } from '../../store/slices/cropsSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function CropDetailsScreen({ route, navigation }: any) {
   const { cropId } = route.params;
-  const dispatch = useDispatch();
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const dispatch = useAppDispatch();
+  const { crops } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
   
-  const crop = crops.find(c => c.id === cropId);
+  const crop = crops.find(c => c._id === cropId || c.id === cropId);
 
   if (!crop) {
     return (
@@ -33,7 +32,7 @@ export default function CropDetailsScreen({ route, navigation }: any) {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            dispatch(deleteCrop(cropId));
+            dispatch(deleteCrop(crop._id || crop.id || cropId));
             navigation.goBack();
           },
         },
@@ -105,7 +104,7 @@ export default function CropDetailsScreen({ route, navigation }: any) {
           <View style={styles.actions}>
             <TouchableOpacity 
               style={[styles.editButton, { backgroundColor: theme.info }]}
-              onPress={() => navigation.navigate('EditCrop', { cropId })}
+              onPress={() => navigation.navigate('EditCrop', { cropId: crop._id || crop.id || cropId })}
             >
               <Text style={styles.editButtonText}>Edit Crop</Text>
             </TouchableOpacity>

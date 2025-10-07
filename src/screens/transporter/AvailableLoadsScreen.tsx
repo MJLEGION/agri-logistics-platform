@@ -1,17 +1,16 @@
 // src/screens/transporter/AvailableLoadsScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchAllOrders, acceptOrder } from '../../store/slices/ordersSlice';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function AvailableLoadsScreen({ navigation }: any) {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { orders, isLoading } = useSelector((state: RootState) => state.orders);
+  const { user } = useAppSelector((state) => state.auth);
+  const { orders, isLoading } = useAppSelector((state) => state.orders);
   const { theme } = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const loadData = async () => {

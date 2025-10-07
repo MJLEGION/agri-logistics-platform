@@ -1,15 +1,14 @@
 // src/screens/farmer/ListCropScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import { createCrop } from '../../store/slices/cropsSlice';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function ListCropScreen({ navigation }: any) {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { isLoading } = useSelector((state: RootState) => state.crops);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { isLoading } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
   
   const [cropName, setCropName] = useState('');

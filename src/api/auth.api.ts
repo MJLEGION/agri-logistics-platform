@@ -15,22 +15,6 @@ export interface RegisterRequest {
 }
 
 export const authAPI = {
-module.exports = {
-  presets: ['babel-preset-expo'],
-  plugins: [
-    [
-      'module:react-native-dotenv',
-      {
-        moduleName: '@env',        // must match your import
-        path: '.env',              // location of your env file
-        blacklist: null,
-        whitelist: null,
-        safe: false,
-        allowUndefined: true
-      }
-    ]
-  ]
-};
   login: async (data: LoginRequest) => {
     const response = await api.post('/auth/login', data);
     return response.data;

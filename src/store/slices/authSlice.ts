@@ -1,23 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authService from '../../services/authService';
+import { RegisterData, LoginCredentials, User } from '../../types';
 
-export const register = createAsyncThunk(
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const register = createAsyncThunk<any, RegisterData, { rejectValue: string }>(
   'auth/register',
   async (userData, { rejectWithValue }) => {
     try {
       return await authService.register(userData);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Registration failed');
     }
   }
 );
 
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<any, LoginCredentials, { rejectValue: string }>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
       return await authService.login(credentials);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
     }
   }
@@ -31,7 +40,7 @@ const authSlice = createSlice({
     isAuthenticated: false,
     isLoading: false,
     error: null,
-  },
+  } as AuthState,
   reducers: {
     logout: (state) => {
       state.user = null;
@@ -41,7 +50,8 @@ const authSlice = createSlice({
     },
     setCredentials: (state, action) => {
       state.user = {
-        id: action.payload._id,
+        _id: action.payload._id,
+        id: action.payload._id, // For backward compatibility
         name: action.payload.name,
         phone: action.payload.phone,
         role: action.payload.role,
@@ -60,7 +70,8 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = {
-          id: action.payload._id,
+          _id: action.payload._id,
+          id: action.payload._id, // For backward compatibility
           name: action.payload.name,
           phone: action.payload.phone,
           role: action.payload.role,
@@ -71,7 +82,7 @@ const authSlice = createSlice({
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Registration failed';
         state.isAuthenticated = false;
       })
       // Login
@@ -82,7 +93,8 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = {
-          id: action.payload._id,
+          _id: action.payload._id,
+          id: action.payload._id, // For backward compatibility
           name: action.payload.name,
           phone: action.payload.phone,
           role: action.payload.role,
@@ -93,7 +105,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Login failed';
         state.isAuthenticated = false;
       });
   },

@@ -1,47 +1,54 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as cropService from '../../services/cropService';
+import { Crop, UpdateCropParams } from '../../types';
+
+interface CropsState {
+  crops: Crop[];
+  isLoading: boolean;
+  error: string | null;
+}
 
 // Async thunks
-export const fetchCrops = createAsyncThunk(
+export const fetchCrops = createAsyncThunk<Crop[], void, { rejectValue: string }>(
   'crops/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
       return await cropService.getAllCrops();
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch crops');
     }
   }
 );
 
-export const createCrop = createAsyncThunk(
+export const createCrop = createAsyncThunk<Crop, any, { rejectValue: string }>(
   'crops/create',
   async (cropData, { rejectWithValue }) => {
     try {
       return await cropService.createCrop(cropData);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create crop');
     }
   }
 );
 
-export const updateCrop = createAsyncThunk(
+export const updateCrop = createAsyncThunk<Crop, UpdateCropParams, { rejectValue: string }>(
   'crops/update',
   async ({ id, data }, { rejectWithValue }) => {
     try {
       return await cropService.updateCrop(id, data);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update crop');
     }
   }
 );
 
-export const deleteCrop = createAsyncThunk(
+export const deleteCrop = createAsyncThunk<string, string, { rejectValue: string }>(
   'crops/delete',
   async (id, { rejectWithValue }) => {
     try {
       await cropService.deleteCrop(id);
       return id;
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete crop');
     }
   }
@@ -53,7 +60,7 @@ const cropsSlice = createSlice({
     crops: [],
     isLoading: false,
     error: null,
-  },
+  } as CropsState,
   reducers: {
     clearError: (state) => {
       state.error = null;
@@ -72,7 +79,7 @@ const cropsSlice = createSlice({
       })
       .addCase(fetchCrops.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to fetch crops';
       })
       // Create crop
       .addCase(createCrop.pending, (state) => {
@@ -85,7 +92,7 @@ const cropsSlice = createSlice({
       })
       .addCase(createCrop.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to create crop';
       })
       // Update crop
       .addCase(updateCrop.pending, (state) => {
@@ -101,7 +108,7 @@ const cropsSlice = createSlice({
       })
       .addCase(updateCrop.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to update crop';
       })
       // Delete crop
       .addCase(deleteCrop.pending, (state) => {
@@ -110,11 +117,11 @@ const cropsSlice = createSlice({
       })
       .addCase(deleteCrop.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.crops = state.crops.filter(c => c._id !== action.payload);
+        state.crops = state.crops.filter(c => c._id !== action.payload && c.id !== action.payload);
       })
       .addCase(deleteCrop.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to delete crop';
       });
   },
 });

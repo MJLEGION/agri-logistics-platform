@@ -1,20 +1,23 @@
 // src/screens/farmer/ActiveOrdersScreen.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { useAppSelector } from '../../store';
 
 export default function ActiveOrdersScreen({ navigation }: any) {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { orders } = useSelector((state: RootState) => state.orders);
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const { user } = useAppSelector((state) => state.auth);
+  const { orders } = useAppSelector((state) => state.orders);
+  const { crops } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
 
+  // Get farmer's crop IDs (handle both _id and id fields)
   const farmerCropIds = crops
-    .filter(crop => crop.farmerId === user?.id)
-    .map(crop => crop.id);
+    .filter(crop => {
+      const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
+      return farmerId === user?._id || farmerId === user?.id;
+    })
+    .map(crop => crop._id || crop.id);
 
   const farmerOrders = orders.filter(order => farmerCropIds.includes(order.cropId));
 
@@ -30,7 +33,7 @@ export default function ActiveOrdersScreen({ navigation }: any) {
   };
 
   const getCropName = (cropId: string) => {
-    return crops.find(c => c.id === cropId)?.name || 'Unknown Crop';
+    return crops.find(c => c._id === cropId || c.id === cropId)?.name || 'Unknown Crop';
   };
 
   return (
@@ -53,7 +56,7 @@ export default function ActiveOrdersScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={farmerOrders}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id || item.id || ''}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <Card>

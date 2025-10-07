@@ -1,91 +1,171 @@
+// src/screens/auth/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { login } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
-import { RootState } from '../../store';
+import { useAppDispatch, useAppSelector } from '../../store';
+import Input from '../../components/Input';
+import Button from '../../components/Button';
 
 export default function LoginScreen({ navigation }: any) {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { theme } = useTheme();
-  const { isLoading, error } = useSelector((state: RootState) => state.auth);
-  
+  const { isLoading, error } = useAppSelector((state) => state.auth);
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({ phone: '', password: '' });
 
-  const handleLogin = async () => {
-    if (!phone || !password) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = { phone: '', password: '' };
+
+    if (!phone) {
+      newErrors.phone = 'Phone number is required';
+      valid = false;
+    } else if (phone.length < 10) {
+      newErrors.phone = 'Please enter a valid phone number';
+      valid = false;
     }
 
+    if (!password) {
+      newErrors.password = 'Password is required';
+      valid = false;
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) return;
+
     try {
-      const result = await dispatch(login({ phone, password })).unwrap();
-      console.log('Login successful:', result);
-      // Navigation happens automatically based on user's actual role from database
+      await dispatch(login({ phone, password })).unwrap();
+      // Navigation happens automatically based on user's role
     } catch (err: any) {
-      console.log('Login error:', err);
       Alert.alert('Login Failed', err || 'Invalid credentials');
     }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Login</Text>
-
-      {error && (
-        <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
-      )}
-
-      <TextInput
-        style={[styles.input, { 
-          backgroundColor: theme.card,
-          borderColor: theme.border,
-          color: theme.text,
-        }]}
-        placeholder="Phone Number (+250)"
-        placeholderTextColor={theme.textSecondary}
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
-
-      <TextInput
-        style={[styles.input, { 
-          backgroundColor: theme.card,
-          borderColor: theme.border,
-          color: theme.text,
-        }]}
-        placeholder="Password"
-        placeholderTextColor={theme.textSecondary}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity 
-        style={[styles.button, { backgroundColor: theme.primary }]} 
-        onPress={handleLogin}
-        disabled={isLoading}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
       >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Login</Text>
-        )}
-      </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <LinearGradient
+            colors={[theme.primary, theme.primaryLight]}
+            style={styles.header}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
-        <Text style={[styles.linkText, { color: theme.primary }]}>
-          Don't have an account? Register
-        </Text>
-      </TouchableOpacity>
+            <View style={styles.headerContent}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="log-in-outline" size={48} color="#FFFFFF" />
+              </View>
+              <Text style={styles.headerTitle}>Welcome Back</Text>
+              <Text style={styles.headerSubtitle}>Sign in to continue</Text>
+            </View>
+          </LinearGradient>
 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={[styles.backText, { color: theme.textSecondary }]}>
-          ← Back to role selection
-        </Text>
-      </TouchableOpacity>
+          {/* Form */}
+          <View style={styles.formContainer}>
+            {error && (
+              <View style={[styles.errorBanner, { backgroundColor: `${theme.error}15` }]}>
+                <Ionicons name="alert-circle" size={20} color={theme.error} />
+                <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
+              </View>
+            )}
+
+            <Input
+              label="Phone Number"
+              placeholder="+250 XXX XXX XXX"
+              value={phone}
+              onChangeText={(text) => {
+                setPhone(text);
+                setErrors({ ...errors, phone: '' });
+              }}
+              keyboardType="phone-pad"
+              icon="call-outline"
+              error={errors.phone}
+              autoCapitalize="none"
+            />
+
+            <Input
+              label="Password"
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors({ ...errors, password: '' });
+              }}
+              secureTextEntry
+              icon="lock-closed-outline"
+              error={errors.password}
+            />
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Sign In"
+              onPress={handleLogin}
+              loading={isLoading}
+              disabled={isLoading}
+              fullWidth
+              size="large"
+              icon={<Ionicons name="log-in-outline" size={20} color="#FFFFFF" />}
+            />
+
+            <View style={styles.divider}>
+              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>OR</Text>
+              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            </View>
+
+            <View style={styles.registerContainer}>
+              <Text style={[styles.registerText, { color: theme.textSecondary }]}>
+                Don't have an account?{' '}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
+                <Text style={[styles.registerLink, { color: theme.primary }]}>
+                  Create Account
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -93,45 +173,103 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
+  keyboardView: {
+    flex: 1,
   },
-  error: {
-    marginBottom: 10,
-    textAlign: 'center',
+  scrollContent: {
+    flexGrow: 1,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    fontSize: 16,
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
-  button: {
-    padding: 15,
-    borderRadius: 8,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    marginBottom: 24,
   },
-  buttonText: {
-    color: '#fff',
+  headerContent: {
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    opacity: 0.9,
   },
-  linkText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 14,
+  formContainer: {
+    flex: 1,
+    padding: 24,
+    paddingTop: 32,
   },
-  backText: {
-    textAlign: 'center',
-    marginTop: 20,
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
     fontSize: 14,
+    fontWeight: '500',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+    marginTop: -8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 32,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  registerText: {
+    fontSize: 15,
+  },
+  registerLink: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

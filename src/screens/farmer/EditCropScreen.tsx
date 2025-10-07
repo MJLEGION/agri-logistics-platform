@@ -1,19 +1,18 @@
 // src/screens/farmer/EditCropScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import { updateCrop } from '../../store/slices/cropsSlice';
 import { Crop } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function EditCropScreen({ route, navigation }: any) {
   const { cropId } = route.params;
-  const dispatch = useDispatch();
-  const { crops } = useSelector((state: RootState) => state.crops);
+  const dispatch = useAppDispatch();
+  const { crops } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
   
-  const crop = crops.find(c => c.id === cropId);
+  const crop = crops.find(c => c._id === cropId || c.id === cropId);
 
   const [cropName, setCropName] = useState(crop?.name || '');
   const [quantity, setQuantity] = useState(crop?.quantity.toString() || '');
@@ -29,24 +28,30 @@ export default function EditCropScreen({ route, navigation }: any) {
     );
   }
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!cropName || !quantity || !harvestDate) {
-      alert('Please fill all required fields');
+      Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
-    const updatedCrop: Crop = {
-      ...crop,
-      name: cropName,
-      quantity: parseFloat(quantity),
-      unit,
-      harvestDate,
-      pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
+    const cropData = {
+      id: crop._id || crop.id,
+      data: {
+        name: cropName,
+        quantity: parseFloat(quantity),
+        unit,
+        pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
+        harvestDate,
+      }
     };
 
-    dispatch(updateCrop(updatedCrop));
-    alert('Crop updated successfully!');
-    navigation.goBack();
+    try {
+      await dispatch(updateCrop(cropData)).unwrap();
+      Alert.alert('Success', 'Crop updated successfully!');
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert('Error', error || 'Failed to update crop');
+    }
   };
 
   return (

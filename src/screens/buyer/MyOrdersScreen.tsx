@@ -1,24 +1,23 @@
 // src/screens/buyer/MyOrdersScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchOrders } from '../../store/slices/ordersSlice';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function MyOrdersScreen({ navigation }: any) {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { orders, isLoading } = useSelector((state: RootState) => state.orders);
+  const { user } = useAppSelector((state) => state.auth);
+  const { orders, isLoading } = useAppSelector((state) => state.orders);
   const { theme } = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(fetchOrders());
   }, [dispatch]);
 
   const myOrders = orders.filter(order => 
-    order.buyerId === user?.id || order.buyerId?._id === user?.id
+    order.buyerId === user?._id || order.buyerId === user?.id
   );
 
   const getStatusColor = (status: string) => {
@@ -72,7 +71,7 @@ export default function MyOrdersScreen({ navigation }: any) {
             <Card>
               <View style={styles.orderHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
-                  {item.cropId?.name || 'Order'}
+                  Order #{item._id?.slice(-6) || item.id?.slice(-6)}
                 </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>

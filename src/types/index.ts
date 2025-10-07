@@ -3,7 +3,8 @@
 export type UserRole = 'farmer' | 'transporter' | 'buyer';
 
 export interface User {
-  id: string;
+  _id: string;
+  id?: string; // For backward compatibility
   name: string;
   phone: string;
   role: UserRole;
@@ -15,8 +16,9 @@ export interface User {
 }
 
 export interface Crop {
-  id: string;
-  farmerId: string;
+  _id: string;
+  id?: string; // For backward compatibility
+  farmerId: string | { _id: string }; // Can be populated or just ID
   name: string;
   quantity: number;
   unit: 'kg' | 'tons' | 'bags';
@@ -31,7 +33,8 @@ export interface Crop {
 }
 
 export interface Order {
-  id: string;
+  _id: string;
+  id?: string; // For backward compatibility
   cropId: string;
   farmerId: string;
   buyerId: string;
@@ -45,6 +48,34 @@ export interface Order {
     address: string;
   };
   deliveryLocation: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+}
+
+// Helper type for async thunk parameters
+export interface UpdateCropParams {
+  id: string;
+  data: Partial<Omit<Crop, '_id' | 'id' | 'farmerId'>>;
+}
+
+export interface UpdateOrderParams {
+  id: string;
+  data: Partial<Omit<Order, '_id' | 'id'>>;
+}
+
+export interface LoginCredentials {
+  phone: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  phone: string;
+  password: string;
+  role: UserRole;
+  location?: {
     latitude: number;
     longitude: number;
     address: string;

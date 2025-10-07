@@ -1,16 +1,15 @@
 // src/screens/buyer/PlaceOrderScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
 import { createOrder } from '../../store/slices/ordersSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function PlaceOrderScreen({ route, navigation }: any) {
   const { crop } = route.params;
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const { theme } = useTheme();
 
   const [quantity, setQuantity] = useState('');

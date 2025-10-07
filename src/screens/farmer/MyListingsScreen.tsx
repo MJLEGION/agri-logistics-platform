@@ -1,23 +1,25 @@
 // src/screens/farmer/MyListingsScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchCrops } from '../../store/slices/cropsSlice';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function MyListingsScreen({ navigation }: any) {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { crops, isLoading } = useSelector((state: RootState) => state.crops);
+  const { user } = useAppSelector((state) => state.auth);
+  const { crops, isLoading } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(fetchCrops());
   }, [dispatch]);
 
-  const myListings = crops.filter(crop => crop.farmerId === user?.id || crop.farmerId?._id === user?.id);
+  const myListings = crops.filter(crop => {
+    const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
+    return farmerId === user?._id || farmerId === user?.id;
+  });
 
   if (isLoading) {
     return (

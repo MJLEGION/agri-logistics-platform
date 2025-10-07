@@ -1,57 +1,64 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as orderService from '../../services/orderService';
+import { Order, UpdateOrderParams } from '../../types';
+
+interface OrdersState {
+  orders: Order[];
+  isLoading: boolean;
+  error: string | null;
+}
 
 // Async thunks
-export const fetchOrders = createAsyncThunk(
+export const fetchOrders = createAsyncThunk<Order[], void, { rejectValue: string }>(
   'orders/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
       return await orderService.getMyOrders();
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch orders');
     }
   }
 );
 
-export const fetchAllOrders = createAsyncThunk(
+export const fetchAllOrders = createAsyncThunk<Order[], void, { rejectValue: string }>(
   'orders/fetchAllOrders',
   async (_, { rejectWithValue }) => {
     try {
       return await orderService.getAllOrders();
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch all orders');
     }
   }
 );
 
-export const createOrder = createAsyncThunk(
+export const createOrder = createAsyncThunk<Order, any, { rejectValue: string }>(
   'orders/create',
   async (orderData, { rejectWithValue }) => {
     try {
       return await orderService.createOrder(orderData);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create order');
     }
   }
 );
 
-export const updateOrder = createAsyncThunk(
+export const updateOrder = createAsyncThunk<Order, UpdateOrderParams, { rejectValue: string }>(
   'orders/update',
   async ({ id, data }, { rejectWithValue }) => {
     try {
       return await orderService.updateOrder(id, data);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update order');
     }
   }
 );
 
-export const acceptOrder = createAsyncThunk(
+export const acceptOrder = createAsyncThunk<Order, string, { rejectValue: string }>(
   'orders/accept',
   async (id, { rejectWithValue }) => {
     try {
       return await orderService.acceptOrder(id);
-    } catch (error) {
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to accept order');
     }
   }
@@ -63,7 +70,7 @@ const ordersSlice = createSlice({
     orders: [],
     isLoading: false,
     error: null,
-  },
+  } as OrdersState,
   reducers: {
     clearError: (state) => {
       state.error = null;
@@ -82,7 +89,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to fetch orders';
       })
       // Fetch all orders
       .addCase(fetchAllOrders.pending, (state) => {
@@ -95,7 +102,7 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchAllOrders.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to fetch all orders';
       })
       // Create order
       .addCase(createOrder.pending, (state) => {
@@ -108,7 +115,7 @@ const ordersSlice = createSlice({
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to create order';
       })
       // Update order
       .addCase(updateOrder.pending, (state) => {
@@ -124,7 +131,7 @@ const ordersSlice = createSlice({
       })
       .addCase(updateOrder.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to update order';
       })
       // Accept order
       .addCase(acceptOrder.pending, (state) => {
@@ -142,7 +149,7 @@ const ordersSlice = createSlice({
       })
       .addCase(acceptOrder.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Failed to accept order';
       });
   },
 });

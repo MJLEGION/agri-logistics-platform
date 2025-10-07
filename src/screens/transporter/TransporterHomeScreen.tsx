@@ -1,17 +1,16 @@
 // src/screens/transporter/TransporterHomeScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchOrders } from '../../store/slices/ordersSlice';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function TransporterHomeScreen({ navigation }: any) {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const { theme } = useTheme();
 
   // Fetch data when screen loads

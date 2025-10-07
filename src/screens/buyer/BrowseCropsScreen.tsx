@@ -1,16 +1,15 @@
 // src/screens/buyer/BrowseCropsScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchCrops } from '../../store/slices/cropsSlice';
+import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function BrowseCropsScreen({ navigation }: any) {
-  const { crops, isLoading } = useSelector((state: RootState) => state.crops);
+  const { crops, isLoading } = useAppSelector((state) => state.crops);
   const { theme } = useTheme();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(fetchCrops());
