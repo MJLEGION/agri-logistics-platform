@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authService from '../../services/authService';
 import { RegisterData, LoginCredentials, User } from '../../types';
+import { clearCrops } from './cropsSlice';
+import { clearOrders } from './ordersSlice';
 
 interface AuthState {
   user: User | null;
@@ -32,6 +34,20 @@ export const login = createAsyncThunk<any, LoginCredentials, { rejectValue: stri
   }
 );
 
+export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
+  'auth/logout',
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      // Clear all user data before logging out
+      dispatch(clearCrops());
+      dispatch(clearOrders());
+      await authService.logout();
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Logout failed');
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -42,12 +58,6 @@ const authSlice = createSlice({
     error: null,
   } as AuthState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.token = null;
-      state.isAuthenticated = false;
-      authService.logout();
-    },
     setCredentials: (state, action) => {
       state.user = {
         _id: action.payload._id,
@@ -107,9 +117,25 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload || 'Login failed';
         state.isAuthenticated = false;
+      })
+      // Logout
+      .addCase(logout.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.error = null;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Logout failed';
       });
   },
 });
 
-export const { logout, setCredentials } = authSlice.actions;
+export const { setCredentials } = authSlice.actions;
 export default authSlice.reducer;

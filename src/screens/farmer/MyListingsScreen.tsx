@@ -1,6 +1,7 @@
 // src/screens/farmer/MyListingsScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchCrops } from '../../store/slices/cropsSlice';
@@ -12,9 +13,17 @@ export default function MyListingsScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
 
+  // Fetch crops on screen mount
   useEffect(() => {
     dispatch(fetchCrops());
   }, [dispatch]);
+
+  // Refetch crops when screen comes into focus (after creating a new crop)
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchCrops());
+    }, [dispatch])
+  );
 
   const myListings = crops.filter(crop => {
     const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;

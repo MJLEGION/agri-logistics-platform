@@ -8,6 +8,67 @@ interface OrdersState {
   error: string | null;
 }
 
+// Mock test orders for development
+const MOCK_TEST_ORDERS: Order[] = [
+  {
+    _id: 'TEST_ORDER_001',
+    cropId: 'CROP_001',
+    farmerId: '1',
+    buyerId: '2', // Test Buyer ID from mockAuthService
+    quantity: 50,
+    totalPrice: 25000,
+    status: 'in_progress',
+    pickupLocation: {
+      latitude: -1.9536,
+      longitude: 29.8739,
+      address: 'Kigali Central Market',
+    },
+    deliveryLocation: {
+      latitude: -1.9706,
+      longitude: 29.9498,
+      address: 'Kigali Business District',
+    },
+  },
+  {
+    _id: 'TEST_ORDER_002',
+    cropId: 'CROP_002',
+    farmerId: '1',
+    buyerId: '2',
+    quantity: 100,
+    totalPrice: 45000,
+    status: 'completed',
+    pickupLocation: {
+      latitude: -1.9445,
+      longitude: 29.8739,
+      address: 'Rwamagana Farm',
+    },
+    deliveryLocation: {
+      latitude: -1.9500,
+      longitude: 30.0588,
+      address: 'Kigali Downtown',
+    },
+  },
+  {
+    _id: 'TEST_ORDER_003',
+    cropId: 'CROP_003',
+    farmerId: '1',
+    buyerId: '2',
+    quantity: 75,
+    totalPrice: 35000,
+    status: 'accepted',
+    pickupLocation: {
+      latitude: -1.9550,
+      longitude: 29.8500,
+      address: 'Nyarugunga Warehouse',
+    },
+    deliveryLocation: {
+      latitude: -1.9700,
+      longitude: 29.9200,
+      address: 'Hotel Location',
+    },
+  },
+];
+
 // Async thunks
 export const fetchOrders = createAsyncThunk<Order[], void, { rejectValue: string }>(
   'orders/fetchAll',
@@ -67,13 +128,20 @@ export const acceptOrder = createAsyncThunk<Order, string, { rejectValue: string
 const ordersSlice = createSlice({
   name: 'orders',
   initialState: {
-    orders: [],
+    orders: MOCK_TEST_ORDERS,
     isLoading: false,
     error: null,
   } as OrdersState,
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearOrders: (state) => {
+      state.orders = [];
+      state.error = null;
+    },
+    addTestOrder: (state, action) => {
+      state.orders.push(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -154,5 +222,5 @@ const ordersSlice = createSlice({
   },
 });
 
-export const { clearError } = ordersSlice.actions;
+export const { clearError, clearOrders, addTestOrder } = ordersSlice.actions;
 export default ordersSlice.reducer;

@@ -29,6 +29,7 @@ export default function ListCropScreen({ navigation }: any) {
       unit,
       pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
       harvestDate,
+      farmerId: user?._id || user?.id,
       location: {
         latitude: -1.9403,
         longitude: 29.8739,

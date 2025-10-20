@@ -16,18 +16,22 @@ export default function Card({ children, style, elevated = false, onPress, paddi
 
   const cardStyle: ViewStyle = {
     backgroundColor: elevated ? theme.cardElevated : theme.card,
-    borderRadius: 16,
+    borderRadius: 12,  // Slightly less rounded for professional look
     padding,
+    maxWidth: 600,
+    marginHorizontal: 'auto',
+    width: '100%',
+    alignSelf: 'center',
     ...(elevated && {
-      shadowColor: theme.shadowDark,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
     }),
     ...(!elevated && {
       borderWidth: 1,
-      borderColor: theme.borderLight,
+      borderColor: theme.border,
     }),
   };
 

@@ -116,6 +116,13 @@ export default function MyOrdersScreen({ navigation }: any) {
                   </Text>
                 </View>
               )}
+
+              <TouchableOpacity
+                style={[styles.trackButton, { backgroundColor: theme.secondary }]}
+                onPress={() => navigation.navigate('OrderTracking', { order: item })}
+              >
+                <Text style={styles.trackButtonText}>📍 Track Order</Text>
+              </TouchableOpacity>
             </Card>
           )}
         />
@@ -225,5 +232,17 @@ const styles = StyleSheet.create({
   statusInfoText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  trackButton: {
+    marginTop: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  trackButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

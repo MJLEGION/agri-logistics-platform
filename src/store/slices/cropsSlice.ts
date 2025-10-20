@@ -65,6 +65,10 @@ const cropsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearCrops: (state) => {
+      state.crops = [];
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -126,5 +130,5 @@ const cropsSlice = createSlice({
   },
 });
 
-export const { clearError } = cropsSlice.actions;
+export const { clearError, clearCrops } = cropsSlice.actions;
 export default cropsSlice.reducer;

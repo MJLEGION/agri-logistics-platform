@@ -105,10 +105,14 @@ export default function RegisterScreen({ route, navigation }: any) {
     if (!validateForm()) return;
 
     try {
+      console.log('🔐 Attempting registration:', { name, phone, role });
       await dispatch(register({ name, phone, password, role })).unwrap();
+      console.log('✅ Registration successful!');
       // Navigation happens automatically via AppNavigator
     } catch (err: any) {
-      Alert.alert('Registration Failed', err || 'Could not register');
+      console.error('❌ Registration failed:', err);
+      const errorMessage = err || 'Could not register. Please check your connection and try again.';
+      Alert.alert('Registration Failed', errorMessage);
     }
   };
 

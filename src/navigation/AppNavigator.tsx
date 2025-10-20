@@ -1,9 +1,11 @@
 // src/navigation/AppNavigator.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, useAppDispatch } from '../store';
+import { clearCrops } from '../store/slices/cropsSlice';
+import { clearOrders } from '../store/slices/ordersSlice';
 import AuthNavigator from './AuthNavigator';
 import FarmerHomeScreen from '../screens/farmer/FarmerHomeScreen';
 import ListCropScreen from '../screens/farmer/ListCropScreen';
@@ -14,15 +16,33 @@ import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
 import ActiveTripsScreen from '../screens/transporter/ActiveTripsScreen';
+import TripTrackingScreen from '../screens/transporter/TripTrackingScreen';
 import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
 import BrowseCropsScreen from '../screens/buyer/BrowseCropsScreen';
 import PlaceOrderScreen from '../screens/buyer/PlaceOrderScreen';
 import MyOrdersScreen from '../screens/buyer/MyOrdersScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const prevUserRef = React.useRef<string | null>(null);
+
+  // Clear user-specific data when user changes or logs out
+  useEffect(() => {
+    const currentUserId = user?._id || user?.id || null;
+    
+    // Check if user has changed (login with different user) or logged out
+    if (prevUserRef.current !== null && currentUserId !== prevUserRef.current) {
+      // User changed - clear previous user's data
+      dispatch(clearCrops());
+      dispatch(clearOrders());
+    }
+    
+    prevUserRef.current = currentUserId;
+  }, [user, dispatch]);
 
   return (
     <NavigationContainer>
@@ -46,6 +66,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="Home" component={TransporterHomeScreen} />
                 <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
                 <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
+                <Stack.Screen name="TripTracking" component={TripTrackingScreen} />
               </>
             )}
             {user?.role === 'buyer' && (
@@ -54,6 +75,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="BrowseCrops" component={BrowseCropsScreen} />
                 <Stack.Screen name="PlaceOrder" component={PlaceOrderScreen} />
                 <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
+                <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
               </>
             )}
           </>

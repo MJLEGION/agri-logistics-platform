@@ -1,6 +1,7 @@
 // src/screens/transporter/ActiveTripsScreen.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
@@ -11,20 +12,36 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const { orders, isLoading } = useAppSelector((state) => state.orders);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchOrders());
-  }, [dispatch]);
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchOrders());
+    }, [dispatch])
+  );
 
   const myTrips = orders.filter(order => 
     order.transporterId === user?.id || order.transporterId?._id === user?.id
   );
 
-  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'in_progress' ? 'completed' : 'in_progress';
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await dispatch(fetchOrders());
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleViewMap = (trip: any) => {
+    navigation.navigate('TripTracking', { trip });
+  };
+
+  const handleUpdateStatus = async (trip: any) => {
+    const nextStatus = trip.status === 'in_progress' ? 'completed' : 'in_progress';
     
     Alert.alert(
-      'Update Status',
+      'Update Delivery Status',
       `Mark this delivery as ${nextStatus === 'completed' ? 'completed' : 'in progress'}?`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -32,10 +49,31 @@ export default function ActiveTripsScreen({ navigation }: any) {
           text: 'Confirm',
           onPress: async () => {
             try {
-              await dispatch(updateOrder({ id: orderId, data: { status: nextStatus } })).unwrap();
-              Alert.alert('Success', nextStatus === 'completed' ? 'Delivery marked as completed!' : 'Status updated');
+              const result = await dispatch(
+                updateOrder({
+                  id: trip._id || trip.id,
+                  data: { status: nextStatus },
+                })
+              ).unwrap();
+              
+              Alert.alert(
+                'Success',
+                nextStatus === 'completed' ? 'Delivery marked as completed! ✓' : 'Status updated!',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      dispatch(fetchOrders());
+                    },
+                  },
+                ]
+              );
             } catch (error: any) {
-              Alert.alert('Error', error || 'Failed to update status');
+              console.error('Update error:', error);
+              Alert.alert(
+                'Error',
+                error?.message || error || 'Failed to update delivery status'
+              );
             }
           },
         },
@@ -51,7 +89,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && myTrips.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.tertiary} />
@@ -62,9 +100,20 @@ export default function ActiveTripsScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
-        </TouchableOpacity>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleRefresh}
+            disabled={isRefreshing}
+            style={styles.refreshButton}
+          >
+            <Text style={[styles.refreshIcon, { opacity: isRefreshing ? 0.5 : 1 }]}>
+              {isRefreshing ? '⟳' : '🔄'}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
       </View>
 
@@ -81,6 +130,8 @@ export default function ActiveTripsScreen({ navigation }: any) {
           data={myTrips}
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
           renderItem={({ item }) => (
             <Card>
               <View style={styles.tripHeader}>
@@ -124,14 +175,22 @@ export default function ActiveTripsScreen({ navigation }: any) {
               </View>
 
               {item.status !== 'completed' && (
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
-                  onPress={() => handleUpdateStatus(item._id || item.id, item.status)}
-                >
-                  <Text style={styles.actionButtonText}>
-                    {item.status === 'in_progress' ? 'Mark as Completed' : 'Start Trip'}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.mapButton, { backgroundColor: theme.info }]}
+                    onPress={() => handleViewMap(item)}
+                  >
+                    <Text style={styles.actionButtonText}>🗺️ View Map</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
+                    onPress={() => handleUpdateStatus(item)}
+                  >
+                    <Text style={styles.actionButtonText}>
+                      {item.status === 'in_progress' ? '✓ Complete' : 'Start Trip'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </Card>
           )}
@@ -148,10 +207,22 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 50,
+    paddingBottom: 15,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
   },
   backButton: {
     fontSize: 16,
-    marginBottom: 10,
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  refreshIcon: {
+    fontSize: 20,
   },
   title: {
     fontSize: 24,
@@ -223,14 +294,26 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 14,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
   actionButton: {
-    padding: 14,
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  mapButton: {
+    flex: 1,
+    padding: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

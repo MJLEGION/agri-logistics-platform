@@ -1,87 +1,104 @@
 // src/config/theme.ts
+// Inspired by Triad Plants - Clean, Professional, Minimalist Design
 export const lightTheme = {
-  // Primary Agricultural Green Palette
-  primary: '#2D6A4F',        // Deep forest green
-  primaryLight: '#52B788',   // Fresh leaf green
-  primaryDark: '#1B4332',    // Dark forest
+  // Primary Green Palette (Professional & Clean)
+  primary: '#2D7A4F',        // Professional forest green (Triad-inspired)
+  primaryLight: '#4CAF50',   // Fresh, vibrant green
+  primaryDark: '#1B5E3F',    // Deep forest
   
-  // Secondary Earth Tones
-  secondary: '#D4A574',      // Warm earth/wheat
-  secondaryLight: '#E9C9A6', // Light sand
-  secondaryDark: '#A67C52',  // Rich soil
+  // Secondary Neutral Tones (Clean & Professional)
+  secondary: '#5D6D7E',      // Professional gray-blue
+  secondaryLight: '#95A5A6', // Light gray
+  secondaryDark: '#34495E',  // Dark slate
   
-  // Accent Colors
-  accent: '#F77F00',         // Vibrant orange (harvest)
-  accentLight: '#FCBF49',    // Golden yellow
+  // Accent Colors (Subtle & Professional)
+  accent: '#FF9800',         // Warm orange accent
+  accentLight: '#FFB74D',    // Light orange
+  accentGold: '#FFC107',     // Gold accent
   
-  // Backgrounds
-  background: '#F8F9FA',     // Soft white
-  backgroundAlt: '#E8F5E9',  // Light green tint
+  // Backgrounds (Clean White Base)
+  background: '#FFFFFF',     // Pure white (Triad style)
+  backgroundAlt: '#F8F9FA',  // Very light gray
+  backgroundSection: '#FAFBFC', // Section background
   card: '#FFFFFF',
   cardElevated: '#FFFFFF',
   
-  // Text
-  text: '#1A1A1A',
-  textSecondary: '#6C757D',
-  textLight: '#ADB5BD',
+  // Text (Professional Hierarchy)
+  text: '#2C3E50',           // Dark blue-gray (professional)
+  textSecondary: '#7F8C8D',  // Medium gray
+  textLight: '#BDC3C7',      // Light gray
+  textMuted: '#95A5A6',      // Muted text
   
-  // Borders & Dividers
-  border: '#DEE2E6',
-  borderLight: '#E9ECEF',
-  divider: '#E0E0E0',
+  // Borders & Dividers (Subtle)
+  border: '#E8EAED',         // Very light border
+  borderLight: '#F0F2F5',    // Ultra-light border
+  divider: '#ECEFF1',        // Subtle divider
   
-  // Status Colors
-  error: '#DC3545',
-  success: '#52B788',
-  warning: '#F77F00',
-  info: '#0077B6',
+  // Status Colors (Professional)
+  error: '#E74C3C',
+  success: '#27AE60',
+  warning: '#F39C12',
+  info: '#3498DB',
+  
+  // Star Rating
+  star: '#FFC107',           // Gold star color
+  starEmpty: '#E0E0E0',      // Empty star
   
   // Legacy support
-  tertiary: '#0077B6',
+  tertiary: '#3498DB',
   
-  // Gradients
-  gradientStart: '#2D6A4F',
-  gradientEnd: '#52B788',
+  // Gradients (Subtle & Professional)
+  gradientStart: '#2D7A4F',
+  gradientEnd: '#4CAF50',
+  gradientOverlay: 'rgba(45, 122, 79, 0.05)',
   
-  // Shadows
-  shadow: 'rgba(45, 106, 79, 0.15)',
-  shadowDark: 'rgba(0, 0, 0, 0.1)',
+  // Shadows (Subtle Elevation)
+  shadow: 'rgba(0, 0, 0, 0.08)',
+  shadowMedium: 'rgba(0, 0, 0, 0.12)',
+  shadowDark: 'rgba(0, 0, 0, 0.16)',
   
   // Overlays
   overlay: 'rgba(0, 0, 0, 0.5)',
   overlayLight: 'rgba(0, 0, 0, 0.3)',
   
+  // Hover States
+  hoverBackground: '#F5F7F9',
+  hoverBorder: '#D1D5DB',
+  
   isDark: false,
 };
 
 export const darkTheme = {
-  // Primary Agricultural Green Palette (adjusted for dark mode)
-  primary: '#52B788',
-  primaryLight: '#74C69D',
-  primaryDark: '#2D6A4F',
+  // Primary Green Palette (Dark Mode)
+  primary: '#4CAF50',
+  primaryLight: '#66BB6A',
+  primaryDark: '#2D7A4F',
   
-  // Secondary Earth Tones
-  secondary: '#D4A574',
-  secondaryLight: '#E9C9A6',
-  secondaryDark: '#A67C52',
+  // Secondary Neutral Tones
+  secondary: '#7F8C8D',
+  secondaryLight: '#95A5A6',
+  secondaryDark: '#5D6D7E',
   
   // Accent Colors
-  accent: '#F77F00',
-  accentLight: '#FCBF49',
+  accent: '#FF9800',
+  accentLight: '#FFB74D',
+  accentGold: '#FFC107',
   
-  // Backgrounds
-  background: '#0D1B2A',      // Deep navy-black
-  backgroundAlt: '#1B263B',   // Lighter navy
-  card: '#1B263B',
-  cardElevated: '#253447',
+  // Backgrounds (Dark Mode)
+  background: '#1A1A1A',      // Dark background
+  backgroundAlt: '#242424',   // Slightly lighter
+  backgroundSection: '#2A2A2A', // Section background
+  card: '#242424',
+  cardElevated: '#2E2E2E',
   
-  // Text
-  text: '#F8F9FA',
-  textSecondary: '#ADB5BD',
-  textLight: '#6C757D',
+  // Text (Dark Mode)
+  text: '#ECEFF1',
+  textSecondary: '#B0BEC5',
+  textLight: '#78909C',
+  textMuted: '#607D8B',
   
   // Borders & Dividers
-  border: '#415A77',
+  border: '#37474F',
   borderLight: '#2C3E50',
   divider: '#34495E',
   
@@ -91,20 +108,30 @@ export const darkTheme = {
   warning: '#FFA726',
   info: '#42A5F5',
   
+  // Star Rating
+  star: '#FFC107',
+  starEmpty: '#455A64',
+  
   // Legacy support
   tertiary: '#42A5F5',
   
   // Gradients
-  gradientStart: '#2D6A4F',
-  gradientEnd: '#52B788',
+  gradientStart: '#2D7A4F',
+  gradientEnd: '#4CAF50',
+  gradientOverlay: 'rgba(76, 175, 80, 0.1)',
   
   // Shadows
   shadow: 'rgba(0, 0, 0, 0.4)',
+  shadowMedium: 'rgba(0, 0, 0, 0.5)',
   shadowDark: 'rgba(0, 0, 0, 0.6)',
   
   // Overlays
   overlay: 'rgba(0, 0, 0, 0.7)',
   overlayLight: 'rgba(0, 0, 0, 0.5)',
+  
+  // Hover States
+  hoverBackground: '#2E2E2E',
+  hoverBorder: '#455A64',
   
   isDark: true,
 };

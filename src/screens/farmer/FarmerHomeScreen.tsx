@@ -308,6 +308,10 @@ const styles = StyleSheet.create({
   },
   section: {
     padding: 20,
+    maxWidth: 600,
+    marginHorizontal: 'auto',
+    width: '100%',
+    alignItems: 'stretch',
   },
   sectionHeader: {
     flexDirection: 'row',

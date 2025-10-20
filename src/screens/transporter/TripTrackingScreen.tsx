@@ -1,0 +1,397 @@
+// src/screens/transporter/TripTrackingScreen.tsx
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import * as Location from 'expo-location';
+import { useTheme } from '../../contexts/ThemeContext';
+import { Card } from '../../components/common/Card';
+import TripMapView from '../../components/TripMapView';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { updateOrder, fetchOrders } from '../../store/slices/ordersSlice';
+
+export default function TripTrackingScreen({ route, navigation }: any) {
+  const { trip } = route.params;
+  const { theme } = useTheme();
+  const dispatch = useAppDispatch();
+  const [currentLocation, setCurrentLocation] = useState<any>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    requestLocationPermission();
+    startLocationTracking();
+
+    return () => {
+      // Cleanup
+    };
+  }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        setLocationPermission(false); // Location not available on web
+        return;
+      }
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      setLocationPermission(status === 'granted');
+    } catch (error) {
+      console.error('Location permission error:', error);
+      setLocationPermission(false);
+    }
+  };
+
+  const startLocationTracking = async () => {
+    try {
+      if (locationPermission === false) {
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        address: 'Current Location',
+      });
+    } catch (error) {
+      console.error('Location tracking error:', error);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    Alert.alert(
+      'Complete Delivery',
+      'Mark this delivery as completed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              setIsUpdating(true);
+              const result = await dispatch(
+                updateOrder({
+                  id: trip._id || trip.id,
+                  data: { status: 'completed' },
+                })
+              ).unwrap();
+
+              setIsUpdating(false);
+              Alert.alert('Success', 'Delivery marked as completed!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    // Refresh trips list
+                    dispatch(fetchOrders());
+                    navigation.goBack();
+                  },
+                },
+              ]);
+            } catch (error: any) {
+              setIsUpdating(false);
+              console.error('Update error:', error);
+              Alert.alert(
+                'Error',
+                error?.message || error || 'Failed to update delivery status'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRefreshLocation = async () => {
+    setIsUpdating(true);
+    await startLocationTracking();
+    setIsUpdating(false);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'in_progress':
+        return theme.info;
+      case 'completed':
+        return theme.success;
+      default:
+        return theme.textSecondary;
+    }
+  };
+
+  const pickupLat = trip.pickupLocation?.latitude || -2.0;
+  const pickupLng = trip.pickupLocation?.longitude || 29.7;
+  const deliveryLat = trip.deliveryLocation?.latitude || -2.0;
+  const deliveryLng = trip.deliveryLocation?.longitude || 29.8;
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: theme.card }]}>Trip Tracking</Text>
+      </View>
+
+      {/* Map View */}
+      <View style={styles.mapContainer}>
+        <TripMapView
+          pickupLocation={{
+            latitude: pickupLat,
+            longitude: pickupLng,
+            address: trip.pickupLocation?.address || 'Pickup Location',
+          }}
+          deliveryLocation={{
+            latitude: deliveryLat,
+            longitude: deliveryLng,
+            address: trip.deliveryLocation?.address || 'Delivery Location',
+          }}
+          currentLocation={currentLocation}
+          isTracking={trip.status === 'in_progress'}
+        />
+      </View>
+
+      {/* Details Card */}
+      <ScrollView style={styles.detailsContainer} showsVerticalScrollIndicator={false}>
+        <Card>
+          <View style={styles.tripHeader}>
+            <Text style={[styles.cropName, { color: theme.text }]}>
+              {trip.cropId?.name || 'Delivery'}
+            </Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
+              <Text style={styles.statusText}>{trip.status.toUpperCase()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{trip.quantity}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Price:</Text>
+            <Text style={[styles.value, { color: theme.text }]}>
+              {trip.totalPrice.toLocaleString()} RWF
+            </Text>
+          </View>
+
+          {/* Current Location Info */}
+          {currentLocation && (
+            <View style={[styles.currentLocationBox, { borderColor: theme.tertiary }]}>
+              <Text style={[styles.currentLocationLabel, { color: theme.tertiary }]}>
+                📍 Your Current Location
+              </Text>
+              <Text style={[styles.currentLocationCoords, { color: theme.text }]}>
+                {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}
+              </Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.refreshButton, { backgroundColor: theme.info }]}
+              onPress={handleRefreshLocation}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.buttonText}>🔄 Refresh Location</Text>
+              )}
+            </TouchableOpacity>
+
+            {trip.status !== 'completed' && (
+              <TouchableOpacity
+                style={[styles.completeButton, { backgroundColor: theme.success }]}
+                onPress={handleMarkCompleted}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.buttonText}>✓ Mark as Completed</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </Card>
+
+        {/* Route Details */}
+        <Card style={{ marginTop: 10 }}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Route Details</Text>
+
+          <View style={styles.routeItem}>
+            <Text style={[styles.routeLabel, { color: theme.success }]}>✓ Pickup</Text>
+            <Text style={[styles.routeText, { color: theme.text }]}>
+              {trip.pickupLocation?.address || 'Not specified'}
+            </Text>
+          </View>
+
+          <View style={[styles.routeSeparator, { backgroundColor: theme.border }]} />
+
+          <View style={styles.routeItem}>
+            <Text style={[styles.routeLabel, { color: theme.info }]}>→ In Transit</Text>
+            <Text style={[styles.routeText, { color: theme.textSecondary }]}>
+              {trip.status === 'in_progress' ? 'Active' : 'Pending'}
+            </Text>
+          </View>
+
+          <View style={[styles.routeSeparator, { backgroundColor: theme.border }]} />
+
+          <View style={styles.routeItem}>
+            <Text style={[styles.routeLabel, { color: theme.info }]}>🏁 Delivery</Text>
+            <Text style={[styles.routeText, { color: theme.text }]}>
+              {trip.deliveryLocation?.address || 'Not specified'}
+            </Text>
+          </View>
+        </Card>
+
+        {/* Notes */}
+        {trip.notes && (
+          <Card style={{ marginTop: 10, marginBottom: 20 }}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Notes</Text>
+            <Text style={[styles.noteText, { color: theme.text }]}>{trip.notes}</Text>
+          </Card>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
+  },
+  backButton: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  mapContainer: {
+    height: 300,
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailsContainer: {
+    flex: 1,
+    padding: 15,
+  },
+  tripHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  cropName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  value: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  currentLocationBox: {
+    marginVertical: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    backgroundColor: 'rgba(41, 128, 185, 0.05)',
+  },
+  currentLocationLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  currentLocationCoords: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 15,
+  },
+  refreshButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completeButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  routeItem: {
+    paddingVertical: 10,
+  },
+  routeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  routeText: {
+    fontSize: 13,
+  },
+  routeSeparator: {
+    height: 1,
+    marginVertical: 8,
+  },
+  noteText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+});

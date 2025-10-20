@@ -32,5 +32,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 1,
+    maxWidth: 600,
+    marginHorizontal: 'auto',
+    width: '100%',
+    alignSelf: 'center',
   },
 });

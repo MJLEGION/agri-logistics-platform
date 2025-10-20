@@ -1,10 +1,15 @@
 // src/screens/buyer/PlaceOrderScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { createOrder } from '../../store/slices/ordersSlice';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { createOrder, addTestOrder } from '../../store/slices/ordersSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { MomoPaymentModal } from '../../components/MomoPaymentModal';
+import { checkConnectivity, saveToOfflineQueue, saveOrderLocally } from '../../services/offlineService';
+import { notifyOrderCreated } from '../../services/smsService';
+import mockOrderService from '../../services/mockOrderService';
 
 export default function PlaceOrderScreen({ route, navigation }: any) {
   const { crop } = route.params;
@@ -15,6 +20,13 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<'kg' | 'tons' | 'bags'>(crop.unit);
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
+
+  useEffect(() => {
+    checkConnectivity().then(setIsOnline);
+  }, []);
 
   const convertQuantity = () => {
     if (!quantity) return 0;
@@ -44,13 +56,13 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
 
   const handlePlaceOrder = async () => {
     if (!quantity || !deliveryAddress) {
-      alert('Please fill all fields');
+      Alert.alert('Missing Information', 'Please fill all fields');
       return;
     }
 
     const convertedQty = convertQuantity();
     if (convertedQty > crop.quantity) {
-      alert(`Only ${crop.quantity} ${crop.unit} available`);
+      Alert.alert('Insufficient Stock', `Only ${crop.quantity} ${crop.unit} available`);
       return;
     }
 
@@ -66,17 +78,144 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
       },
     };
 
-    console.log('=== BUYER PLACING ORDER ===');
-    console.log('ORDER DATA:', JSON.stringify(orderData, null, 2));
+    // Check if online
+    const online = await checkConnectivity();
+    setIsOnline(online);
+
+    if (!online) {
+      // Offline mode: Save to queue
+      Alert.alert(
+        'Offline Mode',
+        'You are offline. Your order will be saved and submitted when you reconnect.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Save Offline',
+            onPress: async () => {
+              try {
+                const offlineId = await saveToOfflineQueue('order', orderData);
+                await saveOrderLocally({ ...orderData, _offlineId: offlineId, status: 'pending_sync' });
+                Alert.alert(
+                  'Order Saved',
+                  'Your order has been saved and will be submitted when you reconnect to the internet.',
+                  [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+                );
+              } catch (error) {
+                Alert.alert('Error', 'Failed to save order offline');
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Online mode: Show payment modal
+    setPendingOrderData(orderData);
+    setPaymentModalVisible(true);
+  };
+
+  const handlePaymentSuccess = async (transactionId: string) => {
+    console.log('=== PAYMENT SUCCESSFUL ===');
+    console.log('Transaction ID:', transactionId);
 
     try {
-      const result = await dispatch(createOrder(orderData)).unwrap();
+      // Create order with payment info
+      const orderDataWithPayment = {
+        ...pendingOrderData,
+        paymentMethod: 'momo',
+        paymentStatus: 'completed',
+        transactionId,
+      };
+
+      const result = await dispatch(createOrder(orderDataWithPayment)).unwrap();
       console.log('ORDER CREATED SUCCESSFULLY:', JSON.stringify(result, null, 2));
-      alert('Order placed successfully!');
-      navigation.navigate('Home');
+
+      // Send SMS notification
+      if (user?.phone) {
+        await notifyOrderCreated(user.phone, {
+          orderId: result._id || result.id,
+          cropName: crop.name,
+          quantity: pendingOrderData.quantity,
+          totalPrice: pendingOrderData.totalPrice,
+        });
+      }
+
+      Alert.alert(
+        'Success! 🎉',
+        'Your order has been placed successfully. You will receive an SMS confirmation shortly.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+      );
     } catch (error: any) {
       console.log('ORDER CREATION FAILED:', error);
-      alert(error || 'Failed to place order');
+      Alert.alert('Error', error || 'Failed to place order');
+    }
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('Payment error:', error);
+    Alert.alert('Payment Failed', error);
+  };
+
+  const handleSkipPayment = async () => {
+    console.log('🧪 TEST BUTTON PRESSED');
+    
+    if (!quantity || !deliveryAddress) {
+      Alert.alert('Missing Information', 'Please fill all fields');
+      return;
+    }
+    
+    const convertedQty = convertQuantity();
+    if (convertedQty > crop.quantity) {
+      Alert.alert('Insufficient Stock', `Only ${crop.quantity} ${crop.unit} available`);
+      return;
+    }
+    
+    try {
+      // Generate unique order ID
+      const orderId = 'TEST_ORDER_' + Date.now();
+      
+      const newOrder: any = {
+        _id: orderId,
+        id: orderId,
+        buyerId: user?._id || user?.id || '2',
+        farmerId: crop?.farmerId || '1',
+        cropId: {
+          _id: crop._id || crop.id,
+          id: crop._id || crop.id,
+          name: crop.name,
+        },
+        quantity: convertedQty,
+        unit: crop.unit,
+        totalPrice: calculateTotal(),
+        status: 'pending',
+        pickupLocation: crop.location,
+        deliveryLocation: {
+          latitude: -1.9500,
+          longitude: 30.0588,
+          address: deliveryAddress,
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      console.log('🧪 TEST: Creating order:', newOrder);
+      
+      // Save to mock service (which saves to AsyncStorage)
+      await mockOrderService.createOrder(newOrder);
+      console.log('✅ TEST: Order saved to storage successfully');
+      
+      // Also add to Redux for immediate display
+      dispatch(addTestOrder(newOrder));
+      console.log('📍 Navigate to Home now!');
+      
+      // Navigate to Home after a short delay
+      setTimeout(() => {
+        navigation.navigate('Home');
+      }, 500);
+    } catch (error: any) {
+      console.error('❌ ERROR:', error);
+      Alert.alert('Error', `Failed: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -89,6 +228,16 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
           </TouchableOpacity>
           <Text style={[styles.title, { color: theme.card }]}>Place Order</Text>
         </View>
+
+        {/* Offline Indicator */}
+        {!isOnline && (
+          <View style={[styles.offlineBanner, { backgroundColor: theme.warning }]}>
+            <Ionicons name="cloud-offline-outline" size={20} color="#FFF" />
+            <Text style={styles.offlineText}>
+              You are offline. Orders will be saved and synced when connected.
+            </Text>
+          </View>
+        )}
 
         <View style={styles.content}>
           <Card style={[styles.cropInfo, { backgroundColor: theme.secondary + '20' }]}>
@@ -181,11 +330,36 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
               style={[styles.orderButton, { backgroundColor: theme.secondary }]} 
               onPress={handlePlaceOrder}
             >
-              <Text style={styles.orderButtonText}>Confirm Order</Text>
+              <Ionicons name={isOnline ? "card-outline" : "save-outline"} size={20} color="#FFF" style={{ marginRight: 8 }} />
+              <Text style={styles.orderButtonText}>
+                {isOnline ? 'Proceed to Payment' : 'Save Order (Offline)'}
+              </Text>
             </TouchableOpacity>
+
+            {/* Test Mode: Skip Payment Button */}
+            {isOnline && (
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                style={[styles.testButton, { backgroundColor: theme.warning }]} 
+                onPress={handleSkipPayment}
+              >
+                <Ionicons name="flash-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text style={styles.testButtonText}>⚡ Skip Payment (TEST)</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
+
+      {/* Mobile Money Payment Modal */}
+      <MomoPaymentModal
+        visible={paymentModalVisible}
+        onClose={() => setPaymentModalVisible(false)}
+        amount={calculateTotal()}
+        orderId={pendingOrderData?.cropId || 'temp'}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
+      />
     </View>
   );
 }
@@ -293,14 +467,43 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   orderButton: {
+    flexDirection: 'row',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 30,
   },
   orderButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  testButton: {
+    flexDirection: 'row',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    gap: 8,
+  },
+  offlineText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
   },
 });

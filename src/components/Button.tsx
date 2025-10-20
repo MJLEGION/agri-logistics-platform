@@ -33,7 +33,7 @@ export default function Button({
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: 12,
+      borderRadius: 8,  // Slightly less rounded for professional look
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -42,32 +42,32 @@ export default function Button({
 
     // Size variations
     const sizeStyles = {
-      small: { paddingVertical: 8, paddingHorizontal: 16 },
-      medium: { paddingVertical: 14, paddingHorizontal: 24 },
-      large: { paddingVertical: 18, paddingHorizontal: 32 },
+      small: { paddingVertical: 10, paddingHorizontal: 20 },
+      medium: { paddingVertical: 14, paddingHorizontal: 28 },
+      large: { paddingVertical: 16, paddingHorizontal: 32 },
     };
 
-    // Variant styles
+    // Variant styles - cleaner, more subtle
     const variantStyles: Record<string, ViewStyle> = {
       primary: {
         backgroundColor: theme.primary,
-        shadowColor: theme.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
       },
       secondary: {
         backgroundColor: theme.secondary,
-        shadowColor: theme.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
       },
       outline: {
         backgroundColor: 'transparent',
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: theme.primary,
       },
       ghost: {

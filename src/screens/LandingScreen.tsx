@@ -1,256 +1,510 @@
 // src/screens/LandingScreen.tsx
+// Professional landing page with navigation bar, organized sections, and footer
 import React, { useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Dimensions,
   TouchableOpacity,
-  Animated,
+  Image,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Button';
-
-const { width, height } = Dimensions.get('window');
+import ServiceCard from '../components/ServiceCard';
+import Testimonial from '../components/Testimonial';
+import FarmerCard from '../components/FarmerCard';
+import HowItWorksCard from '../components/HowItWorksCard';
+import { recommendedFarmers, howItWorks } from '../data/recommendedFarmers';
 
 export default function LandingScreen({ navigation }: any) {
-  const { theme } = useTheme();
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const { theme, isDark, toggleTheme } = useTheme();
+  const scrollViewRef = useRef<ScrollView>(null);
 
-  const features = [
+  const services = [
     {
-      icon: 'leaf-outline',
-      title: 'For Farmers',
-      description: 'List your crops, manage inventory, and connect directly with buyers',
-      color: theme.primary,
+      icon: 'leaf',
+      title: 'Premium Crop Sourcing',
+      description: 'We find, vet, and connect you with Rwanda\'s finest farmers and their premium produce.',
     },
     {
-      icon: 'cart-outline',
-      title: 'For Buyers',
-      description: 'Browse fresh produce, place orders, and track deliveries in real-time',
-      color: theme.accent,
+      icon: 'cube',
+      title: 'Quality Assurance',
+      description: 'Every crop is sourced from verified farmers who meet our strict quality standards.',
     },
     {
-      icon: 'car-outline',
-      title: 'For Transporters',
-      description: 'Find loads, optimize routes, and earn more with efficient logistics',
-      color: theme.secondary,
+      icon: 'car',
+      title: 'Full-Service Logistics',
+      description: 'Efficient delivery operations with the most affordable rates in the industry.',
     },
   ];
 
-  const benefits = [
-    { icon: 'flash-outline', title: 'Fast & Efficient', description: 'Streamlined processes save time' },
-    { icon: 'shield-checkmark-outline', title: 'Secure & Reliable', description: 'Your data is protected' },
-    { icon: 'analytics-outline', title: 'Real-time Tracking', description: 'Monitor every step' },
-    { icon: 'people-outline', title: 'Community Driven', description: 'Supporting local agriculture' },
+  const testimonials = [
+    {
+      rating: 5,
+      text: "I'm so glad I found this platform! It has certainly helped enable us to take on larger orders and win more business with confidence.",
+      author: 'Jean-Claude',
+      company: 'Kigali Fresh Markets',
+    },
+    {
+      rating: 5,
+      text: 'The crop shipment is beautiful! We are very pleased with the quality and varieties. I will definitely be placing another order.',
+      author: 'Marie',
+      company: 'Rwanda Organic Foods',
+    },
+    {
+      rating: 5,
+      text: 'My produce arrived today. These are some of the best looking crops I\'ve received in a while. Thank you!',
+      author: 'Patrick',
+      company: 'Musanze Wholesale',
+    },
+    {
+      rating: 5,
+      text: 'Customer service was great! Crops exceeded my expectations. My team and I are very happy with our order.',
+      author: 'Grace',
+      company: 'Huye Agricultural Co-op',
+    },
   ];
 
   const stats = [
+    { number: '2000+', label: 'Premium Crops Listed' },
     { number: '1000+', label: 'Active Farmers' },
     { number: '500+', label: 'Daily Orders' },
-    { number: '50+', label: 'Transporters' },
-    { number: '98%', label: 'Satisfaction' },
+    { number: '98%', label: 'Customer Satisfaction' },
   ];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
-      >
-        {/* Hero Section */}
+      {/* Navigation Bar */}
+      <View style={[styles.navbar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <View style={styles.navbarContent}>
+          {/* Logo */}
+          <View style={styles.navLogo}>
+            <View style={[styles.navLogoIcon, { backgroundColor: theme.primary }]}>
+              <Ionicons name="leaf" size={20} color="#FFF" />
+            </View>
+            <Text style={[styles.navLogoText, { color: theme.text }]}>AgriLogistics</Text>
+          </View>
+
+          {/* Nav Actions */}
+          <View style={styles.navActions}>
+            <TouchableOpacity
+              style={styles.themeToggle}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isDark ? 'sunny' : 'moon'}
+                size={20}
+                color={theme.textSecondary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navButton, { borderColor: theme.primary }]}
+              onPress={() => navigation.navigate('Login')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.navButtonText, { color: theme.primary }]}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
+        {/* Hero Section - Full-width gradient */}
         <LinearGradient
           colors={[theme.primary, theme.primaryLight]}
-          style={styles.hero}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          style={styles.hero}
         >
           <View style={styles.heroContent}>
-            <Ionicons name="leaf" size={60} color="#FFFFFF" style={styles.heroIcon} />
-            
-            <Text style={styles.heroTitle}>Agri-Logistics</Text>
-            <Text style={styles.heroSubtitle}>
-              Connecting Rwanda's Agricultural Supply Chain
+            {/* Hero Badge */}
+            <View style={styles.heroBadge}>
+              <Ionicons name="star" size={12} color={theme.accent} />
+              <Text style={styles.heroBadgeText}>Rwanda's #1 Agricultural Platform</Text>
+            </View>
+
+            <Text style={styles.heroTitle}>
+              All of Rwanda's finest crops in the palm of your hand
             </Text>
-            
-            <Text style={styles.heroDescription}>
-              A seamless platform bringing together farmers, buyers, and transporters
-              for efficient, transparent agricultural trade.
+
+            <Text style={styles.heroSubtitle}>
+              We <Text style={{ fontWeight: '700' }}>find</Text>,{' '}
+              <Text style={{ fontWeight: '700' }}>vet</Text>, and{' '}
+              <Text style={{ fontWeight: '700' }}>deliver</Text> premium
+              agricultural products from verified farmers to buyers nationwide.
             </Text>
 
             <View style={styles.heroButtons}>
-              <Button
-                title="Get Started"
+              <TouchableOpacity
+                style={styles.heroPrimaryButton}
                 onPress={() => navigation.navigate('RoleSelection')}
-                variant="secondary"
-                size="large"
-                fullWidth
-                style={styles.heroButton}
-              />
-              
-              <Button
-                title="Sign In"
+                activeOpacity={0.8}
+              >
+                <Text style={styles.heroPrimaryButtonText}>Get Started</Text>
+                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.heroSecondaryButton}
                 onPress={() => navigation.navigate('Login')}
-                variant="outline"
-                size="large"
-                fullWidth
-                style={[styles.heroButton, { borderColor: '#FFFFFF' }]}
-                textStyle={{ color: '#FFFFFF' }}
-              />
+                activeOpacity={0.8}
+              >
+                <Text style={styles.heroSecondaryButtonText}>Sign In</Text>
+              </TouchableOpacity>
             </View>
-          </View>
 
-          {/* Decorative Wave */}
-          <View style={styles.wave}>
-            <Ionicons name="leaf" size={40} color="rgba(255,255,255,0.1)" style={styles.floatingLeaf1} />
-            <Ionicons name="leaf" size={30} color="rgba(255,255,255,0.1)" style={styles.floatingLeaf2} />
+            {/* Hero Stats */}
+            <View style={styles.heroStats}>
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatNumber}>1000+</Text>
+                <Text style={styles.heroStatLabel}>Farmers</Text>
+              </View>
+              <View style={styles.heroStatDivider} />
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatNumber}>500+</Text>
+                <Text style={styles.heroStatLabel}>Daily Orders</Text>
+              </View>
+              <View style={styles.heroStatDivider} />
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatNumber}>98%</Text>
+                <Text style={styles.heroStatLabel}>Satisfaction</Text>
+              </View>
+            </View>
           </View>
         </LinearGradient>
 
-        {/* Features Section */}
+        {/* Featured Announcement Banner */}
+        <View style={[styles.banner, { backgroundColor: theme.backgroundAlt }]}>
+          <View style={styles.bannerContent}>
+            <Ionicons name="megaphone" size={24} color={theme.primary} />
+            <View style={styles.bannerText}>
+              <Text style={[styles.bannerTitle, { color: theme.text }]}>
+                New: Fast & Free Delivery Program
+              </Text>
+              <Text style={[styles.bannerSubtitle, { color: theme.textSecondary }]}>
+                Orders ship in as little as 4 days with zero freight charges
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Services Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            How We Serve You
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            Professional agricultural logistics for every stakeholder
+          </Text>
+
+          {services.map((service, index) => (
+            <ServiceCard
+              key={index}
+              icon={service.icon}
+              title={service.title}
+              description={service.description}
+            />
+          ))}
+        </View>
+
+        {/* Who We Serve Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Who We Serve
           </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Tailored solutions for every stakeholder
-          </Text>
 
-          <View style={styles.featuresGrid}>
-            {features.map((feature, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.featureCard,
-                  {
-                    backgroundColor: theme.card,
-                    borderColor: theme.borderLight,
-                  },
-                ]}
-              >
-                <View style={[styles.featureIconContainer, { backgroundColor: `${feature.color}15` }]}>
-                  <Ionicons name={feature.icon as any} size={32} color={feature.color} />
-                </View>
-                <Text style={[styles.featureTitle, { color: theme.text }]}>
-                  {feature.title}
-                </Text>
-                <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>
-                  {feature.description}
-                </Text>
+          <View style={styles.rolesGrid}>
+            {/* Farmers Card */}
+            <TouchableOpacity
+              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+              onPress={() => navigation.navigate('RoleSelection')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
+                <Ionicons name="leaf" size={32} color={theme.primary} />
               </View>
-            ))}
-          </View>
-        </View>
-
-        {/* How It Works Section */}
-        <View style={[styles.section, { backgroundColor: theme.backgroundAlt }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            How It Works
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Simple steps to get started
-          </Text>
-
-          <View style={styles.stepsContainer}>
-            {[
-              { step: '1', title: 'Create Account', description: 'Choose your role and register' },
-              { step: '2', title: 'List or Browse', description: 'Farmers list crops, buyers browse' },
-              { step: '3', title: 'Connect', description: 'Match with the right partners' },
-              { step: '4', title: 'Transact', description: 'Complete orders with transparency' },
-            ].map((item, index) => (
-              <View key={index} style={styles.stepItem}>
-                <View style={[styles.stepNumber, { backgroundColor: theme.primary }]}>
-                  <Text style={styles.stepNumberText}>{item.step}</Text>
+              <Text style={[styles.roleTitle, { color: theme.text }]}>Farmers</Text>
+              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                List your premium crops and connect with verified buyers nationwide
+              </Text>
+              <View style={styles.roleFeatures}>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Easy crop listing
+                  </Text>
                 </View>
-                <View style={styles.stepContent}>
-                  <Text style={[styles.stepTitle, { color: theme.text }]}>{item.title}</Text>
-                  <Text style={[styles.stepDescription, { color: theme.textSecondary }]}>
-                    {item.description}
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Direct buyer access
+                  </Text>
+                </View>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Fair pricing
                   </Text>
                 </View>
               </View>
-            ))}
-          </View>
-        </View>
+            </TouchableOpacity>
 
-        {/* Stats Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Our Impact
-          </Text>
-          
-          <View style={styles.statsGrid}>
-            {stats.map((stat, index) => (
-              <View key={index} style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: theme.primary }]}>
-                  {stat.number}
-                </Text>
-                <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-                  {stat.label}
-                </Text>
+            {/* Buyers Card */}
+            <TouchableOpacity
+              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+              onPress={() => navigation.navigate('RoleSelection')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
+                <Ionicons name="cart" size={32} color={theme.accent} />
               </View>
-            ))}
+              <Text style={[styles.roleTitle, { color: theme.text }]}>Buyers</Text>
+              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                Access premium crops from verified farmers with quality assurance
+              </Text>
+              <View style={styles.roleFeatures}>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Quality guaranteed
+                  </Text>
+                </View>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Fast delivery
+                  </Text>
+                </View>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Real-time tracking
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Transporters Card */}
+            <TouchableOpacity
+              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+              onPress={() => navigation.navigate('RoleSelection')}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
+                <Ionicons name="car" size={32} color={theme.secondary} />
+              </View>
+              <Text style={[styles.roleTitle, { color: theme.text }]}>Transporters</Text>
+              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                Find loads, optimize routes, and maximize earnings efficiently
+              </Text>
+              <View style={styles.roleFeatures}>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Available loads
+                  </Text>
+                </View>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Route optimization
+                  </Text>
+                </View>
+                <View style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
+                    Best rates
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Benefits Section */}
+        {/* Testimonials Section */}
         <View style={[styles.section, { backgroundColor: theme.backgroundAlt }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Why Choose Us
+            What Our Users Say
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            Trusted by farmers, buyers, and transporters across Rwanda
           </Text>
 
-          <View style={styles.benefitsGrid}>
-            {benefits.map((benefit, index) => (
-              <View key={index} style={styles.benefitItem}>
-                <Ionicons name={benefit.icon as any} size={28} color={theme.primary} />
-                <Text style={[styles.benefitTitle, { color: theme.text }]}>
-                  {benefit.title}
-                </Text>
-                <Text style={[styles.benefitDescription, { color: theme.textSecondary }]}>
-                  {benefit.description}
-                </Text>
-              </View>
+          {testimonials.map((testimonial, index) => (
+            <Testimonial
+              key={index}
+              rating={testimonial.rating}
+              text={testimonial.text}
+              author={testimonial.author}
+              company={testimonial.company}
+            />
+          ))}
+        </View>
+
+        {/* How It Works Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            How AgriLogistics Works
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            Simple, transparent process connecting farmers with buyers
+          </Text>
+
+          <View style={styles.howItWorksContainer}>
+            {howItWorks.map((item, index) => (
+              <HowItWorksCard
+                key={index}
+                step={item.step}
+                icon={item.icon}
+                title={item.title}
+                description={item.description}
+                color={item.color}
+              />
             ))}
           </View>
+        </View>
+
+        {/* Recommended Farmers Section */}
+        <View style={[styles.section, { backgroundColor: theme.backgroundAlt }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            Meet Our Recommended Farmers
+          </Text>
+          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
+            Verified farmers delivering quality crops across Rwanda
+          </Text>
+
+          <View style={styles.farmersContainer}>
+            {recommendedFarmers.map((farmer) => (
+              <FarmerCard
+                key={farmer.id}
+                id={farmer.id}
+                name={farmer.name}
+                location={farmer.location}
+                cropTypes={farmer.cropTypes}
+                rating={farmer.rating}
+                reviews={farmer.reviews}
+                onPress={() => {
+                  // Navigate to farmer details or show more info
+                  console.log('Farmer pressed:', farmer.name);
+                }}
+              />
+            ))}
+          </View>
+
+          {/* View All Farmers Button */}
+          <TouchableOpacity
+            style={[styles.viewAllButton, { backgroundColor: theme.primary }]}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllButtonText}>View All Farmers →</Text>
+          </TouchableOpacity>
         </View>
 
         {/* CTA Section */}
-        <LinearGradient
-          colors={[theme.primary, theme.primaryDark]}
-          style={styles.ctaSection}
-        >
-          <Ionicons name="rocket-outline" size={48} color="#FFFFFF" />
-          <Text style={styles.ctaTitle}>Ready to Transform Agriculture?</Text>
-          <Text style={styles.ctaDescription}>
-            Join thousands of farmers, buyers, and transporters already using our platform
-          </Text>
-          
-          <Button
-            title="Get Started Now"
-            onPress={() => navigation.navigate('RoleSelection')}
-            variant="secondary"
-            size="large"
-            style={styles.ctaButton}
-          />
-        </LinearGradient>
+        <View style={styles.section}>
+          <View style={[styles.ctaCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Ionicons name="rocket" size={48} color={theme.primary} />
+            <Text style={[styles.ctaTitle, { color: theme.text }]}>
+              Ready to Transform Your Agricultural Business?
+            </Text>
+            <Text style={[styles.ctaDescription, { color: theme.textSecondary }]}>
+              Join thousands of farmers, buyers, and transporters already using our platform
+            </Text>
+            <Button
+              title="Get Started Today"
+              onPress={() => navigation.navigate('RoleSelection')}
+              variant="primary"
+              size="large"
+            />
+          </View>
+        </View>
 
         {/* Footer */}
-        <View style={[styles.footer, { backgroundColor: theme.card }]}>
-          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            © 2024 Agri-Logistics Platform
-          </Text>
-          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            Made with ❤️ in Rwanda
-          </Text>
+        <View style={[styles.footer, { backgroundColor: theme.backgroundAlt, borderTopColor: theme.border }]}>
+          <View style={styles.footerContent}>
+            {/* Footer Brand */}
+            <View style={styles.footerBrand}>
+              <View style={styles.footerLogo}>
+                <View style={[styles.footerLogoIcon, { backgroundColor: theme.primary }]}>
+                  <Ionicons name="leaf" size={24} color="#FFF" />
+                </View>
+                <Text style={[styles.footerBrandName, { color: theme.text }]}>
+                  AgriLogistics
+                </Text>
+              </View>
+              <Text style={[styles.footerBrandTagline, { color: theme.textSecondary }]}>
+                Connecting Rwanda's agricultural ecosystem
+              </Text>
+            </View>
+
+            {/* Footer Links Grid */}
+            <View style={styles.footerLinksGrid}>
+              {/* Platform Column */}
+              <View style={styles.footerColumn}>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Platform</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Farmers</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Buyers</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Transporters</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Company Column */}
+              <View style={styles.footerColumn}>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Company</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>About Us</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Contact</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Careers</Text>
+              </View>
+
+              {/* Support Column */}
+              <View style={styles.footerColumn}>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Support</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Help Center</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Terms of Service</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Privacy Policy</Text>
+              </View>
+            </View>
+
+            {/* Footer Social */}
+            <View style={styles.footerSocial}>
+              <Text style={[styles.footerSocialTitle, { color: theme.text }]}>Connect With Us</Text>
+              <View style={styles.footerSocialIcons}>
+                <TouchableOpacity style={[styles.socialIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Ionicons name="logo-facebook" size={20} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.socialIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Ionicons name="logo-twitter" size={20} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.socialIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Ionicons name="logo-instagram" size={20} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.socialIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Ionicons name="logo-linkedin" size={20} color={theme.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Footer Bottom */}
+            <View style={[styles.footerBottom, { borderTopColor: theme.border }]}>
+              <Text style={[styles.footerCopyright, { color: theme.textSecondary }]}>
+                © 2024 AgriLogistics Platform. All rights reserved.
+              </Text>
+              <Text style={[styles.footerMade, { color: theme.textSecondary }]}>
+                Made with ❤️ in Rwanda 🇷🇼
+              </Text>
+            </View>
+          </View>
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
     </View>
   );
 }
@@ -259,72 +513,198 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Navigation Bar
+  navbar: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  navbarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navLogo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  navLogoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navLogoText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  navActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  themeToggle: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+  },
+  navButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Hero Section
   hero: {
-    paddingTop: 60,
-    paddingBottom: 80,
+    paddingTop: 48,
+    paddingBottom: 48,
     paddingHorizontal: 24,
   },
   heroContent: {
     alignItems: 'center',
   },
-  heroIcon: {
-    marginBottom: 16,
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 20,
+  },
+  heroBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFF',
   },
   heroTitle: {
-    fontSize: 42,
+    fontSize: 32,
     fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: -1,
-  },
-  heroSubtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 16,
-    opacity: 0.95,
+    lineHeight: 40,
+    color: '#FFF',
   },
-  heroDescription: {
+  heroSubtitle: {
     fontSize: 16,
-    color: '#FFFFFF',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
-    opacity: 0.9,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
+    color: 'rgba(255, 255, 255, 0.95)',
   },
   heroButtons: {
-    width: '100%',
+    flexDirection: 'row',
     gap: 12,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 40,
   },
-  heroButton: {
-    marginBottom: 0,
+  heroPrimaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  wave: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40,
+  heroPrimaryButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2D6A4F',
   },
-  floatingLeaf1: {
-    position: 'absolute',
-    top: -100,
-    right: 20,
+  heroSecondaryButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
-  floatingLeaf2: {
-    position: 'absolute',
-    top: -150,
-    left: 30,
+  heroSecondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
   },
-  section: {
-    paddingVertical: 48,
+  heroStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+  },
+  heroStatItem: {
+    alignItems: 'center',
+  },
+  heroStatNumber: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFF',
+    marginBottom: 2,
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  heroStatDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  banner: {
+    paddingVertical: 16,
     paddingHorizontal: 24,
   },
+  bannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bannerText: {
+    flex: 1,
+  },
+  bannerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+  bannerSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  section: {
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    maxWidth: 600,
+    marginHorizontal: 'auto',
+    width: '100%',
+  },
   sectionTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
@@ -333,139 +713,184 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 32,
+    lineHeight: 24,
   },
-  featuresGrid: {
-    gap: 16,
+  rolesGrid: {
+    gap: 12,
+    alignItems: 'stretch',
   },
-  featureCard: {
-    padding: 24,
-    borderRadius: 16,
+  roleCard: {
+    padding: 20,
+    borderRadius: 12,
     borderWidth: 1,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  featureIconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  featureTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  featureDescription: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  stepsContainer: {
-    gap: 24,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  stepNumber: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  roleIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stepNumberText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  stepContent: {
-    flex: 1,
-    paddingTop: 4,
-  },
-  stepTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  stepDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  statItem: {
-    width: (width - 64) / 2,
-    alignItems: 'center',
-    padding: 16,
-  },
-  statNumber: {
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  benefitsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  benefitItem: {
-    width: (width - 64) / 2,
-    alignItems: 'center',
-    padding: 16,
-  },
-  benefitTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 12,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  benefitDescription: {
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  ctaSection: {
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  ctaTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginTop: 16,
     marginBottom: 12,
   },
-  ctaDescription: {
-    fontSize: 16,
-    color: '#FFFFFF',
+  roleTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  roleDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  roleFeatures: {
+    gap: 6,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  featureText: {
+    fontSize: 13,
+  },
+  ctaCard: {
+    padding: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  ctaTitle: {
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 32,
-    opacity: 0.9,
+    marginTop: 12,
+    marginBottom: 8,
   },
-  ctaButton: {
-    width: '100%',
+  ctaDescription: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
   },
+  // Footer
   footer: {
-    paddingVertical: 24,
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    borderTopWidth: 1,
+  },
+  footerContent: {
+    gap: 32,
+  },
+  footerBrand: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  footerLogo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  footerLogoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerBrandName: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  footerBrandTagline: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  footerLinksGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  footerColumn: {
+    flex: 1,
+    gap: 12,
+  },
+  footerColumnTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  footerLink: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  footerSocial: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  footerSocialTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  footerSocialIcons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  socialIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  footerBottom: {
+    paddingTop: 24,
+    borderTopWidth: 1,
     alignItems: 'center',
     gap: 8,
   },
-  footerText: {
-    fontSize: 14,
+  footerCopyright: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  footerMade: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  // How It Works Section
+  howItWorksContainer: {
+    paddingVertical: 8,
+  },
+  // Farmers Section
+  farmersContainer: {
+    marginBottom: 20,
+  },
+  viewAllButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewAllButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
