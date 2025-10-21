@@ -104,35 +104,25 @@ export default function Button({
     };
   };
 
-  if (variant === 'primary' && !disabled) {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled || loading}
-        style={[getButtonStyle(), style]}
-        activeOpacity={0.8}
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <>
-            {icon}
-            <Text style={[getTextStyle(), textStyle]}>{title}</Text>
-          </>
-        )}
-      </TouchableOpacity>
-    );
-  }
+  /**
+   * Determine loader color based on button variant
+   */
+  const getLoaderColor = (): string => {
+    if (variant === 'primary' || variant === 'secondary') {
+      return '#FFFFFF';
+    }
+    return theme.primary;
+  };
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
       style={[getButtonStyle(), style]}
-      activeOpacity={0.7}
+      activeOpacity={disabled ? 0.5 : 0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' || variant === 'secondary' ? '#FFFFFF' : theme.primary} />
+        <ActivityIndicator color={getLoaderColor()} />
       ) : (
         <>
           {icon}

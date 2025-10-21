@@ -1,24 +1,38 @@
 // src/screens/transporter/AvailableLoadsScreen.tsx
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Dimensions,
+  Alert,
+  RefreshControl,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Card } from '../../components/common/Card';
 import { fetchAllOrders, acceptOrder } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+
+const { width } = Dimensions.get('window');
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { orders, isLoading } = useAppSelector((state) => state.orders);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Fetch orders when screen mounts
   useEffect(() => {
     const loadData = async () => {
       try {
         console.log('=== TRANSPORTER LOADING ORDERS ===');
         const result = await dispatch(fetchAllOrders()).unwrap();
         console.log('TOTAL ORDERS FETCHED:', result.length);
-        console.log('ALL ORDERS:', JSON.stringify(result, null, 2));
       } catch (error) {
         console.log('ERROR LOADING ORDERS:', error);
       }
@@ -26,31 +40,35 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     loadData();
   }, [dispatch]);
 
-  const availableLoads = orders.filter(
-    order => order.status === 'accepted' && !order.transporterId
+  // Handle manual refresh (pull to refresh)
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await dispatch(fetchAllOrders()).unwrap();
+    } catch (error) {
+      console.log('Error refreshing:', error);
+    }
+    setRefreshing(false);
+  };
+
+  // Auto-refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshData = async () => {
+        try {
+          console.log('=== SCREEN FOCUSED - AUTO REFRESHING ORDERS ===');
+          await dispatch(fetchAllOrders()).unwrap();
+        } catch (error) {
+          console.log('ERROR AUTO-REFRESHING:', error);
+        }
+      };
+      refreshData();
+    }, [dispatch])
   );
 
-  console.log('=== FILTERING ORDERS ===');
-  console.log('Total orders in state:', orders.length);
-  console.log('Available loads after filter:', availableLoads.length);
-  console.log('Filter looking for: status="accepted" and no transporterId');
-  if (orders.length > 0) {
-    console.log('First order example:', JSON.stringify(orders[0], null, 2));
-  }
-
-  const handleAcceptLoad = async (orderId: string, cropName: string) => {
-    const confirmed = confirm(`Accept transport for ${cropName}?`);
-    
-    if (confirmed) {
-      try {
-        await dispatch(acceptOrder(orderId)).unwrap();
-        alert('Transport job accepted!');
-        navigation.goBack();
-      } catch (error: any) {
-        alert(error || 'Failed to accept load');
-      }
-    }
-  };
+  const availableLoads = orders.filter(
+    order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
+  );
 
   const calculateDistance = (order: any) => {
     const lat1 = order.pickupLocation.latitude;
@@ -70,21 +88,58 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     return Math.round(distance * 1000);
   };
 
+  const handleAcceptLoad = async (orderId: string, cropName: string) => {
+    Alert.alert(
+      `Accept this load?`,
+      `Transport ${cropName}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Accept',
+          onPress: async () => {
+            try {
+              await dispatch(acceptOrder(orderId)).unwrap();
+              Alert.alert('Success! 🎉', 'Load accepted. Head to pickup location!', [
+                { text: 'OK', onPress: () => navigation.navigate('Home') }
+              ]);
+            } catch (error: any) {
+              Alert.alert('Error', error || 'Failed to accept load');
+            }
+          },
+          style: 'default',
+        },
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={theme.tertiary} />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color={theme.card} />
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.card }]}>Available Loads</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={theme.tertiary} />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
+          <Ionicons name="chevron-back" size={24} color={theme.card} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>Available Loads</Text>
+        <View style={styles.loadsCountBadge}>
+          <Text style={styles.loadsCountText}>{availableLoads.length}</Text>
+        </View>
       </View>
 
       {availableLoads.length === 0 ? (
@@ -94,80 +149,103 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Check back later for transport opportunities
           </Text>
-          <Text style={[styles.debugText, { color: theme.textSecondary, marginTop: 20 }]}>
-            Debug: {orders.length} total orders in system
-          </Text>
+          <TouchableOpacity
+            style={[styles.refreshBtn, { backgroundColor: theme.tertiary }]}
+            onPress={() => dispatch(fetchAllOrders())}
+          >
+            <Ionicons name="refresh" size={16} color="#fff" />
+            <Text style={styles.refreshBtnText}>Refresh</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
           data={availableLoads}
           keyExtractor={(item) => item._id || item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={styles.loadsList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={theme.tertiary}
+            />
+          }
           renderItem={({ item }) => {
             const distance = calculateDistance(item);
             const earnings = calculateEarnings(item);
             
             return (
-              <Card>
-                <View style={styles.loadHeader}>
-                  <Text style={[styles.cropName, { color: theme.text }]}>
-                    {item.cropId?.name || 'Order'}
-                  </Text>
-                  <View style={[styles.earningsBox, { backgroundColor: theme.success + '20' }]}>
+              <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                {/* Top Section: Crop & Earnings */}
+                <View style={styles.loadCardTop}>
+                  <View style={styles.cropSection}>
+                    <Text style={[styles.cropName, { color: theme.text }]} numberOfLines={1}>
+                      {item.cropId?.name || 'Order'}
+                    </Text>
+                    <View style={styles.quantityDistance}>
+                      <View style={styles.badge}>
+                        <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
+                          {item.quantity}
+                        </Text>
+                      </View>
+                      <View style={styles.badge}>
+                        <Ionicons name="navigate" size={12} color={theme.textSecondary} />
+                        <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
+                          {distance.toFixed(1)}km
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Earnings Box - Prominently displayed */}
+                  <View style={[styles.earningsBox, { backgroundColor: theme.success + '15' }]}>
                     <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
-                      You Earn
+                      Earn
                     </Text>
-                    <Text style={[styles.earnings, { color: theme.success }]}>
-                      {earnings.toLocaleString()} RWF
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
-                  <Text style={[styles.value, { color: theme.text }]}>
-                    {item.quantity}
-                  </Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={[styles.label, { color: theme.textSecondary }]}>Distance:</Text>
-                  <Text style={[styles.value, { color: theme.text }]}>
-                    ~{distance.toFixed(1)} km
-                  </Text>
-                </View>
-
-                <View style={styles.detailRow}>
-                  <Text style={[styles.label, { color: theme.textSecondary }]}>Rate:</Text>
-                  <Text style={[styles.value, { color: theme.text }]}>1,000 RWF/km</Text>
-                </View>
-
-                <View style={styles.locationSection}>
-                  <View style={styles.locationItem}>
-                    <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
-                      📍 Pickup:
-                    </Text>
-                    <Text style={[styles.locationText, { color: theme.text }]}>
-                      {item.pickupLocation.address}
-                    </Text>
-                  </View>
-                  <View style={styles.locationItem}>
-                    <Text style={[styles.locationLabel, { color: theme.textSecondary }]}>
-                      🏁 Delivery:
-                    </Text>
-                    <Text style={[styles.locationText, { color: theme.text }]}>
-                      {item.deliveryLocation.address}
+                    <Text style={[styles.earningsAmount, { color: theme.success }]}>
+                      ₦{earnings.toLocaleString()}
                     </Text>
                   </View>
                 </View>
 
+                {/* Route Section */}
+                <View style={styles.routeSection}>
+                  <View style={styles.routeItem}>
+                    <View style={[styles.routeDot, { backgroundColor: theme.success }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.routeLabel, { color: theme.textSecondary }]}>
+                        Pickup
+                      </Text>
+                      <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
+                        {item.pickupLocation?.address || 'Not specified'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={[styles.routeLine, { backgroundColor: theme.border }]} />
+
+                  <View style={styles.routeItem}>
+                    <View style={[styles.routeDot, { backgroundColor: theme.error }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.routeLabel, { color: theme.textSecondary }]}>
+                        Delivery
+                      </Text>
+                      <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
+                        {item.deliveryLocation?.address || 'Not specified'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Accept Button */}
                 <TouchableOpacity
-                  style={[styles.acceptButton, { backgroundColor: theme.tertiary }]}
-                  onPress={() => handleAcceptLoad(item._id || item.id, item.cropId?.name || 'Order')}
+                  style={[styles.acceptBtn, { backgroundColor: theme.tertiary }]}
+                  onPress={() => handleAcceptLoad(item._id || item.id, item.cropId?.name || 'Load')}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.acceptButtonText}>Accept Load</Text>
+                  <Text style={styles.acceptBtnText}>Accept Load</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
-              </Card>
+              </View>
             );
           }}
         />
@@ -181,100 +259,178 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-  },
-  backButton: {
-    fontSize: 16,
-    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
   },
+  loadsCountBadge: {
+    backgroundColor: '#fff',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadsCountText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  // Empty State
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
   emptyIcon: {
     fontSize: 64,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   emptyText: {
-    fontSize: 18,
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 24,
   },
-  debugText: {
-    fontSize: 12,
-    textAlign: 'center',
+  refreshBtn: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    gap: 8,
   },
-  list: {
-    padding: 15,
+  refreshBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
-  loadHeader: {
+
+  // Loads List
+  loadsList: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 12,
+  },
+
+  // Load Card - inDrive Style
+  loadCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 4,
+  },
+
+  // Card Top: Name & Earnings
+  loadCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  cropSection: {
+    flex: 1,
+    marginRight: 8,
   },
   cropName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
   },
+  quantityDistance: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 6,
+    gap: 4,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Earnings Box
   earningsBox: {
-    padding: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
   },
   earningsLabel: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '500',
     marginBottom: 2,
   },
-  earnings: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  earningsAmount: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  detailRow: {
+
+  // Route Section - inDrive style with dots and line
+  routeSection: {
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  routeItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 10,
   },
-  label: {
-    fontSize: 14,
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 4,
   },
-  value: {
-    fontSize: 14,
+  routeLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  routeText: {
+    fontSize: 13,
     fontWeight: '500',
   },
-  locationSection: {
-    marginTop: 10,
-    marginBottom: 15,
+  routeLine: {
+    width: 2,
+    height: 20,
+    marginLeft: 4,
+    marginVertical: 2,
   },
-  locationItem: {
-    marginBottom: 8,
-  },
-  locationLabel: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  locationText: {
-    fontSize: 14,
-  },
-  acceptButton: {
-    padding: 14,
+
+  // Accept Button
+  acceptBtn: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
   },
-  acceptButtonText: {
+  acceptBtnText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

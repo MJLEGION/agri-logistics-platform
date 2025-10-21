@@ -1,13 +1,14 @@
 // src/screens/transporter/TransporterHomeScreen.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
-import { fetchOrders } from '../../store/slices/ordersSlice';
+import { fetchAllOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function TransporterHomeScreen({ navigation }: any) {
@@ -19,12 +20,19 @@ export default function TransporterHomeScreen({ navigation }: any) {
 
   // Fetch data when screen loads
   useEffect(() => {
-    dispatch(fetchOrders());
+    dispatch(fetchAllOrders());
   }, [dispatch]);
+
+  // Auto-refresh when screen comes into focus (e.g., returning after creating order)
+  useFocusEffect(
+    React.useCallback(() => {
+      dispatch(fetchAllOrders());
+    }, [dispatch])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await dispatch(fetchOrders());
+    await dispatch(fetchAllOrders());
     setRefreshing(false);
   };
 
@@ -51,7 +59,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
   }, 0);
 
   const availableLoads = orders.filter(
-    order => order.status === 'accepted' && !order.transporterId
+    order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
   );
 
   function calculateDistance(order: any) {
@@ -134,6 +142,21 @@ export default function TransporterHomeScreen({ navigation }: any) {
               Today's Earnings (RWF)
             </Text>
           </View>
+        </View>
+
+        {/* Featured CTA: Find Loads */}
+        <View style={styles.ctaSection}>
+          <TouchableOpacity 
+            style={[styles.ctaButton, { backgroundColor: theme.tertiary }]}
+            onPress={() => navigation.navigate('AvailableLoads')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.ctaContent}>
+              <Text style={styles.ctaTitle}>Ready to earn?</Text>
+              <Text style={styles.ctaSubtitle}>{availableLoads.length} loads available near you</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
 
         {/* Quick Actions */}
@@ -392,6 +415,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
+  // CTA Section
+  ctaSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  ctaContent: {
+    flex: 1,
+  },
+  ctaTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  ctaSubtitle: {
+    fontSize: 13,
+    color: '#fff',
+    opacity: 0.9,
+  },
+
   content: {
     padding: 16,
     maxWidth: 600,

@@ -7,6 +7,7 @@ import { store, persistor } from './src/store';
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { OfflineBanner } from './src/components/OfflineBanner';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import { initializeAllServices } from './src/services/authService';
 
 function AppContent() {
@@ -25,13 +26,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider>
-          <AppContent />
-        </ThemeProvider>
-      </PersistGate>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <ThemeProvider>
+            <AppContent />
+          </ThemeProvider>
+        </PersistGate>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 

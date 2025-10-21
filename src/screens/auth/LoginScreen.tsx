@@ -17,6 +17,55 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import { UserRole } from '../../types';
+
+// Demo credentials for testing
+const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
+  farmer: {
+    phone: '+250700000001',
+    password: 'password123',
+    name: 'Test Farmer',
+  },
+  buyer: {
+    phone: '+250700000002',
+    password: 'password123',
+    name: 'Test Buyer',
+  },
+  transporter: {
+    phone: '+250700000003',
+    password: 'password123',
+    name: 'Test Transporter',
+  },
+};
+
+const ROLE_INFO: Record<
+  UserRole,
+  {
+    icon: string;
+    label: string;
+    description: string;
+    gradient: string[];
+  }
+> = {
+  farmer: {
+    icon: 'leaf',
+    label: 'Farmer',
+    description: 'List and sell your crops',
+    gradient: ['#2E7D32', '#66BB6A'],
+  },
+  buyer: {
+    icon: 'cart',
+    label: 'Buyer',
+    description: 'Browse and purchase crops',
+    gradient: ['#1976D2', '#42A5F5'],
+  },
+  transporter: {
+    icon: 'car',
+    label: 'Transporter',
+    description: 'Deliver crops efficiently',
+    gradient: ['#F57C00', '#FFB74D'],
+  },
+};
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -25,6 +74,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('farmer');
   const [errors, setErrors] = useState({ phone: '', password: '' });
 
   const validateForm = () => {
@@ -62,6 +112,13 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+  const fillDemoCredentials = () => {
+    const credentials = DEMO_CREDENTIALS[selectedRole];
+    setPhone(credentials.phone);
+    setPassword(credentials.password);
+    setErrors({ phone: '', password: '' });
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
@@ -91,9 +148,50 @@ export default function LoginScreen({ navigation }: any) {
                 <Ionicons name="log-in-outline" size={48} color="#FFFFFF" />
               </View>
               <Text style={styles.headerTitle}>Welcome Back</Text>
-              <Text style={styles.headerSubtitle}>Sign in to continue</Text>
+              <Text style={styles.headerSubtitle}>Sign in to your account</Text>
             </View>
           </LinearGradient>
+
+          {/* Role Selection */}
+          <View style={[styles.roleSelectionContainer, { backgroundColor: theme.background }]}>
+            <Text style={[styles.roleSelectionLabel, { color: theme.text }]}>Select Your Role</Text>
+            <View style={styles.roleButtonsContainer}>
+              {(['farmer', 'buyer', 'transporter'] as UserRole[]).map((role) => {
+                const isSelected = selectedRole === role;
+                const roleData = ROLE_INFO[role];
+                return (
+                  <TouchableOpacity
+                    key={role}
+                    style={[
+                      styles.roleButton,
+                      isSelected && styles.roleButtonSelected,
+                      isSelected && { borderColor: roleData.gradient[0] },
+                    ]}
+                    onPress={() => {
+                      setSelectedRole(role);
+                      setErrors({ phone: '', password: '' });
+                    }}
+                  >
+                    <LinearGradient
+                      colors={roleData.gradient}
+                      style={styles.roleButtonGradient}
+                    >
+                      <Ionicons name={roleData.icon as any} size={24} color="#FFFFFF" />
+                    </LinearGradient>
+                    <Text
+                      style={[
+                        styles.roleButtonText,
+                        isSelected && { color: theme.primary, fontWeight: '700' },
+                        !isSelected && { color: theme.textSecondary },
+                      ]}
+                    >
+                      {roleData.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
 
           {/* Form */}
           <View style={styles.formContainer}>
@@ -103,6 +201,17 @@ export default function LoginScreen({ navigation }: any) {
                 <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
               </View>
             )}
+
+            {/* Demo Credentials Button */}
+            <TouchableOpacity
+              style={[styles.demoButton, { backgroundColor: `${theme.primary}15`, borderColor: theme.primary }]}
+              onPress={fillDemoCredentials}
+            >
+              <Ionicons name="flash" size={16} color={theme.primary} />
+              <Text style={[styles.demoButtonText, { color: theme.primary }]}>
+                Use Demo Credentials ({DEMO_CREDENTIALS[selectedRole].phone})
+              </Text>
+            </TouchableOpacity>
 
             <Input
               label="Phone Number"
@@ -182,7 +291,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 30,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
@@ -271,5 +380,64 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: 15,
     fontWeight: '700',
+  },
+  roleSelectionContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  roleSelectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  roleButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  roleButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    backgroundColor: '#F5F5F5',
+  },
+  roleButtonSelected: {
+    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  roleButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  roleButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  demoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+    gap: 8,
+  },
+  demoButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

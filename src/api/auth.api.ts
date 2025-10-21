@@ -1,5 +1,5 @@
 // src/api/auth.api.ts
-import api from './axios.config';
+import api from '../services/api';
 import { User, UserRole } from '../types';
 
 export interface LoginRequest {

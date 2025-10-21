@@ -72,8 +72,8 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
       totalPrice: calculateTotal(),
       pickupLocation: crop.location,
       deliveryLocation: {
-        latitude: -1.9500,
-        longitude: 30.0588,
+        latitude: crop.location.latitude + (Math.random() * 0.02 - 0.01),
+        longitude: crop.location.longitude + (Math.random() * 0.02 - 0.01),
         address: deliveryAddress,
       },
     };
@@ -191,8 +191,8 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
         status: 'pending',
         pickupLocation: crop.location,
         deliveryLocation: {
-          latitude: -1.9500,
-          longitude: 30.0588,
+          latitude: crop.location.latitude + (Math.random() * 0.02 - 0.01),
+          longitude: crop.location.longitude + (Math.random() * 0.02 - 0.01),
           address: deliveryAddress,
         },
         createdAt: new Date().toISOString(),
@@ -219,38 +219,69 @@ export default function PlaceOrderScreen({ route, navigation }: any) {
     }
   };
 
+  const getCropEmoji = (cropName: string): string => {
+    const name = cropName.toLowerCase();
+    const emojiMap: { [key: string]: string } = {
+      tomato: '🍅', carrot: '🥕', lettuce: '🥬', broccoli: '🥦', corn: '🌽',
+      onion: '🧅', garlic: '🧄', potato: '🥔', pepper: '🌶️', cucumber: '🥒',
+      apple: '🍎', banana: '🍌', orange: '🍊', lemon: '🍋', strawberry: '🍓',
+      watermelon: '🍉', grape: '🍇', chicken: '🍗', beef: '🥩', pork: '🍖',
+      milk: '🥛', cheese: '🧀', wheat: '🌾', rice: '🍚', bean: '🫘',
+    };
+    for (const [key, emoji] of Object.entries(emojiMap)) {
+      if (name.includes(key)) return emoji;
+    }
+    return '🥦';
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={[styles.header, { backgroundColor: theme.secondary }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
+            <Ionicons name="chevron-back" size={24} color={theme.card} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.card }]}>Place Order</Text>
+          <Text style={[styles.title, { color: theme.card }]}>Order Checkout</Text>
+          <View style={{ width: 24 }} />
         </View>
 
         {/* Offline Indicator */}
         {!isOnline && (
           <View style={[styles.offlineBanner, { backgroundColor: theme.warning }]}>
-            <Ionicons name="cloud-offline-outline" size={20} color="#FFF" />
+            <Ionicons name="cloud-offline-outline" size={16} color="#FFF" />
             <Text style={styles.offlineText}>
-              You are offline. Orders will be saved and synced when connected.
+              Offline • Order will sync when connected
             </Text>
           </View>
         )}
 
         <View style={styles.content}>
-          <Card style={[styles.cropInfo, { backgroundColor: theme.secondary + '20' }]}>
-            <Text style={[styles.cropName, { color: theme.text }]}>{crop.name}</Text>
-            <Text style={[styles.availableText, { color: theme.textSecondary }]}>
-              Available: {crop.quantity} {crop.unit}
-            </Text>
-            {crop.pricePerUnit && (
-              <Text style={[styles.priceText, { color: theme.secondary }]}>
-                {crop.pricePerUnit} RWF/{crop.unit}
-              </Text>
-            )}
-          </Card>
+          {/* Product Summary Card */}
+          <View style={[styles.cropInfo, { backgroundColor: theme.secondary + '10', borderColor: theme.secondary }]}>
+            <View style={styles.cropImageContainer}>
+              <Text style={styles.cropEmoji}>{getCropEmoji(crop.name)}</Text>
+            </View>
+            
+            <View style={styles.cropDetails}>
+              <Text style={[styles.cropName, { color: theme.text }]}>{crop.name}</Text>
+              
+              {crop.pricePerUnit && (
+                <View style={styles.priceSection}>
+                  <Text style={[styles.priceLabel, { color: theme.textSecondary }]}>Price</Text>
+                  <Text style={[styles.price, { color: theme.secondary }]}>
+                    ₦{crop.pricePerUnit} <Text style={styles.unit}>/{crop.unit}</Text>
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.availabilitySection}>
+                <Ionicons name="checkmark-circle" size={16} color={theme.success} />
+                <Text style={[styles.availableText, { color: theme.textSecondary }]}>
+                  {crop.quantity} {crop.unit} available
+                </Text>
+              </View>
+            </View>
+          </View>
 
           <View style={styles.form}>
             <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
@@ -369,140 +400,195 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-  },
-  backButton: {
-    fontSize: 16,
-    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
   },
   content: {
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingBottom: 40,
   },
+
+  // Product Info
   cropInfo: {
-    padding: 20,
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+    gap: 14,
+  },
+  cropImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
+  cropEmoji: {
+    fontSize: 48,
+  },
+  cropDetails: {
+    flex: 1,
+  },
   cropName: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     marginBottom: 8,
+  },
+  priceSection: {
+    marginBottom: 8,
+  },
+  priceLabel: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  unit: {
+    fontSize: 14,
+  },
+  availabilitySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   availableText: {
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: 12,
   },
-  priceText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
+
+  // Form
   form: {
-    marginTop: 15,
+    marginTop: 8,
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    marginTop: 15,
+    marginTop: 16,
   },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
-    fontSize: 16,
+    fontSize: 15,
   },
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   quantityInput: {
-    flex: 1,
+    flex: 2,
   },
   unitSelector: {
+    flex: 1,
     flexDirection: 'row',
-    gap: 5,
+    justifyContent: 'space-between',
   },
   unitButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    flex: 1,
+    paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
+    alignItems: 'center',
   },
   unitText: {
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: 11,
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
+    marginTop: 8,
   },
+
+  // Info Cards
   pickupInfo: {
-    marginTop: 15,
-    padding: 12,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 8,
   },
   pickupLabel: {
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 4,
+    fontWeight: '600',
   },
   pickupText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
+
+  // Total Summary
   totalCard: {
     marginTop: 20,
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderRadius: 10,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
   },
   totalAmount: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
   },
+
+  // Buttons
   orderButton: {
-    flexDirection: 'row',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-  },
-  orderButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  testButton: {
     flexDirection: 'row',
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 24,
+  },
+  orderButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  testButton: {
+    flexDirection: 'row',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   testButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
+
+  // Offline Banner
   offlineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     gap: 8,
   },
   offlineText: {
     color: '#FFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     flex: 1,
   },
