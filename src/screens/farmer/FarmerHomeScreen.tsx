@@ -1,5 +1,5 @@
 // src/screens/farmer/FarmerHomeScreen.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,11 @@ import { fetchCrops } from '../../store/slices/cropsSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Card from '../../components/Card';
+import { FarmerHomeScreenProps } from '../../types';
 
 const { width } = Dimensions.get('window');
 
-export default function FarmerHomeScreen({ navigation }: any) {
+export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) {
   const { user } = useAppSelector((state) => state.auth);
   const { crops, isLoading: cropsLoading } = useAppSelector((state) => state.crops);
   const { orders, isLoading: ordersLoading } = useAppSelector((state) => state.orders);
@@ -39,29 +40,36 @@ export default function FarmerHomeScreen({ navigation }: any) {
     dispatch(fetchOrders());
   };
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  };
+  }, [loadData]);
 
-  // Calculate stats
+  // Calculate stats with useMemo for performance
   const userId = user?._id || user?.id;
-  const myCrops = crops.filter((crop) => {
-    const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
-    return farmerId === userId && crop.status === 'available';
-  });
+  
+  const myCrops = useMemo(() => {
+    return crops.filter((crop) => {
+      const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
+      return farmerId === userId && crop.status === 'available';
+    });
+  }, [crops, userId]);
 
-  const myOrders = orders.filter((order) => {
-    const farmerId = typeof order.farmerId === 'string' ? order.farmerId : order.farmerId?._id;
-    return farmerId === userId;
-  });
+  const myOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const farmerId = typeof order.farmerId === 'string' ? order.farmerId : order.farmerId?._id;
+      return farmerId === userId;
+    });
+  }, [orders, userId]);
 
-  const activeOrders = myOrders.filter(
-    (order) => order.status === 'pending' || order.status === 'in_transit'
-  );
+  const activeOrders = useMemo(() => {
+    return myOrders.filter(
+      (order) => order.status === 'pending' || order.status === 'in_transit'
+    );
+  }, [myOrders]);
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
       icon: 'add-circle',
       title: 'List New Crop',
@@ -86,7 +94,7 @@ export default function FarmerHomeScreen({ navigation }: any) {
       gradient: [theme.secondary, theme.secondaryLight],
       onPress: () => navigation.navigate('ActiveOrders'),
     },
-  ];
+  ], [theme, navigation]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

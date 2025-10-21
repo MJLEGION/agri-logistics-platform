@@ -15,9 +15,12 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityRole?: 'button' | 'link' | 'menuitem';
 }
 
-export default function Button({
+const Button = React.memo<ButtonProps>(({
   title,
   onPress,
   variant = 'primary',
@@ -28,7 +31,10 @@ export default function Button({
   style,
   textStyle,
   fullWidth = false,
-}: ButtonProps) {
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole = 'button',
+}) => {
   const { theme } = useTheme();
 
   const getButtonStyle = (): ViewStyle => {
@@ -120,6 +126,14 @@ export default function Button({
       disabled={disabled || loading}
       style={[getButtonStyle(), style]}
       activeOpacity={disabled ? 0.5 : 0.8}
+      accessible={true}
+      accessibilityLabel={accessibilityLabel || title}
+      accessibilityHint={accessibilityHint}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={{
+        disabled: disabled || loading,
+        busy: loading,
+      }}
     >
       {loading ? (
         <ActivityIndicator color={getLoaderColor()} />
@@ -131,6 +145,10 @@ export default function Button({
       )}
     </TouchableOpacity>
   );
-}
+});
+
+Button.displayName = 'Button';
 
 const styles = StyleSheet.create({});
+
+export default Button;

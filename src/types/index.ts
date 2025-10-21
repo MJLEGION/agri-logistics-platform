@@ -2,6 +2,9 @@
 
 export type UserRole = 'farmer' | 'transporter' | 'buyer';
 
+// Re-export navigation types
+export * from './navigation';
+
 export interface User {
   _id: string;
   id?: string; // For backward compatibility
