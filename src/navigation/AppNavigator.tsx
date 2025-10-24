@@ -50,47 +50,45 @@ export default function AppNavigator() {
     prevUserRef.current = currentUserId;
   }, [user, dispatch]);
 
+  console.log('🔍 AppNavigator - isAuthenticated:', isAuthenticated, 'role:', user?.role);
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : (
+        ) : user?.role === 'farmer' ? (
           <>
-            {user?.role === 'farmer' && (
-              <>
-                <Stack.Screen name="Home" component={FarmerHomeScreen} />
-                <Stack.Screen name="ListCrop" component={ListCropScreen} />
-                <Stack.Screen name="MyListings" component={MyListingsScreen} />
-                <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
-                <Stack.Screen name="EditCrop" component={EditCropScreen} />
-                <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
-              </>
-            )}
-            {user?.role === 'transporter' && (
-              <>
-                <Stack.Screen name="Home" component={EnhancedTransporterDashboard} />
-                <Stack.Screen name="TransporterHome" component={TransporterHomeScreen} />
-                <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
-                <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
-                <Stack.Screen name="TripTracking" component={TripTrackingScreen} />
-                <Stack.Screen name="RoutePlanner" component={RoutePlannerScreen} />
-                <Stack.Screen name="EarningsDashboard" component={EarningsDashboardScreen} />
-                <Stack.Screen name="TripHistory" component={TripHistoryScreen} />
-                <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
-                <Stack.Screen name="LogisticsTest" component={TestScreen} />
-              </>
-            )}
-            {user?.role === 'buyer' && (
-              <>
-                <Stack.Screen name="Home" component={BuyerHomeScreen} />
-                <Stack.Screen name="BrowseCrops" component={BrowseCropsScreen} />
-                <Stack.Screen name="PlaceOrder" component={PlaceOrderScreen} />
-                <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
-                <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
-              </>
-            )}
+            <Stack.Screen name="Home" component={FarmerHomeScreen} />
+            <Stack.Screen name="ListCrop" component={ListCropScreen} />
+            <Stack.Screen name="MyListings" component={MyListingsScreen} />
+            <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
+            <Stack.Screen name="EditCrop" component={EditCropScreen} />
+            <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
           </>
+        ) : user?.role === 'transporter' ? (
+          <>
+            <Stack.Screen name="Home" component={EnhancedTransporterDashboard} />
+            <Stack.Screen name="TransporterHome" component={TransporterHomeScreen} />
+            <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
+            <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
+            <Stack.Screen name="TripTracking" component={TripTrackingScreen} />
+            <Stack.Screen name="RoutePlanner" component={RoutePlannerScreen} />
+            <Stack.Screen name="EarningsDashboard" component={EarningsDashboardScreen} />
+            <Stack.Screen name="TripHistory" component={TripHistoryScreen} />
+            <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
+            <Stack.Screen name="LogisticsTest" component={TestScreen} />
+          </>
+        ) : user?.role === 'buyer' ? (
+          <>
+            <Stack.Screen name="Home" component={BuyerHomeScreen} />
+            <Stack.Screen name="BrowseCrops" component={BrowseCropsScreen} />
+            <Stack.Screen name="PlaceOrder" component={PlaceOrderScreen} />
+            <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
+            <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+          </>
+        ) : (
+          <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

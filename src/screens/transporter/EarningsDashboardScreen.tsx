@@ -12,43 +12,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { fetchAllOrders } from '../../store/slices/ordersSlice';
-import distanceService from '../../services/distanceService';
+import {
+  getCompletedTripsForTransporter,
+  calculateTotalEarnings,
+  getTripsByPeriod,
+} from '../../logistics/utils/tripCalculations';
+import { fetchTrips } from '../../logistics/store/tripsSlice';
 
 type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
 export default function EarningsDashboardScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { orders } = useAppSelector((state) => state.orders);
+  const { trips } = useAppSelector((state) => state.trips);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('today');
 
-  // Fetch orders when screen loads
+  // Fetch trips when screen loads
   useEffect(() => {
-    dispatch(fetchAllOrders());
+    dispatch(fetchTrips() as any);
   }, [dispatch]);
 
-  // Filter my orders
-  const myOrders = useMemo(
-    () =>
-      orders.filter(
-        (order) =>
-          order.transporterId === user?.id || order.transporterId === user?._id
-      ),
-    [orders, user?.id, user?._id]
+  // Filter my completed trips
+  const myCompletedTrips = useMemo(
+    () => getCompletedTripsForTransporter(trips, user?.id || user?._id || ''),
+    [trips, user?.id, user?._id]
   );
-
-  // Calculate distance for order
-  const calculateOrderDistance = (order: any) => {
-    if (!order.pickupLocation || !order.deliveryLocation) return 0;
-    return distanceService.calculateDistance(
-      order.pickupLocation.latitude,
-      order.pickupLocation.longitude,
-      order.deliveryLocation.latitude,
-      order.deliveryLocation.longitude
-    );
-  };
 
   // Get date range based on period
   const getDateRange = () => {
@@ -75,46 +64,31 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     }
   };
 
-  // Filter orders by date range
-  const filteredOrders = useMemo(() => {
+  // Filter trips by date range
+  const filteredTrips = useMemo(() => {
     const { start, end } = getDateRange();
-    return myOrders.filter((order) => {
-      if (order.status !== 'completed') return false;
-      const orderDate = new Date(
-        order.updatedAt || order.createdAt || order.completedAt || Date.now()
-      );
-      return orderDate >= start && orderDate <= end;
+    return myCompletedTrips.filter((trip) => {
+      const tripDate = new Date(trip.completedAt || Date.now());
+      return tripDate >= start && tripDate <= end;
     });
-  }, [myOrders, timePeriod]);
+  }, [myCompletedTrips, timePeriod]);
 
-  // Calculate statistics
+  // Calculate statistics from trips
   const stats = useMemo(() => {
-    const totalTrips = filteredOrders.length;
-    const totalDistance = filteredOrders.reduce((sum, order) => {
-      return sum + calculateOrderDistance(order);
-    }, 0);
-    const totalEarnings = filteredOrders.reduce((sum, order) => {
-      const distance = calculateOrderDistance(order);
-      return sum + distanceService.calculateEarnings(distance);
-    }, 0);
-    const totalFuelCost = filteredOrders.reduce((sum, order) => {
-      const distance = calculateOrderDistance(order);
-      return sum + distanceService.calculateFuelCost(distance);
-    }, 0);
-    const netEarnings = Math.max(0, totalEarnings - totalFuelCost);
-    const averagePerTrip = totalTrips > 0 ? Math.round(netEarnings / totalTrips) : 0;
-    const averageDistance = totalTrips > 0 ? Math.round(totalDistance / totalTrips) : 0;
+    const totalTrips = filteredTrips.length;
+    const totalEarnings = calculateTotalEarnings(filteredTrips);
+    const averagePerTrip = totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0;
 
     return {
       totalTrips,
-      totalDistance: Math.round(totalDistance * 10) / 10,
+      totalDistance: 0, // Distance info can be added to Trip type if needed
       totalEarnings,
-      totalFuelCost,
-      netEarnings,
+      totalFuelCost: 0, // Can be calculated from trip.earnings.fuelCost if available
+      netEarnings: totalEarnings,
       averagePerTrip,
-      averageDistance,
+      averageDistance: 0,
     };
-  }, [filteredOrders]);
+  }, [filteredTrips]);
 
   const periodLabels = {
     today: 'Today',
@@ -332,18 +306,17 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         </View>
 
         {/* Recent Trips */}
-        {filteredOrders.length > 0 && (
+        {filteredTrips.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              🚛 Recent Trips ({filteredOrders.length})
+              🚛 Recent Trips ({filteredTrips.length})
             </Text>
-            {filteredOrders.slice(0, 5).map((order) => {
-              const distance = calculateOrderDistance(order);
-              const earnings = distanceService.calculateEarnings(distance);
+            {filteredTrips.slice(0, 5).map((trip) => {
+              const earnings = trip.earnings?.totalRate || 0;
 
               return (
                 <TouchableOpacity
-                  key={order._id || order.id}
+                  key={trip._id || trip.tripId}
                   style={[styles.tripCard, { backgroundColor: theme.card }]}
                 >
                   <View style={styles.tripLeft}>
@@ -352,10 +325,10 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                     </View>
                     <View style={styles.tripInfo}>
                       <Text style={[styles.tripTitle, { color: theme.text }]}>
-                        Delivery Order
+                        {trip.shipment?.cropName || 'Delivery'}
                       </Text>
                       <Text style={[styles.tripDesc, { color: theme.textSecondary }]}>
-                        {distance} km → {earnings.toLocaleString()} RWF
+                        {trip.shipment?.quantity} {trip.shipment?.unit} → {earnings.toLocaleString()} RWF
                       </Text>
                     </View>
                   </View>

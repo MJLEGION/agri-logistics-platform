@@ -12,12 +12,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAppSelector } from '../store';
 import {
-  initiateMomoPayment,
-  validateMomoPhone,
+  initiateMockPayment,
+  checkMockPaymentStatus,
   formatPhoneNumber,
-  mockMomoPayment,
-} from '../services/momoService';
+  detectPaymentProvider,
+  getProviderName,
+  getCachedMockPayment,
+} from '../services/mockPaymentService';
 
 interface MomoPaymentModalProps {
   visible: boolean;
@@ -37,15 +40,126 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
   onError,
 }) => {
   const { theme } = useTheme();
+  const { user } = useAppSelector((state) => state.auth);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'input' | 'processing' | 'success'>('input');
+  const [step, setStep] = useState<'input' | 'processing' | 'success' | 'confirm'>('input');
+  const [detectedProvider, setDetectedProvider] = useState<'momo' | 'airtel' | null>(null);
+  const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Handle phone number change and detect provider
+  const handlePhoneChange = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    setPhoneNumber(cleaned);
+    
+    // Detect provider when user enters full number
+    if (cleaned.length >= 9) {
+      const provider = detectPaymentProvider('+250' + cleaned);
+      setDetectedProvider(provider);
+    } else {
+      setDetectedProvider(null);
+    }
+  };
+
+  // Validate phone number with proper error messages
+  const validatePhoneNumber = (): { valid: boolean; message?: string } => {
+    if (!phoneNumber) {
+      return { valid: false, message: 'Please enter your phone number' };
+    }
+
+    if (phoneNumber.length < 9) {
+      return { valid: false, message: 'Phone number must be 9 digits' };
+    }
+
+    const formatted = formatPhoneNumber(phoneNumber);
+    const prefix = formatted.substring(4, 7);
+    const validPrefixes = ['078', '079', '073', '072', '075'];
+
+    if (!validPrefixes.includes(prefix)) {
+      return {
+        valid: false,
+        message: 'Please use MTN (078/079) or Airtel (073/072) number',
+      };
+    }
+
+    return { valid: true };
+  };
+
+  // Poll for payment status
+  const pollPaymentStatus = async (referenceId: string) => {
+    let attempts = 0;
+    const maxAttempts = 60; // 5 minutes with 5-second intervals
+
+    const interval = setInterval(async () => {
+      attempts++;
+
+      try {
+        const statusResult = await checkMockPaymentStatus(referenceId);
+
+        if (statusResult.success && statusResult.status === 'completed') {
+          clearInterval(interval);
+          setStatusCheckInterval(null);
+          
+          setStep('success');
+          setTimeout(() => {
+            onSuccess(statusResult.transactionId || referenceId);
+            handleClose();
+          }, 1500);
+        } else if (statusResult.status === 'failed') {
+          clearInterval(interval);
+          setStatusCheckInterval(null);
+          
+          setStep('input');
+          setLoading(false);
+          onError(statusResult.message);
+          Alert.alert('Payment Failed', statusResult.message);
+        }
+
+        // Max attempts reached, still pending
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setStatusCheckInterval(null);
+          
+          setStep('input');
+          setLoading(false);
+          Alert.alert(
+            'Payment Timeout',
+            'We are still waiting for payment confirmation. Your order may still be processing.',
+            [
+              {
+                text: 'OK',
+                onPress: () => onError('Payment timeout'),
+              },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error);
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setStatusCheckInterval(null);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+
+    setStatusCheckInterval(interval);
+  };
 
   const handlePayment = async () => {
     // Validate phone number
-    const validation = validateMomoPhone(phoneNumber);
+    const validation = validatePhoneNumber();
     if (!validation.valid) {
       Alert.alert('Invalid Phone Number', validation.message || 'Please enter a valid phone number');
+      return;
+    }
+
+    if (!detectedProvider) {
+      Alert.alert('Error', 'Could not detect payment provider. Please check your number.');
+      return;
+    }
+
+    if (!user?.email) {
+      Alert.alert('Error', 'Email is required for payment processing');
       return;
     }
 
@@ -53,35 +167,70 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
     setStep('processing');
 
     try {
-      // Use mock payment for demo (replace with real API when backend is ready)
-      const result = await mockMomoPayment({
+      console.log('💳 Processing demo payment...', {
         amount,
-        phoneNumber,
-        orderId,
-        currency: 'RWF',
+        provider: detectedProvider,
+        phone: phoneNumber,
       });
 
-      if (result.success && result.transactionId) {
-        setStep('success');
-        setTimeout(() => {
-          onSuccess(result.transactionId!);
-          handleClose();
-        }, 2000);
+      // Initiate mock payment (demo mode - no real API needed)
+      const result = await initiateMockPayment({
+        amount,
+        phoneNumber: formatPhoneNumber(phoneNumber),
+        orderId,
+        email: user.email,
+        firstName: user.firstName || 'Customer',
+        lastName: user.lastName || '',
+        currency: 'RWF',
+        paymentMethod: detectedProvider,
+      });
+
+      if (result.success && result.referenceId) {
+        console.log('✅ Payment initiated successfully:', result.referenceId);
+
+        // User will receive payment prompt on their phone
+        Alert.alert(
+          'Payment Initiated 📱',
+          `You will receive a payment prompt on ${formatPhoneNumber(phoneNumber)}. Please confirm to complete payment.`,
+          [
+            {
+              text: 'I See The Prompt',
+              onPress: () => {
+                // Start polling for payment status
+                pollPaymentStatus(result.referenceId!);
+              },
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => {
+                setStep('input');
+                setLoading(false);
+              },
+            },
+          ]
+        );
       } else {
         setStep('input');
+        setLoading(false);
         onError(result.message);
-        Alert.alert('Payment Failed', result.message);
+        Alert.alert('Payment Error', result.message);
       }
     } catch (error: any) {
+      console.error('❌ Payment error:', error);
       setStep('input');
-      onError(error.message || 'Payment failed');
-      Alert.alert('Error', 'An error occurred. Please try again.');
-    } finally {
       setLoading(false);
+      onError(error.message || 'Payment failed');
+      Alert.alert('Error', 'An error occurred during payment. Please try again.');
     }
   };
 
   const handleClose = () => {
+    // Clean up polling interval
+    if (statusCheckInterval) {
+      clearInterval(statusCheckInterval);
+      setStatusCheckInterval(null);
+    }
     setPhoneNumber('');
     setStep('input');
     setLoading(false);
@@ -139,9 +288,10 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
                     placeholder="078 XXX XXXX"
                     placeholderTextColor={theme.textSecondary}
                     value={formatDisplayPhone(phoneNumber)}
-                    onChangeText={(text) => setPhoneNumber(text.replace(/\D/g, ''))}
+                    onChangeText={handlePhoneChange}
                     keyboardType="phone-pad"
                     maxLength={12} // 078 812 3456 = 12 chars with spaces
+                    editable={!loading}
                   />
                 </View>
 
@@ -154,15 +304,57 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
 
                 <View style={styles.providersContainer}>
                   <Text style={[styles.providersLabel, { color: theme.textSecondary }]}>
-                    Supported providers:
+                    {detectedProvider ? 'Detected provider:' : 'Supported providers:'}
                   </Text>
                   <View style={styles.providers}>
-                    <View style={[styles.providerBadge, { backgroundColor: theme.warning + '20' }]}>
-                      <Text style={[styles.providerText, { color: theme.warning }]}>MTN MoMo</Text>
-                    </View>
-                    <View style={[styles.providerBadge, { backgroundColor: theme.error + '20' }]}>
-                      <Text style={[styles.providerText, { color: theme.error }]}>Airtel Money</Text>
-                    </View>
+                    {detectedProvider ? (
+                      // Show only detected provider
+                      <View
+                        style={[
+                          styles.providerBadge,
+                          {
+                            backgroundColor:
+                              detectedProvider === 'momo'
+                                ? theme.warning + '30'
+                                : theme.error + '30',
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={16}
+                          color={detectedProvider === 'momo' ? theme.warning : theme.error}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={[
+                            styles.providerText,
+                            {
+                              color:
+                                detectedProvider === 'momo'
+                                  ? theme.warning
+                                  : theme.error,
+                              fontWeight: 'bold',
+                            },
+                          ]}
+                        >
+                          {detectedProvider === 'momo' ? 'MTN MoMo' : 'Airtel Money'}
+                        </Text>
+                      </View>
+                    ) : (
+                      <>
+                        <View style={[styles.providerBadge, { backgroundColor: theme.warning + '20' }]}>
+                          <Text style={[styles.providerText, { color: theme.warning }]}>
+                            MTN MoMo
+                          </Text>
+                        </View>
+                        <View style={[styles.providerBadge, { backgroundColor: theme.error + '20' }]}>
+                          <Text style={[styles.providerText, { color: theme.error }]}>
+                            Airtel Money
+                          </Text>
+                        </View>
+                      </>
+                    )}
                   </View>
                 </View>
               </View>

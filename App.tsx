@@ -13,6 +13,7 @@ import SplashScreen from './src/screens/SplashScreen';
 
 function AppContent() {
   const [isReady, setIsReady] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     // Initialize app with splash screen
@@ -20,13 +21,16 @@ function AppContent() {
       try {
         // Initialize all mock services
         await initializeAllServices();
+        console.log('✅ Services initialized');
+        setIsInitialized(true);
 
-        // Show splash screen for minimum 2 seconds
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Show splash screen for minimum 4 seconds (2 seconds longer)
+        await new Promise(resolve => setTimeout(resolve, 4000));
 
         setIsReady(true);
       } catch (err) {
         console.error('Service init error:', err);
+        setIsInitialized(true);
         setIsReady(true); // Still show app even if init fails
       }
     };

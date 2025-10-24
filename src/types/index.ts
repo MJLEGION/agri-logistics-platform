@@ -5,6 +5,9 @@ export type UserRole = 'farmer' | 'transporter' | 'buyer';
 // Re-export navigation types
 export * from './navigation';
 
+// Re-export logistics types
+export * from '../logistics/types/trip';
+
 export interface User {
   _id: string;
   id?: string; // For backward compatibility
@@ -43,6 +46,7 @@ export interface Order {
   buyerId: string;
   transporterId?: string;
   quantity: number;
+  unit?: 'kg' | 'tons' | 'bags'; // Unit of measurement
   totalPrice: number;
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   pickupLocation: {

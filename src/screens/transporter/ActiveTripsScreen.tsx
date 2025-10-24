@@ -4,30 +4,35 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, 
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+import {
+  fetchTrips,
+  completeTrip,
+} from '../../logistics/store/tripsSlice';
+import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { orders, isLoading } = useAppSelector((state) => state.orders);
+  const { trips, isLoading } = useAppSelector((state) => state.trips);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(fetchOrders());
+      dispatch(fetchTrips() as any);
     }, [dispatch])
   );
 
-  const myTrips = orders.filter(order => 
-    order.transporterId === user?.id || order.transporterId?._id === user?.id
+  const activeTrips = getActiveTripsForTransporter(
+    trips,
+    user?.id || user?._id || ''
   );
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await dispatch(fetchOrders());
+      await dispatch(fetchTrips() as any);
     } finally {
       setIsRefreshing(false);
     }
@@ -37,42 +42,38 @@ export default function ActiveTripsScreen({ navigation }: any) {
     navigation.navigate('TripTracking', { trip });
   };
 
-  const handleUpdateStatus = async (trip: any) => {
-    const nextStatus = trip.status === 'in_progress' ? 'completed' : 'in_progress';
-    
+  const handleCompleteTrip = async (trip: any) => {
     Alert.alert(
-      'Update Delivery Status',
-      `Mark this delivery as ${nextStatus === 'completed' ? 'completed' : 'in progress'}?`,
+      'Complete Delivery',
+      'Mark this delivery as completed?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm',
           onPress: async () => {
             try {
+              console.log('🚀 Completing trip:', trip._id || trip.tripId);
               const result = await dispatch(
-                updateOrder({
-                  id: trip._id || trip.id,
-                  data: { status: nextStatus },
-                })
+                completeTrip(trip._id || trip.tripId) as any
               ).unwrap();
-              
+
               Alert.alert(
                 'Success',
-                nextStatus === 'completed' ? 'Delivery marked as completed! ✓' : 'Status updated!',
+                'Delivery marked as completed! ✓',
                 [
                   {
                     text: 'OK',
                     onPress: () => {
-                      dispatch(fetchOrders());
+                      dispatch(fetchTrips() as any);
                     },
                   },
                 ]
               );
             } catch (error: any) {
-              console.error('Update error:', error);
+              console.error('Complete error:', error);
               Alert.alert(
                 'Error',
-                error?.message || error || 'Failed to update delivery status'
+                error?.message || error || 'Failed to complete delivery'
               );
             }
           },
@@ -83,13 +84,23 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'in_progress': return theme.info;
+      case 'in_transit': return theme.info;
+      case 'accepted': return theme.warning;
       case 'completed': return theme.success;
       default: return theme.textSecondary;
     }
   };
 
-  if (isLoading && myTrips.length === 0) {
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'in_transit': return 'In Transit';
+      case 'accepted': return 'Accepted';
+      case 'completed': return 'Completed';
+      default: return status;
+    }
+  };
+
+  if (isLoading && activeTrips.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={theme.tertiary} />
@@ -104,7 +115,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleRefresh}
             disabled={isRefreshing}
             style={styles.refreshButton}
@@ -117,7 +128,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
         <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
       </View>
 
-      {myTrips.length === 0 ? (
+      {activeTrips.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>🚛</Text>
           <Text style={[styles.emptyText, { color: theme.text }]}>No active trips</Text>
@@ -127,31 +138,33 @@ export default function ActiveTripsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={myTrips}
-          keyExtractor={(item) => item._id || item.id}
+          data={activeTrips}
+          keyExtractor={(item) => item._id || item.tripId}
           contentContainerStyle={styles.list}
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          renderItem={({ item }) => (
+          renderItem={({ item: trip }) => (
             <Card>
               <View style={styles.tripHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
-                  {item.cropId?.name || 'Order'}
+                  {trip.shipment?.cropName || 'Delivery'}
                 </Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                  <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
+                  <Text style={styles.statusText}>{getStatusLabel(trip.status).toUpperCase()}</Text>
                 </View>
               </View>
 
               <View style={styles.detailRow}>
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
-                <Text style={[styles.value, { color: theme.text }]}>{item.quantity}</Text>
+                <Text style={[styles.value, { color: theme.text }]}>
+                  {trip.shipment?.quantity} {trip.shipment?.unit}
+                </Text>
               </View>
 
               <View style={styles.detailRow}>
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Payment:</Text>
                 <Text style={[styles.value, { color: theme.text }]}>
-                  {item.totalPrice.toLocaleString()} RWF
+                  {(trip.earnings?.totalRate || 0).toLocaleString()} RWF
                 </Text>
               </View>
 
@@ -161,7 +174,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
                     📍 From:
                   </Text>
                   <Text style={[styles.locationText, { color: theme.text }]}>
-                    {item.pickupLocation.address}
+                    {trip.pickup?.address || 'Not specified'}
                   </Text>
                 </View>
                 <View style={styles.locationItem}>
@@ -169,26 +182,24 @@ export default function ActiveTripsScreen({ navigation }: any) {
                     🏁 To:
                   </Text>
                   <Text style={[styles.locationText, { color: theme.text }]}>
-                    {item.deliveryLocation.address}
+                    {trip.delivery?.address || 'Not specified'}
                   </Text>
                 </View>
               </View>
 
-              {item.status !== 'completed' && (
+              {trip.status !== 'completed' && (
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[styles.mapButton, { backgroundColor: theme.info }]}
-                    onPress={() => handleViewMap(item)}
+                    onPress={() => handleViewMap(trip)}
                   >
                     <Text style={styles.actionButtonText}>🗺️ View Map</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
-                    onPress={() => handleUpdateStatus(item)}
+                    onPress={() => handleCompleteTrip(trip)}
                   >
-                    <Text style={styles.actionButtonText}>
-                      {item.status === 'in_progress' ? '✓ Complete' : 'Start Trip'}
-                    </Text>
+                    <Text style={styles.actionButtonText}>✓ Complete</Text>
                   </TouchableOpacity>
                 </View>
               )}

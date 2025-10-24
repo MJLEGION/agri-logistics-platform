@@ -14,32 +14,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { fetchAllOrders } from '../../store/slices/ordersSlice';
-import distanceService from '../../services/distanceService';
+import {
+  fetchTrips,
+} from '../../logistics/store/tripsSlice';
+import {
+  getTripHistoryForTransporter,
+  sortTripsByDate,
+} from '../../logistics/utils/tripCalculations';
 
-type TripStatus = 'all' | 'completed' | 'in_progress' | 'accepted';
+type TripStatus = 'all' | 'completed' | 'cancelled';
 
 export default function TripHistoryScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { orders, isLoading } = useAppSelector((state) => state.orders);
+  const { trips, isLoading } = useAppSelector((state) => state.trips);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [filterStatus, setFilterStatus] = useState<TripStatus>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'earnings' | 'distance'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'earnings'>('recent');
 
-  // Fetch orders when screen loads
+  // Fetch trips when screen loads
   useEffect(() => {
-    dispatch(fetchAllOrders());
+    dispatch(fetchTrips() as any);
   }, [dispatch]);
 
-  // Filter my trips
+  // Get trip history for user
   const myTrips = useMemo(
-    () =>
-      orders.filter(
-        (order) =>
-          order.transporterId === user?.id || order.transporterId === user?._id
-      ),
-    [orders, user?.id, user?._id]
+    () => getTripHistoryForTransporter(trips, user?.id || user?._id || ''),
+    [trips, user?.id, user?._id]
   );
 
   // Apply status filter
@@ -53,59 +54,29 @@ export default function TripHistoryScreen({ navigation }: any) {
     const trips = [...filteredTrips];
     switch (sortBy) {
       case 'recent':
+        return sortTripsByDate(trips);
+      case 'earnings':
         return trips.sort(
           (a, b) =>
-            new Date(b.updatedAt || b.createdAt || b.completedAt || new Date()).getTime() -
-            new Date(a.updatedAt || a.createdAt || a.completedAt || new Date()).getTime()
-        );
-      case 'earnings':
-        return trips.sort((a, b) => {
-          const aDistance = calculateDistance(a);
-          const bDistance = calculateDistance(b);
-          return (
-            distanceService.calculateEarnings(bDistance) -
-            distanceService.calculateEarnings(aDistance)
-          );
-        });
-      case 'distance':
-        return trips.sort(
-          (a, b) => calculateDistance(b) - calculateDistance(a)
+            (b.earnings?.totalRate || 0) - (a.earnings?.totalRate || 0)
         );
       default:
         return trips;
     }
   }, [filteredTrips, sortBy]);
 
-  const calculateDistance = (order: any) => {
-    if (!order.pickupLocation || !order.deliveryLocation) return 0;
-    return distanceService.calculateDistance(
-      order.pickupLocation.latitude,
-      order.pickupLocation.longitude,
-      order.deliveryLocation.latitude,
-      order.deliveryLocation.longitude
-    );
-  };
-
-  const calculateEarnings = (order: any) => {
-    const distance = calculateDistance(order);
-    return distanceService.calculateEarnings(distance);
-  };
-
   // Calculate summary stats
   const stats = useMemo(() => {
     const totalTrips = filteredTrips.length;
     const completedTrips = filteredTrips.filter((t) => t.status === 'completed').length;
-    const totalDistance = filteredTrips.reduce((sum, trip) => {
-      return sum + calculateDistance(trip);
-    }, 0);
     const totalEarnings = filteredTrips.reduce((sum, trip) => {
-      return sum + calculateEarnings(trip);
+      return sum + (trip.earnings?.totalRate || 0);
     }, 0);
 
     return {
       totalTrips,
       completedTrips,
-      totalDistance: Math.round(totalDistance * 10) / 10,
+      totalDistance: 0, // Can be added to Trip type if needed
       totalEarnings,
       completionRate:
         totalTrips > 0 ? Math.round((completedTrips / totalTrips) * 100) : 0,
@@ -116,10 +87,12 @@ export default function TripHistoryScreen({ navigation }: any) {
     switch (status) {
       case 'completed':
         return '#10B981';
-      case 'in_progress':
+      case 'in_transit':
         return '#3B82F6';
       case 'accepted':
         return '#F59E0B';
+      case 'cancelled':
+        return '#EF4444';
       default:
         return theme.textSecondary;
     }
@@ -129,10 +102,12 @@ export default function TripHistoryScreen({ navigation }: any) {
     switch (status) {
       case 'completed':
         return 'checkmark-circle';
-      case 'in_progress':
+      case 'in_transit':
         return 'car';
       case 'accepted':
         return 'document';
+      case 'cancelled':
+        return 'close-circle';
       default:
         return 'help-circle';
     }
@@ -142,12 +117,14 @@ export default function TripHistoryScreen({ navigation }: any) {
     switch (status) {
       case 'completed':
         return 'Completed';
-      case 'in_progress':
+      case 'in_transit':
         return 'In Transit';
       case 'accepted':
         return 'Accepted';
       case 'pending':
         return 'Pending';
+      case 'cancelled':
+        return 'Cancelled';
       default:
         return status;
     }
@@ -175,8 +152,7 @@ export default function TripHistoryScreen({ navigation }: any) {
   };
 
   const renderTrip = ({ item: trip }: { item: any }) => {
-    const distance = calculateDistance(trip);
-    const earnings = calculateEarnings(trip);
+    const earnings = trip.earnings?.totalRate || 0;
 
     return (
       <TouchableOpacity
@@ -184,8 +160,8 @@ export default function TripHistoryScreen({ navigation }: any) {
         onPress={() =>
           Alert.alert(
             'Trip Details',
-            `${trip.cropId?.name || 'Order'}\n\n` +
-              `Distance: ${distance} km\n` +
+            `${trip.shipment?.cropName || 'Delivery'}\n\n` +
+              `Quantity: ${trip.shipment?.quantity} ${trip.shipment?.unit}\n` +
               `Earnings: ${earnings.toLocaleString()} RWF\n` +
               `Status: ${getStatusLabel(trip.status)}`
           )
@@ -207,22 +183,22 @@ export default function TripHistoryScreen({ navigation }: any) {
             </View>
             <View style={styles.tripInfo}>
               <Text style={[styles.tripTitle, { color: theme.text }]}>
-                {trip.cropId?.name || 'Order'}
+                {trip.shipment?.cropName || 'Delivery'}
               </Text>
               <Text style={[styles.tripRoute, { color: theme.textSecondary }]}>
-                {trip.pickupLocation.address?.split(',')[0]} → {trip.deliveryLocation.address?.split(',')[0]}
+                {trip.pickup?.address?.split(',')[0]} → {trip.delivery?.address?.split(',')[0]}
               </Text>
               <Text style={[styles.tripDate, { color: theme.textSecondary }]}>
-                {formatDate(trip.updatedAt || trip.createdAt)}
+                {formatDate(trip.completedAt || trip.createdAt)}
               </Text>
             </View>
           </View>
           <View style={styles.tripRight}>
             <Text style={[styles.tripEarnings, { color: '#10B981' }]}>
-              {earnings.toLocaleString()}
+              {earnings.toLocaleString()} RWF
             </Text>
             <Text style={[styles.tripDistance, { color: theme.textSecondary }]}>
-              {distance} km
+              {trip.shipment?.quantity} {trip.shipment?.unit}
             </Text>
             <View
               style={[

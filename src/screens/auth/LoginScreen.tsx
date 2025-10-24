@@ -1,5 +1,5 @@
 // src/screens/auth/LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +20,8 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { UserRole, LoginScreenProps } from '../../types';
+
+const { width, height } = Dimensions.get('window');
 
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
@@ -77,6 +81,40 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole>('farmer');
   const [errors, setErrors] = useState({ phone: '', password: '' });
 
+  // Animation refs
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start animations
+    Animated.parallel([
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 3000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   const validateForm = () => {
     let valid = true;
     const newErrors = { phone: '', password: '' };
@@ -131,11 +169,45 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         >
           {/* Header */}
           <LinearGradient
-            colors={[theme.primary, theme.primaryLight]}
+            colors={['#F77F00', '#FCBF49', '#27AE60']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
+            {/* Animated Background Pattern */}
+            <View style={styles.backgroundPattern}>
+              <Animated.View
+                style={[
+                  styles.circle,
+                  styles.circle1,
+                  { transform: [{ rotate: spin }] },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.circle,
+                  styles.circle2,
+                  {
+                    transform: [
+                      {
+                        rotate: rotateAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['360deg', '0deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.circle,
+                  styles.circle3,
+                  { transform: [{ rotate: spin }] },
+                ]}
+              />
+            </View>
+
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
@@ -143,13 +215,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
 
-            <View style={styles.headerContent}>
+            <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
               <View style={styles.iconContainer}>
                 <Ionicons name="log-in-outline" size={48} color="#FFFFFF" />
               </View>
               <Text style={styles.headerTitle}>Welcome Back</Text>
               <Text style={styles.headerSubtitle}>Sign in to your account</Text>
-            </View>
+            </Animated.View>
           </LinearGradient>
 
           {/* Role Selection */}
@@ -439,5 +511,34 @@ const styles = StyleSheet.create({
   demoButtonText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  // Animated Background Pattern
+  backgroundPattern: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  circle: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 999,
+  },
+  circle1: {
+    width: 300,
+    height: 300,
+    top: -100,
+    right: -100,
+  },
+  circle2: {
+    width: 200,
+    height: 200,
+    bottom: -50,
+    left: -50,
+  },
+  circle3: {
+    width: 150,
+    height: 150,
+    top: height / 2 - 75,
+    right: -75,
   },
 });

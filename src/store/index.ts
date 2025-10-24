@@ -7,6 +7,7 @@ import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authReducer from './slices/authSlice';
 import cropsReducer from './slices/cropsSlice';
 import ordersReducer from './slices/ordersSlice';
+import tripsReducer from '../logistics/store/tripsSlice';
 
 const persistConfig = {
   key: 'root',
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   crops: cropsReducer,
   orders: ordersReducer,
+  trips: tripsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

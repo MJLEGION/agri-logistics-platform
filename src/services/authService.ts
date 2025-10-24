@@ -35,6 +35,13 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
     // Fallback to mock auth service
     try {
       const result = await mockAuthService.register(userData);
+      
+      // ⚠️ CRITICAL: Store token from mock service as well
+      if (result.token) {
+        await setAuthToken(result.token);
+        console.log('🔑 Auth token stored from mock service');
+      }
+      
       console.log('✅ Registration successful (Mock Service)');
       return result;
     } catch (mockError) {
@@ -70,6 +77,13 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     // Fallback to mock auth service
     try {
       const result = await mockAuthService.login(credentials);
+      
+      // ⚠️ CRITICAL: Store token from mock service as well
+      if (result.token) {
+        await setAuthToken(result.token);
+        console.log('🔑 Auth token stored from mock service');
+      }
+      
       console.log('✅ Login successful (Mock Service)');
       return result;
     } catch (mockError) {

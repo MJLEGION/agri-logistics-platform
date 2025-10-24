@@ -1,505 +1,253 @@
-# ✅ Implementation Checklist
+# ✅ Implementation Checklist - Live MoMo Integration
 
-## 📋 Overview
+## Phase 1: Preparation (30 min)
 
-Use this checklist to track the implementation of Mobile Money, Offline Support, and SMS features.
+- [ ] Read FLUTTERWAVE_QUICK_START.md
+- [ ] Create Flutterwave account at https://dashboard.flutterwave.com
+- [ ] Complete email verification
+- [ ] Complete KYC verification (required for live payments)
+- [ ] Generate test API keys in Flutterwave dashboard
+  - [ ] Copy Public Key: `pk_test_xxxxx`
+  - [ ] Copy Secret Key: `sk_test_xxxxx`
 
----
+## Phase 2: Frontend Setup (15 min)
 
-## 🎯 Phase 1: Testing (Current - Mock Mode)
+- [ ] Update `.env` file:
+  ```env
+  EXPO_PUBLIC_FLUTTERWAVE_PUBLIC_KEY=pk_test_xxxxx
+  EXPO_PUBLIC_FLUTTERWAVE_API_URL=https://api.flutterwave.com/v3
+  ```
+- [ ] Verify `src/services/flutterwaveService.ts` exists ✓
+- [ ] Verify `src/components/MomoPaymentModal.tsx` is updated ✓
+- [ ] Run app locally: `npm start` or `expo start`
 
-### Frontend Setup ✅
+## Phase 3: Backend Setup (45 min - 1 hour)
 
-- [x] Install `@react-native-community/netinfo`
-- [x] Create `momoService.ts`
-- [x] Create `offlineService.ts`
-- [x] Create `smsService.ts`
-- [x] Create `MomoPaymentModal` component
-- [x] Create `OfflineBanner` component
-- [x] Update `PlaceOrderScreen` with payment & offline
-- [x] Add `OfflineBanner` to `App.tsx`
+- [ ] Copy code from `BACKEND_PAYMENT_TEMPLATE.js`
+- [ ] Create `routes/payments.js` in your backend
+- [ ] Paste template code into new file
+- [ ] In `app.js`, add:
+  ```javascript
+  const paymentRoutes = require("./routes/payments");
+  app.use("/api/payments", paymentRoutes);
+  ```
+- [ ] Create backend `.env` file with:
+  ```env
+  FLUTTERWAVE_SECRET_KEY=sk_test_xxxxx
+  FLUTTERWAVE_API_URL=https://api.flutterwave.com/v3
+  ```
+- [ ] Install required packages:
+  ```bash
+  npm install axios dotenv
+  ```
+- [ ] Verify backend is running on correct port
+- [ ] Test backend routes with Postman/Insomnia
 
-### Testing Mobile Money (Mock) ✅
+## Phase 4: Integration Testing (30 min)
 
-- [ ] Start app: `npm start`
-- [ ] Navigate to Place Order screen
-- [ ] Click "Proceed to Payment"
-- [ ] Enter test phone: `0788123456`
-- [ ] Verify auto-formatting works
+- [ ] Start backend server
+- [ ] Start frontend app
+- [ ] Open app in emulator/simulator
+- [ ] Login as buyer
+- [ ] Navigate to browse crops
+- [ ] Select any crop
+- [ ] Enter quantity: 100
+- [ ] Enter delivery address: "Test Address"
+- [ ] Click "Place Order"
+- [ ] Payment modal appears ✓
+- [ ] Enter test phone: `0788000001`
+- [ ] System detects: "MTN MoMo" ✓
 - [ ] Click "Pay Now"
-- [ ] Verify processing animation
-- [ ] Verify success screen
-- [ ] Check order created with transaction ID
+- [ ] See processing state
+- [ ] Click "I See The Prompt" (test only)
+- [ ] Wait for payment confirmation (auto in test mode)
+- [ ] See success screen ✓
+- [ ] Order should appear in "My Orders" ✓
 
-### Testing Offline Mode ✅
+## Phase 5: Error Scenario Testing (20 min)
 
-- [ ] Enable Airplane Mode
-- [ ] Navigate to Place Order screen
-- [ ] Verify offline banner appears (orange)
-- [ ] Verify button says "Save Order (Offline)"
-- [ ] Fill order details
-- [ ] Click "Save Order (Offline)"
-- [ ] Confirm save in dialog
-- [ ] Verify success message
-- [ ] Disable Airplane Mode
-- [ ] Verify yellow banner appears with count
-- [ ] Click "Sync Now"
-- [ ] Verify order synced successfully
+- [ ] Test with invalid phone (12345678)
+  - Expected: Error "Phone number must be 9 digits"
+- [ ] Test with wrong provider prefix (0987654321)
+  - Expected: Error "Please use MTN/Airtel number"
+- [ ] Test payment cancellation
+  - Click Cancel button
+  - Should return to input screen
+- [ ] Test with missing quantity
+  - Expected: Error "Please fill all fields"
+- [ ] Verify error messages are helpful
 
-### Testing SMS (Mock) ✅
+## Phase 6: Go Live Preparation (15 min)
 
-- [ ] Place order successfully
-- [ ] Check console/terminal
-- [ ] Verify SMS log appears:
-  ```
-  📱 [MOCK SMS]
-  To: +250788123456
-  Type: order_created
-  Message: Order #... created successfully!
-  ```
+- [ ] Verify all tests pass with test keys
+- [ ] In Flutterwave dashboard: Get live keys
+  - [ ] Copy Public Key: `pk_live_xxxxx`
+  - [ ] Copy Secret Key: `sk_live_xxxxx`
+- [ ] **DO NOT** proceed unless test phase complete!
 
----
+## Phase 7: Production Deployment (15 min)
 
-## 🚀 Phase 2: Backend Setup
-
-### Environment Setup
-
-- [ ] Create `.env` file in backend
-- [ ] Add MTN MoMo credentials:
+- [ ] Update frontend `.env`:
   ```env
-  MOMO_API_KEY=
-  MOMO_API_SECRET=
-  MOMO_SUBSCRIPTION_KEY=
-  MOMO_ENVIRONMENT=sandbox
+  EXPO_PUBLIC_FLUTTERWAVE_PUBLIC_KEY=pk_live_xxxxx
   ```
-- [ ] Add Africa's Talking credentials:
+- [ ] Update backend `.env`:
   ```env
-  SMS_API_KEY=
-  SMS_USERNAME=
+  FLUTTERWAVE_SECRET_KEY=sk_live_xxxxx
   ```
+- [ ] Rebuild and deploy frontend
+- [ ] Restart backend with new environment
+- [ ] Verify API connectivity
+- [ ] Do ONE test transaction with real money
+- [ ] Monitor Flutterwave dashboard for transaction
+- [ ] Verify order created in database
+- [ ] Check SMS notification sent
+- [ ] **STOP if anything fails!**
 
-### Database Updates
+## Phase 8: Post-Launch Monitoring (Daily for 1 week)
 
-- [ ] Create `transactions` table
-  ```sql
-  CREATE TABLE transactions (...)
-  ```
-- [ ] Create `sms_logs` table
-  ```sql
-  CREATE TABLE sms_logs (...)
-  ```
-- [ ] Update `orders` table
-  ```sql
-  ALTER TABLE orders ADD COLUMN payment_method...
-  ```
+- [ ] Check Flutterwave dashboard daily
+  - [ ] Monitor transaction volume
+  - [ ] Check for failed payments
+  - [ ] Verify settlement amounts
+- [ ] Check application logs
+  - [ ] Look for payment errors
+  - [ ] Monitor error rates
+  - [ ] Verify polling success
+- [ ] Test daily with small amounts
+- [ ] Monitor user feedback
+- [ ] Check SMS notifications working
+- [ ] Verify orders created correctly
 
-### Backend Implementation
+## Phase 9: Documentation Updates
 
-- [ ] Install dependencies:
-  ```bash
-  npm install axios uuid africastalking
-  ```
-- [ ] Create `utils/momoAuth.js`
-- [ ] Create `routes/payments.js`
-- [ ] Implement `POST /api/payments/momo/initiate`
-- [ ] Implement `GET /api/payments/momo/status/:id`
-- [ ] Create `services/smsService.js`
-- [ ] Create `routes/notifications.js`
-- [ ] Implement `POST /api/notifications/sms`
-- [ ] Update `POST /api/orders` to accept payment info
-- [ ] Create `utils/smsTemplates.js`
-- [ ] Add routes to main app
-- [ ] Test endpoints with Postman/curl
+- [ ] Add payment info to README
+- [ ] Document Flutterwave setup in deployment guide
+- [ ] Add troubleshooting guide for support team
+- [ ] Create FAQ for users
+- [ ] Document transaction reconciliation process
 
-### API Testing
+## Security Checklist
 
-- [ ] Test MoMo initiate endpoint
-  ```bash
-  curl -X POST http://localhost:3000/api/payments/momo/initiate ...
-  ```
-- [ ] Test MoMo status endpoint
-  ```bash
-  curl http://localhost:3000/api/payments/momo/status/REF_ID
-  ```
-- [ ] Test SMS endpoint
-  ```bash
-  curl -X POST http://localhost:3000/api/notifications/sms ...
-  ```
-- [ ] Test order creation with payment
-  ```bash
-  curl -X POST http://localhost:3000/api/orders ...
-  ```
+- [ ] Secret Key NEVER in frontend code
+- [ ] Secret Key NEVER in git repo
+- [ ] Public Key in environment variables
+- [ ] .gitignore includes .env files
+- [ ] CORS configured on backend
+- [ ] Rate limiting added to payment routes
+- [ ] Input validation on backend
+- [ ] Authentication required on payment routes
+- [ ] HTTPS enforced in production
+- [ ] Transaction logging implemented
+- [ ] Error logging without exposing secrets
 
----
+## Troubleshooting Reference
 
-## 🔐 Phase 3: API Integration
+### If "Backend Error 500"
 
-### MTN Mobile Money Setup
+```
+1. Check backend is running
+2. Check FLUTTERWAVE_SECRET_KEY in .env
+3. Check API_BASE_URL in frontend
+4. Check console logs on backend
+5. Restart backend
+```
 
-- [ ] Sign up at https://momodeveloper.mtn.com/
-- [ ] Create sandbox app
-- [ ] Generate API credentials
-- [ ] Test with sandbox phone numbers
-- [ ] Verify payment flow works
-- [ ] Test status checking
-- [ ] Handle all error cases
+### If "Payment Status Timeout"
 
-### Africa's Talking Setup
+```
+1. Check backend /status route exists
+2. Check route is registered
+3. Check polling interval (5 sec is correct)
+4. Check Flutterwave dashboard for transaction
+5. May retry after 5 minute timeout
+```
 
-- [ ] Sign up at https://africastalking.com/
-- [ ] Get free $0.50 credits
-- [ ] Note API key and username
-- [ ] Test SMS sending
-- [ ] Verify SMS delivery
-- [ ] Check delivery reports
-- [ ] Monitor costs
+### If "Could Not Detect Provider"
 
-### Frontend Integration
+```
+1. Phone must be 9 digits
+2. Accepted: 0788123456, 788123456, +250788123456
+3. Prefix must be: 078, 079 (MTN) or 072, 073, 075 (Airtel)
+4. Use valid test numbers
+```
 
-- [ ] Update API base URL in `axios.config.ts`
-- [ ] Switch from `mockMomoPayment` to `initiateMomoPayment`
-- [ ] Test real payment flow
-- [ ] Verify transaction tracking
-- [ ] Test error handling
-- [ ] Verify SMS notifications sent
+### If "Order Not Created After Payment"
 
----
+```
+1. Payment succeeded (check Flutterwave)
+2. Check order creation endpoint
+3. Check authentication token
+4. Check database connection
+5. Check console for errors
+```
 
-## 🧪 Phase 4: End-to-End Testing
+## Communication Checklist
 
-### Mobile Money Flow
+- [ ] Document for operations team
+- [ ] Notify support of new payment system
+- [ ] Create support FAQ
+- [ ] Brief customer support on process
+- [ ] Set up monitoring alerts
+- [ ] Create escalation contacts
+- [ ] Add to incident response plan
 
-- [ ] Buyer places order
-- [ ] Payment modal opens
-- [ ] Enter real phone number
-- [ ] Receive MoMo prompt on phone
-- [ ] Confirm payment
-- [ ] Verify order created
-- [ ] Check transaction in database
-- [ ] Verify SMS sent
+## Maintenance Checklist
 
-### Offline Flow
+- [ ] Weekly: Check transaction volume
+- [ ] Weekly: Review failed transactions
+- [ ] Monthly: Review fees and settlement
+- [ ] Monthly: Check transaction logs
+- [ ] Quarterly: Review Flutterwave limits
+- [ ] Quarterly: Update documentation
+- [ ] Yearly: Security audit
 
-- [ ] Disable network
-- [ ] Create order offline
-- [ ] Verify saved to queue
-- [ ] Enable network
-- [ ] Verify auto-sync triggers
-- [ ] Check order in database
-- [ ] Verify SMS sent after sync
+## Quick Start Reference
 
-### SMS Flow
+**Before testing, you need:**
 
-- [ ] Create order → Verify SMS sent
-- [ ] Assign transporter → Verify SMS sent
-- [ ] Complete delivery → Verify SMS sent
-- [ ] Process payment → Verify SMS sent (farmer)
+- ✅ `.env` with `EXPO_PUBLIC_FLUTTERWAVE_PUBLIC_KEY`
+- ✅ Backend running with payment routes
+- ✅ Backend `.env` with `FLUTTERWAVE_SECRET_KEY`
 
-### Error Scenarios
+**Test numbers:**
 
-- [ ] Invalid phone number
-- [ ] Insufficient balance
-- [ ] Network timeout
-- [ ] Payment declined
-- [ ] SMS delivery failure
-- [ ] Sync failure (retry logic)
+- ✅ `+250788000001` = MTN (auto-succeeds)
+- ✅ `+250720000001` = Airtel (auto-succeeds)
 
----
+**Live deployment:**
 
-## 🔒 Phase 5: Security & Optimization
+- ✅ Switch to `pk_live_xxxxx`
+- ✅ Switch to `sk_live_xxxxx`
+- ✅ Test one real transaction first
+- ✅ Monitor for 1 week
 
-### Security
+## Success Criteria
 
-- [ ] Add request validation
-  ```bash
-  npm install express-validator
-  ```
-- [ ] Add rate limiting
-  ```bash
-  npm install express-rate-limit
-  ```
-- [ ] Implement webhook verification
-- [ ] Add HTTPS (required for production)
-- [ ] Secure API keys (never in frontend)
-- [ ] Add authentication middleware
-- [ ] Implement CORS properly
-- [ ] Add request logging
+- [ ] User can complete payment flow end-to-end
+- [ ] Order created after payment
+- [ ] SMS notification sent
+- [ ] Payment visible in Flutterwave dashboard
+- [ ] No errors in console
+- [ ] Transaction logged in database
+- [ ] User experience is smooth
+- [ ] All error cases handled gracefully
 
-### Optimization
+## Status Tracker
 
-- [ ] Add payment caching
-- [ ] Implement retry logic
-- [ ] Add background jobs for sync
-- [ ] Optimize database queries
-- [ ] Add indexes to tables
-- [ ] Implement connection pooling
-- [ ] Add error monitoring (Sentry)
-- [ ] Set up logging (Winston)
+| Phase               | Status | Date | Notes |
+| ------------------- | ------ | ---- | ----- |
+| Preparation         | ⬜     |      |       |
+| Frontend            | ⬜     |      |       |
+| Backend             | ⬜     |      |       |
+| Integration Testing | ⬜     |      |       |
+| Error Testing       | ⬜     |      |       |
+| Go Live Prep        | ⬜     |      |       |
+| Production          | ⬜     |      |       |
+| Monitoring          | ⬜     |      |       |
+
+**Legend:** ⬜ = Not Started, 🟨 = In Progress, ✅ = Complete
 
 ---
 
-## 📱 Phase 6: Production Deployment
-
-### Backend Deployment
-
-- [ ] Choose hosting (AWS, Heroku, DigitalOcean)
-- [ ] Set up production database
-- [ ] Configure environment variables
-- [ ] Enable HTTPS/SSL
-- [ ] Set up domain/subdomain
-- [ ] Configure CORS for production
-- [ ] Set up monitoring
-- [ ] Configure backups
-
-### Mobile Money Production
-
-- [ ] Apply for production access (MTN)
-- [ ] Complete KYC verification
-- [ ] Update to production URLs
-- [ ] Update API credentials
-- [ ] Test with real accounts
-- [ ] Monitor transaction success rate
-
-### SMS Production
-
-- [ ] Upgrade Africa's Talking account
-- [ ] Add credits
-- [ ] Configure sender ID
-- [ ] Test delivery rates
-- [ ] Monitor costs
-- [ ] Set up alerts for low balance
-
-### Frontend Updates
-
-- [ ] Update API base URL to production
-- [ ] Remove mock functions
-- [ ] Test on real devices
-- [ ] Test in low-connectivity areas
-- [ ] Verify offline sync works
-- [ ] Test payment flow
-- [ ] Verify SMS delivery
-
----
-
-## 📊 Phase 7: Monitoring & Maintenance
-
-### Monitoring Setup
-
-- [ ] Set up error tracking (Sentry)
-- [ ] Add analytics (Mixpanel, Amplitude)
-- [ ] Monitor payment success rate
-- [ ] Track SMS delivery rate
-- [ ] Monitor offline sync success
-- [ ] Set up alerts for failures
-- [ ] Create dashboard for metrics
-
-### Metrics to Track
-
-- [ ] Payment success rate
-- [ ] Average payment time
-- [ ] SMS delivery rate
-- [ ] Offline sync success rate
-- [ ] Average sync time
-- [ ] Error rates by type
-- [ ] User adoption rates
-
-### Regular Maintenance
-
-- [ ] Review error logs weekly
-- [ ] Check payment reconciliation
-- [ ] Monitor SMS costs
-- [ ] Review failed transactions
-- [ ] Update API credentials
-- [ ] Test backup/restore
-- [ ] Update dependencies
-
----
-
-## 🎯 Phase 8: User Training & Documentation
-
-### User Documentation
-
-- [ ] Create user guide for mobile money
-- [ ] Create guide for offline mode
-- [ ] Add FAQ section
-- [ ] Create video tutorials
-- [ ] Translate to local languages
-- [ ] Add in-app help tooltips
-
-### Training Materials
-
-- [ ] Train support team
-- [ ] Create troubleshooting guide
-- [ ] Document common issues
-- [ ] Create admin dashboard guide
-- [ ] Train field agents
-
----
-
-## 🚀 Launch Checklist
-
-### Pre-Launch
-
-- [ ] All tests passing
-- [ ] Backend deployed
-- [ ] Database backed up
-- [ ] Monitoring active
-- [ ] Support team trained
-- [ ] Documentation complete
-- [ ] Legal/compliance checked
-
-### Launch Day
-
-- [ ] Deploy frontend update
-- [ ] Monitor error rates
-- [ ] Watch payment success rate
-- [ ] Check SMS delivery
-- [ ] Monitor server load
-- [ ] Be ready for support requests
-
-### Post-Launch
-
-- [ ] Collect user feedback
-- [ ] Monitor metrics daily
-- [ ] Fix critical bugs immediately
-- [ ] Plan improvements
-- [ ] Celebrate success! 🎉
-
----
-
-## 📈 Success Metrics
-
-### Week 1
-
-- [ ] 50+ successful payments
-- [ ] 90%+ payment success rate
-- [ ] 95%+ SMS delivery rate
-- [ ] 100+ offline syncs
-- [ ] <5% error rate
-
-### Month 1
-
-- [ ] 500+ successful payments
-- [ ] 95%+ payment success rate
-- [ ] 98%+ SMS delivery rate
-- [ ] 1000+ offline syncs
-- [ ] <2% error rate
-
-### Quarter 1
-
-- [ ] 5000+ successful payments
-- [ ] 98%+ payment success rate
-- [ ] 99%+ SMS delivery rate
-- [ ] 10000+ offline syncs
-- [ ] <1% error rate
-
----
-
-## 🐛 Known Issues & Solutions
-
-### Issue: Payment timeout
-
-**Solution:** Increase timeout to 60s, add retry logic
-
-### Issue: SMS not delivered
-
-**Solution:** Check phone format, verify credits, check spam
-
-### Issue: Offline sync fails
-
-**Solution:** Check network, verify backend reachable, retry
-
-### Issue: Duplicate payments
-
-**Solution:** Add idempotency keys, check transaction ID
-
----
-
-## 📞 Support Contacts
-
-### MTN Mobile Money
-
-- **Support:** https://momodeveloper.mtn.com/support
-- **Email:** momo@mtn.com
-- **Phone:** +250 788 XXX XXX
-
-### Africa's Talking
-
-- **Support:** https://help.africastalking.com/
-- **Email:** support@africastalking.com
-- **Slack:** africastalking.slack.com
-
----
-
-## 📚 Resources
-
-### Documentation
-
-- [x] FEATURES_SUMMARY.md
-- [x] OFFLINE_MOMO_SMS_FEATURES.md
-- [x] QUICK_START_MOMO_OFFLINE.md
-- [x] BACKEND_API_TEMPLATE.md
-- [x] IMPLEMENTATION_CHECKLIST.md (this file)
-
-### External Links
-
-- MTN MoMo Docs: https://momodeveloper.mtn.com/
-- Africa's Talking Docs: https://developers.africastalking.com/
-- React Native NetInfo: https://github.com/react-native-netinfo/react-native-netinfo
-
----
-
-## ✅ Current Status
-
-**Phase 1: Testing (Mock Mode)** ✅ COMPLETE
-
-- All services created
-- All components created
-- Mock testing ready
-
-**Phase 2: Backend Setup** ⏳ PENDING
-
-- Needs backend implementation
-- See BACKEND_API_TEMPLATE.md
-
-**Phase 3: API Integration** ⏳ PENDING
-
-- Needs API credentials
-- Needs backend deployment
-
-**Phase 4-8** ⏳ PENDING
-
-- Awaiting Phase 2-3 completion
-
----
-
-## 🎉 Next Steps
-
-1. **Test Mock Features** (Now)
-
-   - Run `npm start`
-   - Test payment modal
-   - Test offline mode
-   - Check SMS logs
-
-2. **Set Up Backend** (Next)
-
-   - Follow BACKEND_API_TEMPLATE.md
-   - Implement endpoints
-   - Test with Postman
-
-3. **Get API Credentials** (Then)
-
-   - Sign up for MTN MoMo
-   - Sign up for Africa's Talking
-   - Configure credentials
-
-4. **Deploy & Launch** (Finally)
-   - Deploy backend
-   - Update frontend
-   - Test end-to-end
-   - Launch! 🚀
-
----
-
-**You're ready to transform rural agriculture! 🌾📱💰**
+**Good luck! You're ready to go live! 🚀**

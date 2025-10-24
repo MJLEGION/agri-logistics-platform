@@ -15,7 +15,9 @@ const MOCK_TEST_ORDERS: Order[] = [
     cropId: 'CROP_001',
     farmerId: '1',
     buyerId: '2', // Test Buyer ID from mockAuthService
+    transporterId: '3', // Test Transporter ID from mockAuthService
     quantity: 50,
+    unit: 'kg',
     totalPrice: 25000,
     status: 'in_progress',
     pickupLocation: {
@@ -34,7 +36,9 @@ const MOCK_TEST_ORDERS: Order[] = [
     cropId: 'CROP_002',
     farmerId: '1',
     buyerId: '2',
+    transporterId: '3', // Test Transporter ID
     quantity: 100,
+    unit: 'kg',
     totalPrice: 45000,
     status: 'completed',
     pickupLocation: {
@@ -54,6 +58,7 @@ const MOCK_TEST_ORDERS: Order[] = [
     farmerId: '1',
     buyerId: '2',
     quantity: 75,
+    unit: 'kg',
     totalPrice: 35000,
     status: 'accepted',
     pickupLocation: {
@@ -114,13 +119,51 @@ export const updateOrder = createAsyncThunk<Order, UpdateOrderParams, { rejectVa
   }
 );
 
-export const acceptOrder = createAsyncThunk<Order, string, { rejectValue: string }>(
+export const acceptOrder = createAsyncThunk<Order, string, { rejectValue: string; state: any }>(
   'orders/accept',
+  async (id, { rejectWithValue, getState }) => {
+    try {
+      console.log('🎯 acceptOrder thunk started for ID:', id);
+      
+      // Get current user's ID to assign as transporter
+      const state = getState();
+      const currentUser = state.auth?.user;
+      const transporterId = currentUser?._id || currentUser?.id;
+      console.log('👤 Current user (transporter) ID:', transporterId);
+      
+      const result = await orderService.acceptOrder(id, transporterId);
+      console.log('✅ acceptOrder thunk success:', result);
+      return result;
+    } catch (error: any) {
+      console.error('❌ acceptOrder thunk error:', {
+        message: error?.message,
+        response: error?.response?.data,
+        errorString: String(error)
+      });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to accept order';
+      console.log('📤 Returning rejection value:', errorMsg);
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
+export const completeOrder = createAsyncThunk<Order, string, { rejectValue: string }>(
+  'orders/complete',
   async (id, { rejectWithValue }) => {
     try {
-      return await orderService.acceptOrder(id);
+      console.log('🎯 completeOrder thunk started for ID:', id);
+      const result = await orderService.completeDelivery(id);
+      console.log('✅ completeOrder thunk success:', result);
+      return result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to accept order');
+      console.error('❌ completeOrder thunk error:', {
+        message: error?.message,
+        response: error?.response?.data,
+        errorString: String(error)
+      });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to complete order';
+      console.log('📤 Returning rejection value:', errorMsg);
+      return rejectWithValue(errorMsg);
     }
   }
 );
@@ -218,6 +261,24 @@ const ordersSlice = createSlice({
       .addCase(acceptOrder.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || 'Failed to accept order';
+      })
+      // Complete order
+      .addCase(completeOrder.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(completeOrder.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.orders.findIndex(o => o._id === action.payload._id);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        } else {
+          state.orders.push(action.payload);
+        }
+      })
+      .addCase(completeOrder.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Failed to complete order';
       });
   },
 });

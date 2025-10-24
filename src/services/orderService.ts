@@ -115,24 +115,73 @@ export const updateOrder = async (
 /**
  * Accept an order (assign to transporter) - tries real API first, falls back to mock
  */
-export const acceptOrder = async (id: string): Promise<Order> => {
+export const acceptOrder = async (id: string, transporterId?: string): Promise<Order> => {
   try {
     console.log('📦 Attempting to accept order with real API...');
-    const response = await api.put<Order>(`/orders/${id}/accept`);
+    console.log('🌐 Order ID:', id);
+    console.log('👤 Transporter ID:', transporterId);
+    const response = await api.put<any>(`/orders/${id}/accept`, { transporterId });
     console.log('✅ Order accepted (Real API)');
-    return response.data;
-  } catch (error) {
+    console.log('📦 Response:', response.data);
+    
+    // Handle both wrapped and direct response formats
+    const orderData = response.data.data || response.data;
+    console.log('✔️ Order data returned:', orderData);
+    return orderData;
+  } catch (error: any) {
     console.log('⚠️ Real API failed, using mock order service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('❌ API Error:', {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+    });
 
     // Fallback to mock order service
     try {
-      const result = await mockOrderService.acceptOrder(id);
-      console.log('✅ Order accepted (Mock Service)');
+      console.log('🎭 Calling mock order service acceptOrder for ID:', id, 'Transporter:', transporterId);
+      const result = await mockOrderService.acceptOrder(id, transporterId);
+      console.log('✅ Order accepted (Mock Service):', result);
       return result;
-    } catch (mockError) {
+    } catch (mockError: any) {
       const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to accept order';
       console.error('❌ Mock order accept failed:', errorMessage);
+      throw new Error(errorMessage);
+    }
+  }
+};
+
+/**
+ * Complete a delivery - tries real API first, falls back to mock
+ */
+export const completeDelivery = async (id: string): Promise<Order> => {
+  try {
+    console.log('📦 Attempting to complete delivery with real API...');
+    console.log('🌐 Order ID:', id);
+    const response = await api.put<any>(`/orders/${id}/complete`);
+    console.log('✅ Delivery completed (Real API)');
+    console.log('📦 Response:', response.data);
+    
+    // Handle both wrapped and direct response formats
+    const orderData = response.data.data || response.data;
+    console.log('✔️ Order data returned:', orderData);
+    return orderData;
+  } catch (error: any) {
+    console.log('⚠️ Real API failed, using mock order service...');
+    console.error('❌ API Error:', {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+    });
+
+    // Fallback to mock order service
+    try {
+      console.log('🎭 Calling mock order service completeDelivery for ID:', id);
+      const result = await mockOrderService.completeDelivery(id);
+      console.log('✅ Delivery completed (Mock Service):', result);
+      return result;
+    } catch (mockError: any) {
+      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to complete delivery';
+      console.error('❌ Mock order completion failed:', errorMessage);
       throw new Error(errorMessage);
     }
   }

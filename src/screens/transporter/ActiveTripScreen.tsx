@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import TripMapView from '../../components/TripMapView';
 import tripService from '../../services/tripService';
-import mockOrderService from '../../services/mockOrderService';
+import * as orderService from '../../services/orderService';
 
 export default function ActiveTripScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -56,26 +56,84 @@ export default function ActiveTripScreen({ navigation }: any) {
   const handleCompleteDelivery = async () => {
     if (!activeTrip) return;
 
-    Alert.alert('Complete Delivery', 'Mark this delivery as complete?', [
-      { text: 'Cancel', onPress: () => {}, style: 'cancel' },
-      {
-        text: 'Confirm',
-        onPress: async () => {
-          try {
-            setIsLoading(true);
-            await mockOrderService.completeDelivery(activeTrip._id || activeTrip.id);
-            tripService.completeTrip(activeTrip._id || activeTrip.id);
-            await dispatch(fetchOrders());
-            Alert.alert('Success', '✅ Delivery completed! Earnings added to your account.');
-            navigation.goBack();
-          } catch (error: any) {
-            Alert.alert('Error', error?.message || 'Failed to complete delivery');
-          } finally {
-            setIsLoading(false);
-          }
+    console.log('🔘 COMPLETE DELIVERY BUTTON CLICKED! Order ID:', activeTrip._id || activeTrip.id);
+    
+    // Try using browser confirm as fallback for web
+    const isWeb = typeof window !== 'undefined' && !window.cordova;
+    console.log('🌐 Is Web Platform:', isWeb);
+    
+    if (isWeb) {
+      const confirmed = window.confirm('Mark this delivery as complete? 🎉 Earnings will be added to your account.');
+      console.log('✔️ Browser confirm result:', confirmed);
+      
+      if (confirmed) {
+        try {
+          setIsLoading(true);
+          const tripId = activeTrip._id || activeTrip.id;
+          console.log('🚀 Starting complete delivery for ID:', tripId);
+          
+          const result = await orderService.completeDelivery(tripId);
+          console.log('✅ Complete delivery successful:', result);
+          
+          tripService.completeTrip(tripId);
+          await dispatch(fetchOrders());
+          
+          alert('🎉 Success! Delivery completed. Earnings added to your account.');
+          navigation.goBack();
+        } catch (error: any) {
+          console.error('❌ Complete delivery error caught:', error);
+          const errorMessage = 
+            typeof error === 'string' ? error : 
+            error?.message || 
+            String(error) || 
+            'Failed to complete delivery';
+          
+          console.error('📤 Showing error message:', errorMessage);
+          alert('Error: ' + errorMessage);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        console.log('❌ User cancelled the action');
+      }
+    } else {
+      // Native/mobile platform - use Alert.alert
+      Alert.alert('Complete Delivery', 'Mark this delivery as complete? 🎉 Earnings will be added to your account.', [
+        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              const tripId = activeTrip._id || activeTrip.id;
+              console.log('🚀 Starting complete delivery for ID:', tripId);
+              
+              const result = await orderService.completeDelivery(tripId);
+              console.log('✅ Complete delivery successful:', result);
+              
+              tripService.completeTrip(tripId);
+              await dispatch(fetchOrders());
+              
+              Alert.alert('Success! 🎉', 'Delivery completed. Earnings added to your account.', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error: any) {
+              console.error('❌ Complete delivery error caught:', error);
+              const errorMessage = 
+                typeof error === 'string' ? error : 
+                error?.message || 
+                String(error) || 
+                'Failed to complete delivery';
+              
+              console.error('📤 Showing error message:', errorMessage);
+              Alert.alert('Error', errorMessage);
+            } finally {
+              setIsLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   if (!activeTrip) {

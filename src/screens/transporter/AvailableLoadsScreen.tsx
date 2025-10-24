@@ -14,28 +14,31 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { fetchAllOrders, acceptOrder } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { calculateDistance as calcDistance, calculateEarnings as calcEarnings } from '../../services/routeOptimizationService';
+import {
+  fetchTrips,
+  acceptTrip,
+} from '../../logistics/store/tripsSlice';
+import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 
 const { width } = Dimensions.get('window');
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { orders, isLoading } = useAppSelector((state) => state.orders);
+  const { trips, isLoading } = useAppSelector((state) => state.trips);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch orders when screen mounts
+  // Fetch trips when screen mounts
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('=== TRANSPORTER LOADING ORDERS ===');
-        const result = await dispatch(fetchAllOrders()).unwrap();
-        console.log('TOTAL ORDERS FETCHED:', result.length);
+        console.log('=== TRANSPORTER LOADING TRIPS ===');
+        await dispatch(fetchTrips() as any);
+        console.log('TOTAL TRIPS FETCHED:', trips.length);
       } catch (error) {
-        console.log('ERROR LOADING ORDERS:', error);
+        console.log('ERROR LOADING TRIPS:', error);
       }
     };
     loadData();
@@ -45,7 +48,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await dispatch(fetchAllOrders()).unwrap();
+      await dispatch(fetchTrips() as any);
     } catch (error) {
       console.log('Error refreshing:', error);
     }
@@ -57,8 +60,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          console.log('=== SCREEN FOCUSED - AUTO REFRESHING ORDERS ===');
-          await dispatch(fetchAllOrders()).unwrap();
+          console.log('=== SCREEN FOCUSED - AUTO REFRESHING TRIPS ===');
+          await dispatch(fetchTrips() as any);
         } catch (error) {
           console.log('ERROR AUTO-REFRESHING:', error);
         }
@@ -67,46 +70,87 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     }, [dispatch])
   );
 
-  const availableLoads = orders.filter(
-    order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
-  );
+  const pendingTrips = getPendingTripsForTransporter(trips);
 
-  const calculateDistance = (order: any) => {
-    return calcDistance(
-      order.pickupLocation.latitude,
-      order.pickupLocation.longitude,
-      order.deliveryLocation.latitude,
-      order.deliveryLocation.longitude
-    );
-  };
+  console.log('📊 Available Trips Debug:', {
+    totalTrips: trips.length,
+    pendingTrips: pendingTrips.length,
+    tripsDetails: trips.map(t => ({
+      id: t._id || t.tripId,
+      status: t.status,
+      hasTransporter: !!t.transporterId,
+      isPending: t.status === 'pending' && !t.transporterId,
+    })),
+  });
 
-  const calculateEarnings = (order: any) => {
-    const distance = calculateDistance(order);
-    return calcEarnings(distance);
-  };
+  if (pendingTrips.length === 0) {
+    console.warn('⚠️ NO PENDING TRIPS! Check if mock trips have status=pending and no transporterId');
+  } else {
+    console.log(`✅ ${pendingTrips.length} trip(s) available for acceptance`);
+  }
 
-  const handleAcceptLoad = async (orderId: string, cropName: string) => {
-    Alert.alert(
-      `Accept this load?`,
-      `Transport ${cropName}`,
-      [
+  const handleAcceptTrip = async (tripId: string, cropName: string) => {
+    console.log('🔘 ACCEPT TRIP BUTTON CLICKED! Trip ID:', tripId, 'Crop:', cropName);
+
+    // Try using browser confirm as fallback for web
+    const isWeb = typeof window !== 'undefined' && !window.cordova;
+    console.log('🌐 Is Web Platform:', isWeb);
+
+    if (isWeb) {
+      const confirmed = window.confirm(`Accept this trip? Transport ${cropName}`);
+      console.log('✔️ Browser confirm result:', confirmed);
+
+      if (confirmed) {
+        try {
+          console.log('🚀 Accepting trip for ID:', tripId);
+          const result = await dispatch(acceptTrip(tripId) as any).unwrap();
+          console.log('✅ Accept trip successful:', result);
+
+          alert('Success! 🎉 Trip accepted. Head to pickup location!');
+          navigation.navigate('Home');
+        } catch (error: any) {
+          console.error('❌ Accept trip error caught:', error);
+          const errorMessage =
+            typeof error === 'string'
+              ? error
+              : error?.message || String(error) || 'Failed to accept trip';
+
+          console.error('📤 Showing error message:', errorMessage);
+          alert('Error: ' + errorMessage);
+        }
+      } else {
+        console.log('❌ User cancelled the action');
+      }
+    } else {
+      // Native/mobile platform - use Alert.alert
+      Alert.alert(`Accept this trip?`, `Transport ${cropName}`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Accept',
           onPress: async () => {
             try {
-              await dispatch(acceptOrder(orderId)).unwrap();
-              Alert.alert('Success! 🎉', 'Load accepted. Head to pickup location!', [
-                { text: 'OK', onPress: () => navigation.navigate('Home') }
+              console.log('🚀 Accepting trip for ID:', tripId);
+              const result = await dispatch(acceptTrip(tripId) as any).unwrap();
+              console.log('✅ Accept trip successful:', result);
+
+              Alert.alert('Success! 🎉', 'Trip accepted. Head to pickup location!', [
+                { text: 'OK', onPress: () => navigation.navigate('Home') },
               ]);
             } catch (error: any) {
-              Alert.alert('Error', error || 'Failed to accept load');
+              console.error('❌ Accept trip error caught:', error);
+              const errorMessage =
+                typeof error === 'string'
+                  ? error
+                  : error?.message || String(error) || 'Failed to accept trip';
+
+              console.error('📤 Showing error message:', errorMessage);
+              Alert.alert('Error', errorMessage);
             }
           },
           style: 'default',
         },
-      ]
-    );
+      ]);
+    }
   };
 
   if (isLoading) {
@@ -133,22 +177,22 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={theme.card} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>Available Loads</Text>
+        <Text style={[styles.title, { color: theme.card }]}>Available Trips</Text>
         <View style={styles.loadsCountBadge}>
-          <Text style={styles.loadsCountText}>{availableLoads.length}</Text>
+          <Text style={styles.loadsCountText}>{pendingTrips.length}</Text>
         </View>
       </View>
 
-      {availableLoads.length === 0 ? (
+      {pendingTrips.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>No loads available</Text>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No trips available</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Check back later for transport opportunities
           </Text>
           <TouchableOpacity
             style={[styles.refreshBtn, { backgroundColor: theme.tertiary }]}
-            onPress={() => dispatch(fetchAllOrders())}
+            onPress={() => dispatch(fetchTrips() as any)}
           >
             <Ionicons name="refresh" size={16} color="#fff" />
             <Text style={styles.refreshBtnText}>Refresh</Text>
@@ -156,8 +200,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={availableLoads}
-          keyExtractor={(item) => item._id || item.id}
+          data={pendingTrips}
+          keyExtractor={(item) => item._id || item.tripId}
           contentContainerStyle={styles.loadsList}
           refreshControl={
             <RefreshControl
@@ -166,28 +210,21 @@ export default function AvailableLoadsScreen({ navigation }: any) {
               tintColor={theme.tertiary}
             />
           }
-          renderItem={({ item }) => {
-            const distance = calculateDistance(item);
-            const earnings = calculateEarnings(item);
-            
+          renderItem={({ item: trip }) => {
+            const earnings = trip.earnings?.totalRate || 0;
+
             return (
               <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {/* Top Section: Crop & Earnings */}
                 <View style={styles.loadCardTop}>
                   <View style={styles.cropSection}>
                     <Text style={[styles.cropName, { color: theme.text }]} numberOfLines={1}>
-                      {item.cropId?.name || 'Order'}
+                      {trip.shipment?.cropName || 'Agricultural Load'}
                     </Text>
                     <View style={styles.quantityDistance}>
                       <View style={styles.badge}>
                         <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
-                          {item.quantity}
-                        </Text>
-                      </View>
-                      <View style={styles.badge}>
-                        <Ionicons name="navigate" size={12} color={theme.textSecondary} />
-                        <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
-                          {distance.toFixed(1)}km
+                          {trip.shipment?.quantity} {trip.shipment?.unit}
                         </Text>
                       </View>
                     </View>
@@ -199,7 +236,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                       Earn
                     </Text>
                     <Text style={[styles.earningsAmount, { color: theme.success }]}>
-                      ₦{earnings.toLocaleString()}
+                      {earnings.toLocaleString()} RWF
                     </Text>
                   </View>
                 </View>
@@ -213,7 +250,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                         Pickup
                       </Text>
                       <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
-                        {item.pickupLocation?.address || 'Not specified'}
+                        {trip.pickup?.address || 'Not specified'}
                       </Text>
                     </View>
                   </View>
@@ -227,7 +264,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                         Delivery
                       </Text>
                       <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
-                        {item.deliveryLocation?.address || 'Not specified'}
+                        {trip.delivery?.address || 'Not specified'}
                       </Text>
                     </View>
                   </View>
@@ -236,10 +273,15 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                 {/* Accept Button */}
                 <TouchableOpacity
                   style={[styles.acceptBtn, { backgroundColor: theme.tertiary }]}
-                  onPress={() => handleAcceptLoad(item._id || item.id, item.cropId?.name || 'Load')}
+                  onPress={() =>
+                    handleAcceptTrip(
+                      trip._id || trip.tripId,
+                      trip.shipment?.cropName || 'Load'
+                    )
+                  }
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.acceptBtnText}>Accept Load</Text>
+                  <Text style={styles.acceptBtnText}>Accept Trip</Text>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>

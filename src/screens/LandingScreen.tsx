@@ -1,6 +1,6 @@
 // src/screens/LandingScreen.tsx
 // Professional landing page with navigation bar, organized sections, and footer
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,9 +22,45 @@ import FarmerCard from '../components/FarmerCard';
 import HowItWorksCard from '../components/HowItWorksCard';
 import { recommendedFarmers, howItWorks } from '../data/recommendedFarmers';
 
+const { width, height } = Dimensions.get('window');
+
 export default function LandingScreen({ navigation }: any) {
   const { theme, isDark, toggleTheme } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Animation refs
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start animations
+    Animated.parallel([
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 3000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const services = [
     {
@@ -79,14 +117,19 @@ export default function LandingScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Navigation Bar */}
-      <View style={[styles.navbar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+      <LinearGradient
+        colors={['#F77F00', '#FCBF49']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.navbar, { borderBottomColor: theme.border }]}
+      >
         <View style={styles.navbarContent}>
           {/* Logo */}
           <View style={styles.navLogo}>
-            <View style={[styles.navLogoIcon, { backgroundColor: theme.primary }]}>
+            <View style={[styles.navLogoIcon, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
               <Ionicons name="leaf" size={20} color="#FFF" />
             </View>
-            <Text style={[styles.navLogoText, { color: theme.text }]}>AgriLogistics</Text>
+            <Text style={[styles.navLogoText, { color: '#FFF', fontWeight: '700' }]}>AgriLogistics</Text>
           </View>
 
           {/* Nav Actions */}
@@ -99,29 +142,63 @@ export default function LandingScreen({ navigation }: any) {
               <Ionicons
                 name={isDark ? 'sunny' : 'moon'}
                 size={20}
-                color={theme.textSecondary}
+                color="#FFF"
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.navButton, { borderColor: theme.primary }]}
+              style={[styles.navButton, { borderColor: '#FFF' }]}
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.navButtonText, { color: theme.primary }]}>Sign In</Text>
+              <Text style={[styles.navButtonText, { color: '#FFF' }]}>Sign In</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Hero Section - Full-width gradient */}
         <LinearGradient
-          colors={[theme.primary, theme.primaryLight]}
+          colors={['#F77F00', '#FCBF49', '#27AE60']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.hero}
         >
-          <View style={styles.heroContent}>
+          {/* Animated Background Pattern */}
+          <View style={styles.backgroundPattern}>
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle1,
+                { transform: [{ rotate: spin }] },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle2,
+                {
+                  transform: [
+                    {
+                      rotate: rotateAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['360deg', '0deg'],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle3,
+                { transform: [{ rotate: spin }] },
+              ]}
+            />
+          </View>
+
+          <Animated.View style={[styles.heroContent, { opacity: fadeAnim }]}>
             {/* Hero Badge */}
             <View style={styles.heroBadge}>
               <Ionicons name="star" size={12} color={theme.accent} />
@@ -174,7 +251,7 @@ export default function LandingScreen({ navigation }: any) {
                 <Text style={styles.heroStatLabel}>Satisfaction</Text>
               </View>
             </View>
-          </View>
+          </Animated.View>
         </LinearGradient>
 
         {/* Featured Announcement Banner */}
@@ -892,5 +969,34 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 15,
     fontWeight: '600',
+  },
+  // Animated Background Pattern
+  backgroundPattern: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  circle: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 999,
+  },
+  circle1: {
+    width: 300,
+    height: 300,
+    top: -100,
+    right: -100,
+  },
+  circle2: {
+    width: 200,
+    height: 200,
+    bottom: -50,
+    left: -50,
+  },
+  circle3: {
+    width: 150,
+    height: 150,
+    top: height / 2 - 75,
+    right: -75,
   },
 });

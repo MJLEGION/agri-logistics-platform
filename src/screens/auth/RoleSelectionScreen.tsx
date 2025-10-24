@@ -1,5 +1,5 @@
 // src/screens/auth/RoleSelectionScreen.tsx
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,10 +16,44 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import Card from '../../components/Card';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function RoleSelectionScreen({ navigation }: any) {
   const { theme } = useTheme();
+
+  // Animation refs
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Start animations
+    Animated.parallel([
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(rotateAnim, {
+            toValue: 1,
+            duration: 3000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(rotateAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const roles = [
     {
@@ -55,11 +90,45 @@ export default function RoleSelectionScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <LinearGradient
-          colors={[theme.primary, theme.primaryLight]}
+          colors={['#F77F00', '#FCBF49', '#27AE60']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
+          {/* Animated Background Pattern */}
+          <View style={styles.backgroundPattern}>
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle1,
+                { transform: [{ rotate: spin }] },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle2,
+                {
+                  transform: [
+                    {
+                      rotate: rotateAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['360deg', '0deg'],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <Animated.View
+              style={[
+                styles.circle,
+                styles.circle3,
+                { transform: [{ rotate: spin }] },
+              ]}
+            />
+          </View>
+
           <View style={styles.headerTop}>
             <TouchableOpacity
               style={styles.backButton}
@@ -70,13 +139,13 @@ export default function RoleSelectionScreen({ navigation }: any) {
             <ThemeToggle />
           </View>
 
-          <View style={styles.headerContent}>
+          <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
             <Ionicons name="leaf" size={56} color="#FFFFFF" style={styles.headerIcon} />
             <Text style={styles.headerTitle}>Choose Your Role</Text>
             <Text style={styles.headerSubtitle}>
               Select how you want to use Agri-Logistics
             </Text>
-          </View>
+          </Animated.View>
         </LinearGradient>
 
         {/* Roles */}
@@ -281,5 +350,34 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     textAlign: 'center',
+  },
+  // Animated Background Pattern
+  backgroundPattern: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  circle: {
+    position: 'absolute',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 999,
+  },
+  circle1: {
+    width: 300,
+    height: 300,
+    top: -100,
+    right: -100,
+  },
+  circle2: {
+    width: 200,
+    height: 200,
+    bottom: -50,
+    left: -50,
+  },
+  circle3: {
+    width: 150,
+    height: 150,
+    top: height / 2 - 75,
+    right: -75,
   },
 });
