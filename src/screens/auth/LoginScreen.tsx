@@ -17,7 +17,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import { UserRole } from '../../types';
+import { UserRole, LoginScreenProps } from '../../types';
 
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
@@ -67,7 +67,7 @@ const ROLE_INFO: Record<
   },
 };
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation }: LoginScreenProps) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { isLoading, error } = useAppSelector((state) => state.auth);

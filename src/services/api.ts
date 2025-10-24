@@ -8,6 +8,8 @@ import {
   STORAGE_REFRESH_TOKEN_KEY,
   API_ENDPOINTS,
 } from '../constants';
+import { getApiUrl, getApiTimeout, log, logError } from '../utils/platformUtils';
+import { getErrorMessage, isNetworkError, isTimeoutError, isAuthError } from '../utils/errorHandler';
 
 /**
  * API Response Types
@@ -25,35 +27,17 @@ interface AuthResponse {
   user?: any;
 }
 
-/**
- * Automatically detect platform and use correct API URL
- */
-const getApiUrl = (): string => {
-  // For web, always use localhost
-  if (Platform.OS === 'web') {
-    return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
-  }
-
-  // For mobile (iOS/Android), use mobile IP or localhost
-  return (
-    process.env.EXPO_PUBLIC_API_URL_MOBILE ||
-    process.env.EXPO_PUBLIC_API_URL ||
-    process.env.API_BASE_URL ||
-    'http://192.168.1.64:5000/api'
-  );
-};
-
 const API_URL = getApiUrl();
 
 // Log the API URL for debugging
-console.log(`🌐 API URL (${Platform.OS}):`, API_URL);
+log(`API URL (${Platform.OS}):`, API_URL);
 
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: API_TIMEOUT,
+  timeout: getApiTimeout(),
 });
 
 /**
@@ -79,11 +63,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error: AxiosError) => {
-    console.error('❌ Request Error:', error.message);
+    logError(error, 'Request Error');
     return Promise.reject(error);
   }
 );
@@ -93,8 +77,8 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
   (response) => {
-    console.log(
-      `✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`
+    log(
+      `API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`
     );
     return response;
   },
@@ -103,12 +87,8 @@ api.interceptors.response.use(
 
     if (error.response) {
       // Server responded with error
-      console.error(
-        `❌ API Error: ${error.response.status} - ${
-          (error.response.data as any)?.message || error.message
-        }`
-      );
-      console.error('Error details:', error.response.data);
+      const errorMessage = getErrorMessage(error);
+      logError(error, `API Error: ${error.response.status} - ${errorMessage}`);
 
       // Handle 401 Unauthorized - attempt token refresh
       if (error.response.status === 401 && !originalRequest._retry) {
@@ -161,19 +141,24 @@ api.interceptors.response.use(
 
       // Handle other error codes
       if (error.response.status === 403) {
-        console.error('❌ Forbidden - access denied');
+        logError(error, 'Forbidden - access denied');
       }
 
       if (error.response.status === 500) {
-        console.error('❌ Server error - please try again later');
+        logError(error, 'Server error - please try again later');
       }
     } else if (error.request) {
       // Request made but no response
-      console.error('❌ Network Error: No response from server');
-      console.error('Request:', error.request);
+      if (isNetworkError(error)) {
+        logError(error, 'Network Error: No response from server');
+      } else if (isTimeoutError(error)) {
+        logError(error, 'Request timeout');
+      } else {
+        logError(error, 'Request Error');
+      }
     } else {
       // Something else happened
-      console.error('❌ Error:', error.message);
+      logError(error, 'Unknown Error');
     }
 
     return Promise.reject(error);
@@ -188,9 +173,9 @@ const handleTokenRefreshFailure = async (): Promise<void> => {
     await AsyncStorage.removeItem(STORAGE_TOKEN_KEY);
     await AsyncStorage.removeItem(STORAGE_REFRESH_TOKEN_KEY);
     // Note: Navigation to login screen should be handled by Redux auth state
-    console.log('🔐 Cleared auth tokens - user should be logged out');
+    log('Cleared auth tokens - user should be logged out');
   } catch (error) {
-    console.error('Error clearing tokens:', error);
+    logError(error, 'Error clearing tokens');
   }
 };
 
