@@ -10,6 +10,7 @@ import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { calculateDistance as calcDistance } from '../../services/routeOptimizationService';
 
 export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -64,16 +65,12 @@ export default function TransporterHomeScreen({ navigation }: any) {
 
   function calculateDistance(order: any) {
     if (!order.pickupLocation || !order.deliveryLocation) return 0;
-    const lat1 = order.pickupLocation.latitude;
-    const lon1 = order.pickupLocation.longitude;
-    const lat2 = order.deliveryLocation.latitude;
-    const lon2 = order.deliveryLocation.longitude;
-    
-    const distance = Math.sqrt(
-      Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2)
-    ) * 111;
-    
-    return distance;
+    return calcDistance(
+      order.pickupLocation.latitude,
+      order.pickupLocation.longitude,
+      order.deliveryLocation.latitude,
+      order.deliveryLocation.longitude
+    );
   }
 
   return (
@@ -205,9 +202,9 @@ export default function TransporterHomeScreen({ navigation }: any) {
             </TouchableOpacity>
 
             {/* Earnings */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => alert('Earnings dashboard coming soon!')}
+              onPress={() => navigation.navigate('EarningsDashboard')}
             >
               <LinearGradient
                 colors={['#F59E0B', '#D97706']}
@@ -224,9 +221,9 @@ export default function TransporterHomeScreen({ navigation }: any) {
             </TouchableOpacity>
 
             {/* Vehicle Info */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => alert('Vehicle management coming soon!')}
+              onPress={() => navigation.navigate('VehicleProfile')}
             >
               <LinearGradient
                 colors={['#8B5CF6', '#7C3AED']}
@@ -243,9 +240,9 @@ export default function TransporterHomeScreen({ navigation }: any) {
             </TouchableOpacity>
 
             {/* Route Planner */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => alert('Route optimization coming soon!')}
+              onPress={() => navigation.navigate('RoutePlanner')}
             >
               <LinearGradient
                 colors={['#EC4899', '#DB2777']}
@@ -262,9 +259,9 @@ export default function TransporterHomeScreen({ navigation }: any) {
             </TouchableOpacity>
 
             {/* Trip History */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => alert('Trip history coming soon!')}
+              onPress={() => navigation.navigate('TripHistory')}
             >
               <LinearGradient
                 colors={['#06B6D4', '#0891B2']}

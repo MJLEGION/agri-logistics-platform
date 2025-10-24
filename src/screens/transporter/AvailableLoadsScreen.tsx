@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { fetchAllOrders, acceptOrder } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { calculateDistance as calcDistance, calculateEarnings as calcEarnings } from '../../services/routeOptimizationService';
 
 const { width } = Dimensions.get('window');
 
@@ -71,21 +72,17 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   );
 
   const calculateDistance = (order: any) => {
-    const lat1 = order.pickupLocation.latitude;
-    const lon1 = order.pickupLocation.longitude;
-    const lat2 = order.deliveryLocation.latitude;
-    const lon2 = order.deliveryLocation.longitude;
-    
-    const distance = Math.sqrt(
-      Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2)
-    ) * 111;
-    
-    return distance;
+    return calcDistance(
+      order.pickupLocation.latitude,
+      order.pickupLocation.longitude,
+      order.deliveryLocation.latitude,
+      order.deliveryLocation.longitude
+    );
   };
 
   const calculateEarnings = (order: any) => {
     const distance = calculateDistance(order);
-    return Math.round(distance * 1000);
+    return calcEarnings(distance);
   };
 
   const handleAcceptLoad = async (orderId: string, cropName: string) => {

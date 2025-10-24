@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Dimensions,
   RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,14 +16,11 @@ import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchCrops } from '../../store/slices/cropsSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
-import Card from '../../components/Card';
-
-const { width } = Dimensions.get('window');
 
 export default function BuyerHomeScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { crops, isLoading: cropsLoading } = useAppSelector((state) => state.crops);
-  const { orders, isLoading: ordersLoading } = useAppSelector((state) => state.orders);
+  const { crops } = useAppSelector((state) => state.crops);
+  const { orders } = useAppSelector((state) => state.orders);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
 
@@ -49,32 +45,13 @@ export default function BuyerHomeScreen({ navigation }: any) {
   const userId = user?._id || user?.id;
   const availableCrops = crops.filter((crop) => crop.status === 'listed');
   const myOrders = orders.filter((order) => {
-    const buyerId = typeof order.buyerId === 'string' ? order.buyerId : order.buyerId;
+    const buyerId = typeof order.buyerId === 'string' ? order.buyerId : order.buyerId?._id;
     return buyerId === userId;
   });
 
   const activeOrders = myOrders.filter(
     (order) => order.status === 'pending' || order.status === 'accepted' || order.status === 'in_progress'
   );
-
-  const quickActions = [
-    {
-      icon: 'search',
-      title: 'Browse Crops',
-      description: 'Find fresh produce',
-      color: theme.accent,
-      gradient: [theme.accent, theme.accentLight],
-      onPress: () => navigation.navigate('BrowseCrops'),
-    },
-    {
-      icon: 'receipt',
-      title: 'My Orders',
-      description: 'Track purchases',
-      color: theme.primary,
-      gradient: [theme.primary, theme.primaryLight],
-      onPress: () => navigation.navigate('MyOrders'),
-    },
-  ];
 
   // Featured crops (latest available)
   const featuredCrops = availableCrops.slice(0, 3);
@@ -87,197 +64,193 @@ export default function BuyerHomeScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
+        {/* Gradient Header */}
         <LinearGradient
-          colors={[theme.accent, theme.accentLight]}
+          colors={['#3B82F6', '#2563EB']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <View style={styles.avatarContainer}>
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+              <View style={styles.avatarCircle}>
+                <Ionicons name="cart" size={32} color="#FFF" />
               </View>
-              <View>
-                <Text style={styles.greeting}>Hello, {user?.name}! 👋</Text>
-                <Text style={styles.role}>Buyer Dashboard</Text>
+              <View style={styles.headerText}>
+                <Text style={styles.greeting}>Welcome back!</Text>
+                <Text style={styles.userName}>{user?.name}</Text>
+                <Text style={styles.role}>🛒 Buyer</Text>
               </View>
             </View>
             <ThemeToggle />
           </View>
-
-          {/* Stats Cards */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Ionicons name="leaf" size={24} color="#FFFFFF" />
-              <Text style={styles.statNumber}>{availableCrops.length}</Text>
-              <Text style={styles.statLabel}>Available</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="cart" size={24} color="#FFFFFF" />
-              <Text style={styles.statNumber}>{activeOrders.length}</Text>
-              <Text style={styles.statLabel}>Active</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
-              <Text style={styles.statNumber}>
-                {myOrders.filter((o) => o.status === 'completed').length}
-              </Text>
-              <Text style={styles.statLabel}>Completed</Text>
-            </View>
-          </View>
         </LinearGradient>
 
+        {/* Statistics Cards */}
+        <View style={styles.statsContainer}>
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.statIconBox, { backgroundColor: '#27AE60' + '20' }]}>
+              <Ionicons name="leaf" size={24} color="#27AE60" />
+            </View>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
+              {availableCrops.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+              Available Crops
+            </Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
+              <Ionicons name="cart" size={24} color="#F59E0B" />
+            </View>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
+              {activeOrders.length}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+              Active Orders
+            </Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
+              <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+            </View>
+            <Text style={[styles.statNumber, { color: theme.text }]}>
+              {myOrders.filter((o) => o.status === 'completed').length}
+            </Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+              Completed
+            </Text>
+          </View>
+        </View>
+
         {/* Quick Actions */}
-        <View style={styles.section}>
+        <View style={styles.content}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Quick Actions
           </Text>
 
           <View style={styles.actionsGrid}>
-            {quickActions.map((action, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={action.onPress}
-                activeOpacity={0.8}
-                style={styles.actionCardWrapper}
+            {/* Browse Crops */}
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: theme.card }]}
+              onPress={() => navigation.navigate('BrowseCrops')}
+            >
+              <LinearGradient
+                colors={['#3B82F6', '#2563EB']}
+                style={styles.actionGradient}
               >
-                <Card elevated style={styles.actionCard}>
-                  <LinearGradient
-                    colors={action.gradient}
-                    style={styles.actionIconContainer}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <Ionicons name={action.icon as any} size={28} color="#FFFFFF" />
-                  </LinearGradient>
-                  <Text style={[styles.actionTitle, { color: theme.text }]}>
-                    {action.title}
-                  </Text>
-                  <Text style={[styles.actionDescription, { color: theme.textSecondary }]}>
-                    {action.description}
-                  </Text>
-                </Card>
-              </TouchableOpacity>
-            ))}
+                <Ionicons name="search" size={32} color="#FFF" />
+              </LinearGradient>
+              <Text style={[styles.actionTitle, { color: theme.text }]}>
+                Browse Crops
+              </Text>
+              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                {availableCrops.length} available
+              </Text>
+            </TouchableOpacity>
+
+            {/* My Orders */}
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: theme.card }]}
+              onPress={() => navigation.navigate('MyOrders')}
+            >
+              <LinearGradient
+                colors={['#27AE60', '#2ECC71']}
+                style={styles.actionGradient}
+              >
+                <Ionicons name="receipt" size={32} color="#FFF" />
+              </LinearGradient>
+              <Text style={[styles.actionTitle, { color: theme.text }]}>
+                My Orders
+              </Text>
+              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                {myOrders.length} total orders
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Featured Crops */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Featured Crops
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('BrowseCrops')}>
-              <Text style={[styles.seeAll, { color: theme.accent }]}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {featuredCrops.length > 0 ? (
-            featuredCrops.map((crop, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => navigation.navigate('PlaceOrder', { cropId: crop._id || crop.id })}
-              >
-                <Card style={styles.cropCard}>
-                  <View style={styles.cropHeader}>
-                    <View
-                      style={[
-                        styles.cropIcon,
-                        { backgroundColor: `${theme.primary}20` },
-                      ]}
-                    >
-                      <Ionicons name="leaf" size={24} color={theme.primary} />
-                    </View>
-                    <View style={styles.cropContent}>
-                      <Text style={[styles.cropName, { color: theme.text }]}>
-                        {crop.name}
-                      </Text>
-                      <Text style={[styles.cropDetails, { color: theme.textSecondary }]}>
-                        {crop.quantity} {crop.unit}
-                        {crop.pricePerUnit && ` • ${crop.pricePerUnit} RWF/${crop.unit}`}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={theme.textLight} />
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Card style={styles.emptyCard}>
-              <Ionicons name="leaf-outline" size={48} color={theme.textLight} />
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                No crops available at the moment
-              </Text>
-              <TouchableOpacity
-                style={[styles.refreshButton, { backgroundColor: `${theme.accent}15` }]}
-                onPress={onRefresh}
-              >
-                <Text style={[styles.refreshButtonText, { color: theme.accent }]}>
-                  Refresh
-                </Text>
-              </TouchableOpacity>
-            </Card>
-          )}
-        </View>
-
-        {/* Active Orders */}
-        {activeOrders.length > 0 && (
-          <View style={styles.section}>
+        {featuredCrops.length > 0 && (
+          <View style={styles.recentSection}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Active Orders
+                Featured Crops
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('MyOrders')}>
-                <Text style={[styles.seeAll, { color: theme.accent }]}>See All</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('BrowseCrops')}>
+                <Text style={[styles.seeAll, { color: '#3B82F6' }]}>See All</Text>
               </TouchableOpacity>
             </View>
 
-            {activeOrders.slice(0, 2).map((order, index) => (
-              <Card key={index} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <View
-                    style={[
-                      styles.orderIcon,
-                      {
-                        backgroundColor:
-                          order.status === 'pending'
-                            ? `${theme.warning}20`
-                            : `${theme.info}20`,
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={order.status === 'pending' ? 'time' : 'car'}
-                      size={20}
-                      color={order.status === 'pending' ? theme.warning : theme.info}
-                    />
+            {featuredCrops.map((crop) => (
+              <TouchableOpacity
+                key={crop._id || crop.id}
+                style={[styles.activityCardNew, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('PlaceOrder', { cropId: crop._id || crop.id })}
+              >
+                <View style={styles.activityLeft}>
+                  <View style={[styles.activityIconNew, { backgroundColor: '#27AE60' + '20' }]}>
+                    <Ionicons name="leaf" size={20} color="#27AE60" />
                   </View>
-                  <View style={styles.orderContent}>
-                    <Text style={[styles.orderTitle, { color: theme.text }]}>
-                      Order #{order._id?.slice(-6) || order.id?.slice(-6)}
+                  <View style={styles.activityInfo}>
+                    <Text style={[styles.activityTitleNew, { color: theme.text }]}>
+                      {crop.name}
                     </Text>
-                    <Text style={[styles.orderDescription, { color: theme.textSecondary }]}>
-                      {order.status === 'pending' ? 'Awaiting pickup' : 'In transit'}
+                    <Text style={[styles.activityDescNew, { color: theme.textSecondary }]}>
+                      {crop.quantity} {crop.unit} • {crop.pricePerUnit || 0} RWF/{crop.unit}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={theme.textLight} />
                 </View>
-              </Card>
+                <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
+              </TouchableOpacity>
             ))}
           </View>
         )}
 
-        {/* Logout Button */}
-        <View style={styles.section}>
+        {/* Active Orders */}
+        {activeOrders.length > 0 && (
+          <View style={styles.recentSection}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Active Orders
+            </Text>
+            {activeOrders.slice(0, 3).map((order) => (
+              <TouchableOpacity
+                key={order._id || order.id}
+                style={[styles.activityCardNew, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('MyOrders')}
+              >
+                <View style={styles.activityLeft}>
+                  <View style={[styles.activityIconNew, { backgroundColor: '#F59E0B' + '20' }]}>
+                    <Ionicons name="cube" size={20} color="#F59E0B" />
+                  </View>
+                  <View style={styles.activityInfo}>
+                    <Text style={[styles.activityTitleNew, { color: theme.text }]}>
+                      Order #{(order._id || order.id)?.slice(-6)}
+                    </Text>
+                    <Text style={[styles.activityDescNew, { color: theme.textSecondary }]}>
+                      {order.status === 'pending' ? 'Awaiting pickup' : 'In transit'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: order.status === 'pending' ? '#F59E0B' : '#3B82F6' }]}>
+                  <Text style={styles.statusText}>
+                    {order.status === 'pending' ? 'PENDING' : 'IN TRANSIT'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.content}>
           <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: `${theme.error}15` }]}
+            style={[styles.logoutButton, { backgroundColor: theme.error }]}
             onPress={() => dispatch(logout())}
           >
-            <Ionicons name="log-out-outline" size={20} color={theme.error} />
-            <Text style={[styles.logoutText, { color: theme.error }]}>Logout</Text>
+            <Ionicons name="log-out-outline" size={20} color="#FFF" />
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -290,81 +263,105 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
+    padding: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    alignItems: 'flex-start',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    flex: 1,
   },
-  avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerText: {
+    flex: 1,
   },
   greeting: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 14,
+    color: '#FFF',
+    opacity: 0.9,
+    fontWeight: '600',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFF',
+    marginTop: 4,
   },
   role: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: '#FFF',
+    marginTop: 4,
     opacity: 0.9,
-    marginTop: 2,
   },
   statsContainer: {
     flexDirection: 'row',
+    padding: 16,
     gap: 12,
+    marginTop: -20,
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
     padding: 16,
+    borderRadius: 16,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#FFFFFF',
-    marginTop: 8,
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 11,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  section: {
-    padding: 20,
+  content: {
+    padding: 16,
     maxWidth: 600,
     marginHorizontal: 'auto',
     width: '100%',
     alignItems: 'stretch',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 16,
+    marginTop: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
   },
   seeAll: {
     fontSize: 14,
@@ -374,112 +371,99 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginTop: 12,
-  },
-  actionCardWrapper: {
-    width: (width - 52) / 2,
+    marginBottom: 24,
   },
   actionCard: {
+    width: '48%',
+    padding: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  actionIconContainer: {
+  actionGradient: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
   },
   actionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    textAlign: 'center',
     marginBottom: 4,
+    textAlign: 'center',
   },
-  actionDescription: {
+  actionDesc: {
     fontSize: 12,
     textAlign: 'center',
   },
-  cropCard: {
-    marginBottom: 12,
+  recentSection: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
   },
-  cropHeader: {
+  activityCardNew: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  activityLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  cropIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cropContent: {
     flex: 1,
   },
-  cropName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  cropDetails: {
-    fontSize: 13,
-  },
-  orderCard: {
-    marginBottom: 12,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  orderIcon: {
+  activityIconNew: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  orderContent: {
+  activityInfo: {
     flex: 1,
   },
-  orderTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
+  activityTitleNew: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  orderDescription: {
-    fontSize: 13,
+  activityDescNew: {
+    fontSize: 12,
   },
-  emptyCard: {
-    alignItems: 'center',
-    padding: 32,
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  emptyText: {
-    fontSize: 14,
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  refreshButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  refreshButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  statusText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 10,
     padding: 16,
     borderRadius: 12,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
     gap: 8,
   },
   logoutText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
   },

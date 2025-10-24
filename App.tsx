@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { SafeAreaView, StyleSheet } from 'react-native';
@@ -9,12 +9,34 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { OfflineBanner } from './src/components/OfflineBanner';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { initializeAllServices } from './src/services/authService';
+import SplashScreen from './src/screens/SplashScreen';
 
 function AppContent() {
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
-    // Initialize all mock services on app start
-    initializeAllServices().catch(err => console.error('Service init error:', err));
+    // Initialize app with splash screen
+    const initializeApp = async () => {
+      try {
+        // Initialize all mock services
+        await initializeAllServices();
+
+        // Show splash screen for minimum 2 seconds
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        setIsReady(true);
+      } catch (err) {
+        console.error('Service init error:', err);
+        setIsReady(true); // Still show app even if init fails
+      }
+    };
+
+    initializeApp();
   }, []);
+
+  if (!isReady) {
+    return <SplashScreen />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,7 +50,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
+        <PersistGate loading={<SplashScreen />} persistor={persistor}>
           <ThemeProvider>
             <AppContent />
           </ThemeProvider>

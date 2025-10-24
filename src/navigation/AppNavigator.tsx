@@ -14,9 +14,15 @@ import CropDetailsScreen from '../screens/farmer/CropDetailsScreen';
 import EditCropScreen from '../screens/farmer/EditCropScreen';
 import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
+import EnhancedTransporterDashboard from '../screens/transporter/EnhancedTransporterDashboard';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
 import ActiveTripsScreen from '../screens/transporter/ActiveTripsScreen';
 import TripTrackingScreen from '../screens/transporter/TripTrackingScreen';
+import RoutePlannerScreen from '../screens/transporter/RoutePlannerScreen';
+import EarningsDashboardScreen from '../screens/transporter/EarningsDashboardScreen';
+import TripHistoryScreen from '../screens/transporter/TripHistoryScreen';
+import VehicleProfileScreen from '../screens/transporter/VehicleProfileScreen';
+import TestScreen from '../screens/TestScreen';
 import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
 import BrowseCropsScreen from '../screens/buyer/BrowseCropsScreen';
 import PlaceOrderScreen from '../screens/buyer/PlaceOrderScreen';
@@ -63,10 +69,16 @@ export default function AppNavigator() {
             )}
             {user?.role === 'transporter' && (
               <>
-                <Stack.Screen name="Home" component={TransporterHomeScreen} />
+                <Stack.Screen name="Home" component={EnhancedTransporterDashboard} />
+                <Stack.Screen name="TransporterHome" component={TransporterHomeScreen} />
                 <Stack.Screen name="AvailableLoads" component={AvailableLoadsScreen} />
                 <Stack.Screen name="ActiveTrips" component={ActiveTripsScreen} />
                 <Stack.Screen name="TripTracking" component={TripTrackingScreen} />
+                <Stack.Screen name="RoutePlanner" component={RoutePlannerScreen} />
+                <Stack.Screen name="EarningsDashboard" component={EarningsDashboardScreen} />
+                <Stack.Screen name="TripHistory" component={TripHistoryScreen} />
+                <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
+                <Stack.Screen name="LogisticsTest" component={TestScreen} />
               </>
             )}
             {user?.role === 'buyer' && (
