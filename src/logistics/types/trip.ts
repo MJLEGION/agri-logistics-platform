@@ -30,6 +30,7 @@ export interface Trip {
   // Core Identifiers
   _id: string;
   tripId: string; // Unique trip number (TRIP-20250101-001)
+  orderId?: string; // Reference to associated shipment order
   transporterId?: string; // Assigned transporter (optional until accepted)
 
   // Trip Status
@@ -38,9 +39,10 @@ export interface Trip {
   // What's Being Transported
   shipment: Shipment;
 
-  // Locations
+  // Locations (can support multiple stops for consolidated shipments)
   pickup: Location;
   delivery: Location;
+  waypoints?: Location[]; // Optional intermediate stops
 
   // Financial Tracking
   earnings: Earnings;
@@ -51,6 +53,12 @@ export interface Trip {
   startedAt?: Date;
   completedAt?: Date;
   estimatedDuration?: number; // minutes
+  actualDuration?: number; // Actual time taken in minutes
+  distance?: number; // Distance in kilometers
+
+  // Vehicle Information
+  vehicleType?: 'pickup' | 'truck' | 'van' | 'motorcycle';
+  vehicleCapacity?: number; // in kg
 }
 
 // Helper type for creating new trips

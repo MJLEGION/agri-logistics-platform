@@ -1,4 +1,5 @@
-// Mock Order Service for Testing
+// Mock Transport Request Service for Testing
+// Two-role system: shippers request transport, transporters deliver
 // Provides local order management when backend is unavailable
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,113 +7,134 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface MockOrder {
   _id: string;
   id: string;
-  buyerId: string;
-  farmerId: string;
-  transporterId?: string;
-  cropId: string; // Must be a string to match Order type
+  shipperId: string; // Who requests transport (formerly farmerId)
+  transporterId?: string; // Who delivers
+  cargoId: string; // Reference to cargo
   quantity: number;
   unit?: 'kg' | 'tons' | 'bags';
-  totalPrice: number;
+  transportFee: number; // Payment to transporter (formerly totalPrice)
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   pickupLocation: {
     latitude: number;
     longitude: number;
     address: string;
+    contactName?: string;
+    contactPhone?: string;
   };
   deliveryLocation: {
     latitude: number;
     longitude: number;
     address: string;
+    contactName?: string;
+    contactPhone?: string;
   };
+  deliveryNotes?: string;
 }
 
-// Mock order database (in-memory)
+// Mock transport request database (in-memory)
+// Two-role system: shipper requests, transporter delivers
 let mockOrders: MockOrder[] = [
   {
     _id: 'order_1',
     id: 'order_1',
-    buyerId: '2',
-    farmerId: '1',
-    transporterId: '3',
-    cropId: 'crop_1', // String ID, not object
+    shipperId: '1', // Shipper requesting transport
+    transporterId: '3', // Assigned transporter
+    cargoId: 'cargo_1',
     quantity: 100,
     unit: 'kg',
-    totalPrice: 50000,
+    transportFee: 50000,
     status: 'in_progress',
     pickupLocation: {
       latitude: -2.0,
       longitude: 29.7,
       address: 'Farmer Market, Kigali',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -2.1,
       longitude: 29.8,
       address: 'Central Market, Kigali',
+      contactName: 'Market Manager',
+      contactPhone: '+250788123456',
     },
+    deliveryNotes: 'Fresh produce, deliver by noon',
   },
   {
     _id: 'order_2',
     id: 'order_2',
-    buyerId: '2',
-    farmerId: '1',
+    shipperId: '1',
     transporterId: '3',
-    cropId: 'crop_2', // Potatoes
+    cargoId: 'cargo_2', // Potatoes
     quantity: 200,
     unit: 'kg',
-    totalPrice: 80000,
+    transportFee: 80000,
     status: 'completed',
     pickupLocation: {
       latitude: -2.0,
       longitude: 29.7,
       address: 'Farmer Market, Kigali',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -2.2,
       longitude: 29.9,
       address: 'Downtown Market, Kigali',
+      contactName: 'Store Owner',
+      contactPhone: '+250788234567',
     },
   },
   {
     _id: 'order_3',
     id: 'order_3',
-    buyerId: '2',
-    farmerId: '1',
-    cropId: 'crop_3', // Tomatoes
+    shipperId: '1',
+    cargoId: 'cargo_3', // Tomatoes
     quantity: 150,
     unit: 'kg',
-    totalPrice: 60000,
+    transportFee: 60000,
     status: 'pending',
     pickupLocation: {
       latitude: -2.0,
       longitude: 29.7,
       address: 'Farmer Market, Kigali',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -2.3,
       longitude: 29.85,
       address: 'Neighborhood Market, Kigali',
+      contactName: 'Recipient',
+      contactPhone: '+250788345678',
     },
+    deliveryNotes: 'Handle gently, fragile items',
   },
   {
     _id: 'order_4',
     id: 'order_4',
-    buyerId: '2',
-    farmerId: '1',
-    cropId: 'crop_1', // Beans
+    shipperId: '1',
+    transporterId: '3',
+    cargoId: 'cargo_1', // Beans
     quantity: 80,
     unit: 'kg',
-    totalPrice: 32000,
+    transportFee: 32000,
     status: 'accepted',
     pickupLocation: {
       latitude: -2.0,
       longitude: 29.7,
       address: 'Farmer Market, Kigali',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -2.15,
       longitude: 29.9,
       address: 'Business District, Kigali',
+      contactName: 'Office Manager',
+      contactPhone: '+250788456789',
     },
+    deliveryNotes: 'Office hours delivery preferred',
   },
 ];
 

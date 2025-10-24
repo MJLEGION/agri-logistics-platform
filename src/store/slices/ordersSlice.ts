@@ -8,69 +8,82 @@ interface OrdersState {
   error: string | null;
 }
 
-// Mock test orders for development
+// Mock test transport requests for development
+// Two-role system: shipper creates transport request, transporter delivers
 const MOCK_TEST_ORDERS: Order[] = [
   {
     _id: 'TEST_ORDER_001',
-    cropId: 'CROP_001',
-    farmerId: '1',
-    buyerId: '2', // Test Buyer ID from mockAuthService
-    transporterId: '3', // Test Transporter ID from mockAuthService
+    cargoId: 'CARGO_001',
+    shipperId: '1', // Shipper (farmer) requesting transport
+    transporterId: '3', // Transporter assigned
     quantity: 50,
     unit: 'kg',
-    totalPrice: 25000,
+    transportFee: 25000,
     status: 'in_progress',
     pickupLocation: {
       latitude: -1.9536,
       longitude: 29.8739,
       address: 'Kigali Central Market',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -1.9706,
       longitude: 29.9498,
       address: 'Kigali Business District',
+      contactName: 'Store Manager',
+      contactPhone: '+250788999888',
     },
+    deliveryNotes: 'Deliver before 5 PM',
   },
   {
     _id: 'TEST_ORDER_002',
-    cropId: 'CROP_002',
-    farmerId: '1',
-    buyerId: '2',
-    transporterId: '3', // Test Transporter ID
+    cargoId: 'CARGO_002',
+    shipperId: '1',
+    transporterId: '3',
     quantity: 100,
     unit: 'kg',
-    totalPrice: 45000,
+    transportFee: 45000,
     status: 'completed',
     pickupLocation: {
       latitude: -1.9445,
       longitude: 29.8739,
       address: 'Rwamagana Farm',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -1.9500,
       longitude: 30.0588,
       address: 'Kigali Downtown',
+      contactName: 'Warehouse Staff',
+      contactPhone: '+250788777666',
     },
   },
   {
     _id: 'TEST_ORDER_003',
-    cropId: 'CROP_003',
-    farmerId: '1',
-    buyerId: '2',
+    cargoId: 'CARGO_003',
+    shipperId: '1',
+    transporterId: undefined,
     quantity: 75,
     unit: 'kg',
-    totalPrice: 35000,
-    status: 'accepted',
+    transportFee: 35000,
+    status: 'pending',
     pickupLocation: {
       latitude: -1.9550,
       longitude: 29.8500,
       address: 'Nyarugunga Warehouse',
+      contactName: 'John Farmer',
+      contactPhone: '+250700000001',
     },
     deliveryLocation: {
       latitude: -1.9700,
       longitude: 29.9200,
       address: 'Hotel Location',
+      contactName: 'Hotel Manager',
+      contactPhone: '+250788555444',
     },
+    deliveryNotes: 'Handle with care',
   },
 ];
 

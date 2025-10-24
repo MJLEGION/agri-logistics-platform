@@ -1,6 +1,14 @@
 // src/types/index.ts
 
-export type UserRole = 'farmer' | 'transporter' | 'buyer';
+// Two-role logistics platform: Shippers request transport, Transporters deliver
+export type UserRole = 'shipper' | 'transporter';
+
+// Legacy role mapping for backward compatibility
+export type LegacyUserRole = 'farmer' | 'buyer';
+export const roleMigrationMap: Record<LegacyUserRole, UserRole> = {
+  farmer: 'shipper',
+  buyer: 'shipper', // Buyers are now also shippers (anyone can request transport)
+};
 
 // Re-export navigation types
 export * from './navigation';
@@ -21,14 +29,15 @@ export interface User {
   };
 }
 
-export interface Crop {
+// Cargo represents goods to be transported (formerly Crop)
+export interface Cargo {
   _id: string;
   id?: string; // For backward compatibility
-  farmerId: string | { _id: string }; // Can be populated or just ID
-  name: string;
+  shipperId: string | { _id: string }; // Shipper who listed the cargo
+  name: string; // Cargo description (e.g., "Maize", "Coffee Beans")
   quantity: number;
   unit: 'kg' | 'tons' | 'bags';
-  harvestDate: string;
+  readyDate: string; // When cargo is ready for pickup (formerly harvestDate)
   location: {
     latitude: number;
     longitude: number;
@@ -38,39 +47,62 @@ export interface Crop {
   pricePerUnit?: number;
 }
 
-export interface Order {
+// Legacy alias for backward compatibility
+export type Crop = Cargo;
+
+// Transport Request - shipper directly requests transportation service
+export interface TransportRequest {
   _id: string;
   id?: string; // For backward compatibility
-  cropId: string;
-  farmerId: string;
-  buyerId: string;
-  transporterId?: string;
+  cargoId: string; // Reference to cargo being transported
+  shipperId: string; // Shipper requesting transport
+  transporterId?: string; // Assigned transporter (optional until accepted)
+  tripId?: string; // Reference to associated trip
   quantity: number;
-  unit?: 'kg' | 'tons' | 'bags'; // Unit of measurement
-  totalPrice: number;
+  unit?: 'kg' | 'tons' | 'bags';
+  transportFee: number; // Fee paid to transporter
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   pickupLocation: {
     latitude: number;
     longitude: number;
     address: string;
+    contactName?: string;
+    contactPhone?: string;
   };
   deliveryLocation: {
     latitude: number;
     longitude: number;
     address: string;
+    contactName?: string;
+    contactPhone?: string;
   };
+  deliveryNotes?: string; // Special instructions for delivery
+  createdAt?: Date;
+  acceptedAt?: Date;
+  completedAt?: Date;
 }
+
+// Legacy alias for backward compatibility
+export type ShipmentOrder = TransportRequest;
+
+// Legacy alias for backward compatibility
+export type Order = ShipmentOrder;
 
 // Helper type for async thunk parameters
-export interface UpdateCropParams {
+export interface UpdateCargoParams {
   id: string;
-  data: Partial<Omit<Crop, '_id' | 'id' | 'farmerId'>>;
+  data: Partial<Omit<Cargo, '_id' | 'id' | 'shipperId'>>;
 }
 
-export interface UpdateOrderParams {
+export interface UpdateTransportRequestParams {
   id: string;
-  data: Partial<Omit<Order, '_id' | 'id'>>;
+  data: Partial<Omit<TransportRequest, '_id' | 'id'>>;
 }
+
+// Legacy aliases
+export type UpdateCropParams = UpdateCargoParams;
+export type UpdateShipmentOrderParams = UpdateTransportRequestParams;
+export type UpdateOrderParams = UpdateTransportRequestParams;
 
 export interface LoginCredentials {
   phone: string;

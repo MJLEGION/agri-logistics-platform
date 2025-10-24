@@ -4,37 +4,31 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Mock user database
+// Two-role system: shipper (requests transport) and transporter (delivers)
 interface MockUser {
   _id: string;
   name: string;
   phone: string;
   password: string;
-  role: 'farmer' | 'buyer' | 'transporter';
+  role: 'shipper' | 'transporter' | 'farmer'; // Support legacy farmer role
   token: string;
   email?: string;
 }
 
 // Store users in memory and AsyncStorage
+// Two test users: one shipper, one transporter
 let mockUsers: MockUser[] = [
   {
     _id: '1',
-    name: 'Test Farmer',
+    name: 'John Farmer (Shipper)',
     phone: '+250700000001',
     password: 'password123',
-    role: 'farmer',
-    token: 'farmer_token_123',
-  },
-  {
-    _id: '2',
-    name: 'Test Buyer',
-    phone: '+250700000002',
-    password: 'password123',
-    role: 'buyer',
-    token: 'buyer_token_123',
+    role: 'farmer', // Legacy role, will be normalized to 'shipper'
+    token: 'shipper_token_123',
   },
   {
     _id: '3',
-    name: 'Test Transporter',
+    name: 'Mike Transporter',
     phone: '+250700000003',
     password: 'password123',
     role: 'transporter',
@@ -51,12 +45,13 @@ const generateToken = () => 'token_' + Math.random().toString(36).substr(2, 20);
 export const mockAuthService = {
   /**
    * Register a new user
+   * Two-role system: shipper or transporter
    */
   register: async (userData: {
     name: string;
     phone: string;
     password: string;
-    role: 'farmer' | 'buyer' | 'transporter';
+    role: 'shipper' | 'transporter' | 'farmer'; // Support legacy farmer
   }) => {
     // Validate input
     if (!userData.name || !userData.phone || !userData.password || !userData.role) {

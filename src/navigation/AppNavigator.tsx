@@ -23,13 +23,26 @@ import EarningsDashboardScreen from '../screens/transporter/EarningsDashboardScr
 import TripHistoryScreen from '../screens/transporter/TripHistoryScreen';
 import VehicleProfileScreen from '../screens/transporter/VehicleProfileScreen';
 import TestScreen from '../screens/TestScreen';
-import BuyerHomeScreen from '../screens/buyer/BuyerHomeScreen';
-import BrowseCropsScreen from '../screens/buyer/BrowseCropsScreen';
-import PlaceOrderScreen from '../screens/buyer/PlaceOrderScreen';
-import MyOrdersScreen from '../screens/buyer/MyOrdersScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 
 const Stack = createNativeStackNavigator();
+
+// Helper function to normalize role for navigation
+// Two-role system: shipper (requests transport) and transporter (delivers)
+const normalizeRole = (role: string | undefined): string | undefined => {
+  if (!role) return undefined;
+
+  // Map legacy roles to new logistics roles
+  const roleMap: Record<string, string> = {
+    'farmer': 'shipper',
+    'buyer': 'shipper',  // Buyers are now also shippers
+    'shipper': 'shipper',
+    'receiver': 'shipper', // Receivers are now shippers
+    'transporter': 'transporter',
+  };
+
+  return roleMap[role] || role;
+};
 
 export default function AppNavigator() {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
@@ -39,34 +52,27 @@ export default function AppNavigator() {
   // Clear user-specific data when user changes or logs out
   useEffect(() => {
     const currentUserId = user?._id || user?.id || null;
-    
+
     // Check if user has changed (login with different user) or logged out
     if (prevUserRef.current !== null && currentUserId !== prevUserRef.current) {
       // User changed - clear previous user's data
       dispatch(clearCrops());
       dispatch(clearOrders());
     }
-    
+
     prevUserRef.current = currentUserId;
   }, [user, dispatch]);
 
-  console.log('🔍 AppNavigator - isAuthenticated:', isAuthenticated, 'role:', user?.role);
+  const userRole = normalizeRole(user?.role);
+  console.log('🚚 AppNavigator - isAuthenticated:', isAuthenticated, 'role:', user?.role, 'normalized:', userRole);
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : user?.role === 'farmer' ? (
-          <>
-            <Stack.Screen name="Home" component={FarmerHomeScreen} />
-            <Stack.Screen name="ListCrop" component={ListCropScreen} />
-            <Stack.Screen name="MyListings" component={MyListingsScreen} />
-            <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
-            <Stack.Screen name="EditCrop" component={EditCropScreen} />
-            <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
-          </>
-        ) : user?.role === 'transporter' ? (
+        ) : userRole === 'transporter' ? (
+          // TRANSPORTER FLOW - Accept transport requests and deliver cargo
           <>
             <Stack.Screen name="Home" component={EnhancedTransporterDashboard} />
             <Stack.Screen name="TransporterHome" component={TransporterHomeScreen} />
@@ -79,12 +85,16 @@ export default function AppNavigator() {
             <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
             <Stack.Screen name="LogisticsTest" component={TestScreen} />
           </>
-        ) : user?.role === 'buyer' ? (
+        ) : userRole === 'shipper' ? (
+          // SHIPPER FLOW - Request transportation services for cargo
+          // Shippers can list cargo and request transport directly from transporters
           <>
-            <Stack.Screen name="Home" component={BuyerHomeScreen} />
-            <Stack.Screen name="BrowseCrops" component={BrowseCropsScreen} />
-            <Stack.Screen name="PlaceOrder" component={PlaceOrderScreen} />
-            <Stack.Screen name="MyOrders" component={MyOrdersScreen} />
+            <Stack.Screen name="Home" component={FarmerHomeScreen} />
+            <Stack.Screen name="ListCrop" component={ListCropScreen} />
+            <Stack.Screen name="MyListings" component={MyListingsScreen} />
+            <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
+            <Stack.Screen name="EditCrop" component={EditCropScreen} />
+            <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
           </>
         ) : (

@@ -1,6 +1,7 @@
 {
   "name": "agri-logistics-platform",
-  "version": "1.0.0",
+  "version": "2.1.0",
+  "description": "Direct shipper-to-transporter logistics platform for agricultural cargo transportation - no middleman, pure logistics focus",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
