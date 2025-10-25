@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
-  fetchTrips,
+  fetchAllTrips,
   completeTrip,
 } from '../../logistics/store/tripsSlice';
 import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
@@ -20,7 +20,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(fetchTrips() as any);
+      dispatch(fetchAllTrips() as any);
     }, [dispatch])
   );
 
@@ -32,7 +32,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await dispatch(fetchTrips() as any);
+      await dispatch(fetchAllTrips() as any);
     } finally {
       setIsRefreshing(false);
     }
@@ -52,11 +52,20 @@ export default function ActiveTripsScreen({ navigation }: any) {
           text: 'Confirm',
           onPress: async () => {
             try {
-              console.log('🚀 Completing trip:', trip._id || trip.tripId);
+              const tripId = trip._id || trip.tripId;
+              console.log('🚀 Completing trip:', tripId);
+              console.log('📋 Trip object:', JSON.stringify({
+                _id: trip._id,
+                tripId: trip.tripId,
+                status: trip.status,
+                shipmentCropName: trip.shipment?.cropName,
+              }));
+              
               const result = await dispatch(
-                completeTrip(trip._id || trip.tripId) as any
+                completeTrip(tripId) as any
               ).unwrap();
 
+              console.log('✅ Trip completion successful:', result);
               Alert.alert(
                 'Success',
                 'Delivery marked as completed! ✓',
@@ -64,16 +73,18 @@ export default function ActiveTripsScreen({ navigation }: any) {
                   {
                     text: 'OK',
                     onPress: () => {
-                      dispatch(fetchTrips() as any);
+                      console.log('🔄 Refreshing trips list after completion');
+                      dispatch(fetchAllTrips() as any);
                     },
                   },
                 ]
               );
             } catch (error: any) {
-              console.error('Complete error:', error);
+              console.error('❌ Complete error:', error);
+              console.error('Error details:', JSON.stringify(error));
               Alert.alert(
                 'Error',
-                error?.message || error || 'Failed to complete delivery'
+                error?.message || String(error) || 'Failed to complete delivery'
               );
             }
           },

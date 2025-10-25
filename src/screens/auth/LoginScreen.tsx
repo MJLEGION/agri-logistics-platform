@@ -25,15 +25,10 @@ const { width, height } = Dimensions.get('window');
 
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
-  farmer: {
+  shipper: {
     phone: '+250700000001',
     password: 'password123',
-    name: 'Test Farmer',
-  },
-  buyer: {
-    phone: '+250700000002',
-    password: 'password123',
-    name: 'Test Buyer',
+    name: 'Test Shipper',
   },
   transporter: {
     phone: '+250700000003',
@@ -51,17 +46,11 @@ const ROLE_INFO: Record<
     gradient: string[];
   }
 > = {
-  farmer: {
+  shipper: {
     icon: 'leaf',
-    label: 'Farmer',
-    description: 'List and sell your crops',
+    label: 'Shipper',
+    description: 'List and ship your cargo',
     gradient: ['#2E7D32', '#66BB6A'],
-  },
-  buyer: {
-    icon: 'cart',
-    label: 'Buyer',
-    description: 'Browse and purchase crops',
-    gradient: ['#1976D2', '#42A5F5'],
   },
   transporter: {
     icon: 'car',
@@ -78,7 +67,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('farmer');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('shipper');
   const [errors, setErrors] = useState({ phone: '', password: '' });
 
   // Animation refs
@@ -228,7 +217,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <View style={[styles.roleSelectionContainer, { backgroundColor: theme.background }]}>
             <Text style={[styles.roleSelectionLabel, { color: theme.text }]}>Select Your Role</Text>
             <View style={styles.roleButtonsContainer}>
-              {(['farmer', 'buyer', 'transporter'] as UserRole[]).map((role) => {
+              {(['shipper', 'transporter'] as UserRole[]).map((role) => {
                 const isSelected = selectedRole === role;
                 const roleData = ROLE_INFO[role];
                 return (

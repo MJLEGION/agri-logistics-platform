@@ -59,6 +59,9 @@ export interface Trip {
   // Vehicle Information
   vehicleType?: 'pickup' | 'truck' | 'van' | 'motorcycle';
   vehicleCapacity?: number; // in kg
+  
+  // Additional Info
+  notes?: string;
 }
 
 // Helper type for creating new trips

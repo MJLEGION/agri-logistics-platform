@@ -3,14 +3,17 @@
 import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TripMapView from '../components/TripMapView';
 import { useTheme } from '../contexts/ThemeContext';
+import { OrderTrackingScreenProps } from '../types/navigation';
+import { Order } from '../types';
 
-const OrderTrackingScreen = ({ route, navigation }: any) => {
+const OrderTrackingScreen = ({ route, navigation }: OrderTrackingScreenProps) => {
   const { theme } = useTheme();
-  const order = route?.params?.order;
+  const order: Order | undefined = route.params?.order;
 
-  // Use order data if available, otherwise use sample data
+  // Fallback to sample data if order data is not available for development/testing
   const pickupLocation = order?.pickupLocation || {
     latitude: -1.9403, // Kigali, Rwanda
     longitude: 30.0589,
@@ -26,9 +29,11 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
   const orderStatus = order?.status || 'in_progress';
   const isTracking = orderStatus === 'in_progress' || orderStatus === 'accepted';
 
+  const orderId = order?._id?.slice(-6) || order?.id?.slice(-6);
+
   return (
-    <View style={styles.container}>
-      <View style={[styles.header, { backgroundColor: theme.secondary }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.secondary, borderBottomColor: theme.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
@@ -36,9 +41,9 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
           <Ionicons name="arrow-back" size={24} color={theme.card} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>📍 Order Tracking</Text>
-        {order && (
+        {orderId && (
           <Text style={[styles.orderId, { color: theme.card }]}>
-            Order #{order._id?.slice(-6) || order.id?.slice(-6)}
+            Order #{orderId}
           </Text>
         )}
       </View>
@@ -47,7 +52,7 @@ const OrderTrackingScreen = ({ route, navigation }: any) => {
         deliveryLocation={deliveryLocation}
         isTracking={isTracking}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -57,10 +62,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingTop: 50,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   backButton: {
     marginBottom: 12,

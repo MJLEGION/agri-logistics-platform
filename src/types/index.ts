@@ -4,10 +4,9 @@
 export type UserRole = 'shipper' | 'transporter';
 
 // Legacy role mapping for backward compatibility
-export type LegacyUserRole = 'farmer' | 'buyer';
+export type LegacyUserRole = 'farmer';
 export const roleMigrationMap: Record<LegacyUserRole, UserRole> = {
   farmer: 'shipper',
-  buyer: 'shipper', // Buyers are now also shippers (anyone can request transport)
 };
 
 // Re-export navigation types

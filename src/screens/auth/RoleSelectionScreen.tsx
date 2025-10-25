@@ -57,22 +57,13 @@ export default function RoleSelectionScreen({ navigation }: any) {
 
   const roles = [
     {
-      role: 'farmer' as UserRole,
+      role: 'shipper' as UserRole,
       icon: 'leaf',
-      title: 'Farmer',
-      description: 'List and sell your crops directly to buyers',
+      title: 'Shipper',
+      description: 'List and ship your cargo',
       color: theme.primary,
       gradient: [theme.primary, theme.primaryLight],
-      features: ['List crops', 'Manage inventory', 'Track orders'],
-    },
-    {
-      role: 'buyer' as UserRole,
-      icon: 'cart',
-      title: 'Buyer',
-      description: 'Browse and purchase fresh agricultural produce',
-      color: theme.accent,
-      gradient: [theme.accent, theme.accentLight],
-      features: ['Browse crops', 'Place orders', 'Track deliveries'],
+      features: ['List cargo', 'Manage shipments', 'Track deliveries'],
     },
     {
       role: 'transporter' as UserRole,

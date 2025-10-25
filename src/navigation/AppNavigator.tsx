@@ -4,15 +4,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, useAppDispatch } from '../store';
-import { clearCrops } from '../store/slices/cropsSlice';
 import { clearOrders } from '../store/slices/ordersSlice';
 import AuthNavigator from './AuthNavigator';
-import FarmerHomeScreen from '../screens/farmer/FarmerHomeScreen';
-import ListCropScreen from '../screens/farmer/ListCropScreen';
-import MyListingsScreen from '../screens/farmer/MyListingsScreen';
-import CropDetailsScreen from '../screens/farmer/CropDetailsScreen';
-import EditCropScreen from '../screens/farmer/EditCropScreen';
-import ActiveOrdersScreen from '../screens/farmer/ActiveOrdersScreen';
+import ShipperHomeScreen from '../screens/shipper/ShipperHomeScreen';
+import ListCargoScreen from '../screens/shipper/ListCargoScreen';
+import MyCargoScreen from '../screens/shipper/MyCargoScreen';
+import CargoDetailsScreen from '../screens/shipper/CargoDetailsScreen';
+import EditCargoScreen from '../screens/shipper/EditCargoScreen';
+import ShipperActiveOrdersScreen from '../screens/shipper/ShipperActiveOrdersScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
 import EnhancedTransporterDashboard from '../screens/transporter/EnhancedTransporterDashboard';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
@@ -56,7 +55,6 @@ export default function AppNavigator() {
     // Check if user has changed (login with different user) or logged out
     if (prevUserRef.current !== null && currentUserId !== prevUserRef.current) {
       // User changed - clear previous user's data
-      dispatch(clearCrops());
       dispatch(clearOrders());
     }
 
@@ -89,12 +87,12 @@ export default function AppNavigator() {
           // SHIPPER FLOW - Request transportation services for cargo
           // Shippers can list cargo and request transport directly from transporters
           <>
-            <Stack.Screen name="Home" component={FarmerHomeScreen} />
-            <Stack.Screen name="ListCrop" component={ListCropScreen} />
-            <Stack.Screen name="MyListings" component={MyListingsScreen} />
-            <Stack.Screen name="CropDetails" component={CropDetailsScreen} />
-            <Stack.Screen name="EditCrop" component={EditCropScreen} />
-            <Stack.Screen name="ActiveOrders" component={ActiveOrdersScreen} />
+            <Stack.Screen name="Home" component={ShipperHomeScreen} />
+            <Stack.Screen name="ListCargo" component={ListCargoScreen} />
+            <Stack.Screen name="MyCargo" component={MyCargoScreen} />
+            <Stack.Screen name="CargoDetails" component={CargoDetailsScreen} />
+            <Stack.Screen name="EditCargo" component={EditCargoScreen} />
+            <Stack.Screen name="ShipperActiveOrders" component={ShipperActiveOrdersScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
           </>
         ) : (

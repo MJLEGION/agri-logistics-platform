@@ -17,7 +17,7 @@ import {
   calculateTotalEarnings,
   getTripsByPeriod,
 } from '../../logistics/utils/tripCalculations';
-import { fetchTrips } from '../../logistics/store/tripsSlice';
+import { fetchAllTrips } from '../../logistics/store/tripsSlice';
 
 type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
@@ -30,7 +30,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
 
   // Fetch trips when screen loads
   useEffect(() => {
-    dispatch(fetchTrips() as any);
+    dispatch(fetchAllTrips() as any);
   }, [dispatch]);
 
   // Filter my completed trips
@@ -342,7 +342,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         )}
 
         {/* Empty State */}
-        {filteredOrders.length === 0 && (
+        {filteredTrips.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🎯</Text>
             <Text style={[styles.emptyText, { color: theme.text }]}>

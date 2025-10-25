@@ -1,4 +1,4 @@
-// src/screens/farmer/FarmerHomeScreen.tsx
+// src/screens/shipper/ShipperHomeScreen.tsx
 import React, { useEffect, useMemo, useCallback } from 'react';
 import {
   View,
@@ -14,17 +14,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
-import { fetchCrops } from '../../store/slices/cropsSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Card from '../../components/Card';
-import { FarmerHomeScreenProps } from '../../types';
+import { ShipperHomeScreenProps } from '../../types';
 
 const { width } = Dimensions.get('window');
 
-export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) {
+export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps) {
   const { user } = useAppSelector((state) => state.auth);
-  const { crops, isLoading: cropsLoading } = useAppSelector((state) => state.crops);
+  const { cargo, isLoading: cargoLoading } = useAppSelector((state) => state.cargo);
   const { orders, isLoading: ordersLoading } = useAppSelector((state) => state.orders);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
@@ -36,7 +36,7 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
   }, [dispatch]);
 
   const loadData = () => {
-    dispatch(fetchCrops());
+    dispatch(fetchCargo());
     dispatch(fetchOrders());
   };
 
@@ -49,17 +49,17 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
   // Calculate stats with useMemo for performance
   const userId = user?._id || user?.id;
   
-  const myCrops = useMemo(() => {
-    return crops.filter((crop) => {
-      const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
-      return farmerId === userId && crop.status === 'available';
+  const myCargo = useMemo(() => {
+    return cargo.filter((c) => {
+      const shipperId = typeof c.shipperId === 'string' ? c.shipperId : c.shipperId?._id;
+      return shipperId === userId && c.status === 'listed';
     });
-  }, [crops, userId]);
+  }, [cargo, userId]);
 
   const myOrders = useMemo(() => {
     return orders.filter((order) => {
-      const farmerId = typeof order.farmerId === 'string' ? order.farmerId : order.farmerId?._id;
-      return farmerId === userId;
+      const shipperId = typeof order.shipperId === 'string' ? order.shipperId : order.shipperId?._id;
+      return shipperId === userId;
     });
   }, [orders, userId]);
 
@@ -72,19 +72,19 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
   const quickActions = useMemo(() => [
     {
       icon: 'add-circle',
-      title: 'List New Crop',
-      description: 'Add crops for sale',
+      title: 'List New Cargo',
+      description: 'Add cargo for shipping',
       color: theme.primary,
       gradient: [theme.primary, theme.primaryLight],
-      onPress: () => navigation.navigate('ListCrop'),
+      onPress: () => navigation.navigate('ListCargo'),
     },
     {
       icon: 'list',
-      title: 'My Listings',
-      description: 'View all your crops',
+      title: 'My Cargo',
+      description: 'View all your cargo',
       color: theme.accent,
       gradient: [theme.accent, theme.accentLight],
-      onPress: () => navigation.navigate('MyListings'),
+      onPress: () => navigation.navigate('MyCargo'),
     },
     {
       icon: 'cube',
@@ -92,7 +92,7 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
       description: 'Track deliveries',
       color: theme.secondary,
       gradient: [theme.secondary, theme.secondaryLight],
-      onPress: () => navigation.navigate('ActiveOrders'),
+      onPress: () => navigation.navigate('ShipperActiveOrders'),
     },
   ], [theme, navigation]);
 
@@ -119,7 +119,7 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>Welcome back!</Text>
                 <Text style={styles.userName}>{user?.name}</Text>
-                <Text style={styles.role}>🌾 Farmer</Text>
+                <Text style={styles.role}>📦 Shipper</Text>
               </View>
             </View>
             <ThemeToggle />
@@ -133,10 +133,10 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
               <Ionicons name="leaf" size={24} color="#27AE60" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
-              {myCrops.length}
+              {myCargo.length}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Active Crops
+              Active Cargo
             </Text>
           </View>
 
@@ -172,10 +172,10 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
           </Text>
 
           <View style={styles.actionsGrid}>
-            {/* List New Crop */}
+            {/* List New Cargo */}
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('ListCrop')}
+              onPress={() => navigation.navigate('ListCargo')}
             >
               <LinearGradient
                 colors={['#27AE60', '#2ECC71']}
@@ -184,17 +184,17 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
                 <Ionicons name="add-circle" size={32} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
-                List New Crop
+                List New Cargo
               </Text>
               <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                Add crops for sale
+                Add cargo for shipping
               </Text>
             </TouchableOpacity>
 
             {/* My Listings */}
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('MyListings')}
+              onPress={() => navigation.navigate('MyCargo')}
             >
               <LinearGradient
                 colors={['#3B82F6', '#2563EB']}
@@ -203,17 +203,17 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
                 <Ionicons name="list" size={32} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
-                My Listings
+                My Cargo
               </Text>
               <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                {myCrops.length} active crops
+                {myCargo.length} active cargo
               </Text>
             </TouchableOpacity>
 
             {/* Active Orders */}
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('ActiveOrders')}
+              onPress={() => navigation.navigate('ShipperActiveOrders')}
             >
               <LinearGradient
                 colors={['#F59E0B', '#D97706']}
@@ -241,7 +241,7 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
               <TouchableOpacity
                 key={order._id || order.id}
                 style={[styles.activityCardNew, { backgroundColor: theme.card }]}
-                onPress={() => navigation.navigate('ActiveOrders')}
+                onPress={() => navigation.navigate('ShipperActiveOrders')}
               >
                 <View style={styles.activityLeft}>
                   <View style={[styles.activityIconNew, { backgroundColor: '#F59E0B' + '20' }]}>
@@ -249,7 +249,7 @@ export default function FarmerHomeScreen({ navigation }: FarmerHomeScreenProps) 
                   </View>
                   <View style={styles.activityInfo}>
                     <Text style={[styles.activityTitleNew, { color: theme.text }]}>
-                      {order.cropId?.name || 'Order'}
+                      {order.cargoId?.name || 'Order'}
                     </Text>
                     <Text style={[styles.activityDescNew, { color: theme.textSecondary }]}>
                       {order.pickupLocation?.address || 'Pickup location'} → {order.deliveryLocation?.address || 'Delivery location'}

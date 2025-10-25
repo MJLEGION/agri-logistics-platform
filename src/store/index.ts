@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers } from 'redux';
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authReducer from './slices/authSlice';
-import cropsReducer from './slices/cropsSlice';
+import cargoReducer from './slices/cargoSlice';
 import ordersReducer from './slices/ordersSlice';
 import tripsReducer from '../logistics/store/tripsSlice';
 
@@ -17,7 +17,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  crops: cropsReducer,
+  cargo: cargoReducer,
   orders: ordersReducer,
   trips: tripsReducer,
 });

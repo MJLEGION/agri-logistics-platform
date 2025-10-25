@@ -1,5 +1,6 @@
 // Navigation type definitions for type safety
 import { NavigationProp } from '@react-navigation/native';
+import { Order } from './index';
 
 export type RootStackParamList = {
   // Auth Stack
@@ -9,24 +10,20 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   
-  // Farmer Screens
+  // Shipper Screens
   Home: undefined;
-  ListCrop: undefined;
-  MyListings: undefined;
-  CropDetails: { cropId: string };
-  EditCrop: { cropId: string };
-  ActiveOrders: undefined;
+  ListCargo: undefined;
+  MyCargo: undefined;
+  CargoDetails: { cargoId: string };
+  EditCargo: { cargoId: string };
+  ShipperActiveOrders: undefined;
   
   // Transporter Screens
   AvailableLoads: undefined;
   ActiveTrips: undefined;
   TripTracking: { orderId: string };
   
-  // Buyer Screens
-  BrowseCrops: undefined;
-  PlaceOrder: { cropId: string };
-  MyOrders: undefined;
-  OrderTracking: { orderId: string };
+  OrderTracking: { order: Order };
 };
 
 // Navigation prop types for screens
@@ -38,25 +35,21 @@ export type NavigationProps<T extends keyof RootStackParamList> = {
 };
 
 // Screen-specific navigation types
-export type FarmerHomeScreenProps = NavigationProps<'Home'>;
-export type BuyerHomeScreenProps = NavigationProps<'Home'>;
+export type ShipperHomeScreenProps = NavigationProps<'Home'>;
 export type TransporterHomeScreenProps = NavigationProps<'Home'>;
 export type LoginScreenProps = NavigationProps<'Login'>;
 export type RegisterScreenProps = NavigationProps<'Register'>;
 export type RoleSelectionScreenProps = NavigationProps<'RoleSelection'>;
 export type LandingScreenProps = NavigationProps<'Landing'>;
 
-// Crop-related screens
-export type ListCropScreenProps = NavigationProps<'ListCrop'>;
-export type MyListingsScreenProps = NavigationProps<'MyListings'>;
-export type CropDetailsScreenProps = NavigationProps<'CropDetails'>;
-export type EditCropScreenProps = NavigationProps<'EditCrop'>;
-export type BrowseCropsScreenProps = NavigationProps<'BrowseCrops'>;
-export type PlaceOrderScreenProps = NavigationProps<'PlaceOrder'>;
+// Cargo-related screens
+export type ListCargoScreenProps = NavigationProps<'ListCargo'>;
+export type MyCargoScreenProps = NavigationProps<'MyCargo'>;
+export type CargoDetailsScreenProps = NavigationProps<'CargoDetails'>;
+export type EditCargoScreenProps = NavigationProps<'EditCargo'>;
 
 // Order-related screens
-export type ActiveOrdersScreenProps = NavigationProps<'ActiveOrders'>;
-export type MyOrdersScreenProps = NavigationProps<'MyOrders'>;
+export type ShipperActiveOrdersScreenProps = NavigationProps<'ShipperActiveOrders'>;
 export type OrderTrackingScreenProps = NavigationProps<'OrderTracking'>;
 
 // Transporter screens

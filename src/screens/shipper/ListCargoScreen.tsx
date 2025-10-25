@@ -1,71 +1,63 @@
-// src/screens/farmer/EditCropScreen.tsx
+// src/screens/shipper/ListCargoScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { updateCrop } from '../../store/slices/cropsSlice';
-import { Crop } from '../../types';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { createCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 
-export default function EditCropScreen({ route, navigation }: any) {
-  const { cropId } = route.params;
+export default function ListCargoScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
-  const { crops } = useAppSelector((state) => state.crops);
+  const { user } = useAppSelector((state) => state.auth);
+  const { isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   
-  const crop = crops.find(c => c._id === cropId || c.id === cropId);
+  const [cargoName, setCargoName] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState<'kg' | 'tons' | 'bags'>('kg');
+  const [pricePerUnit, setPricePerUnit] = useState('');
+  const [readyDate, setReadyDate] = useState('');
 
-  const [cropName, setCropName] = useState(crop?.name || '');
-  const [quantity, setQuantity] = useState(crop?.quantity.toString() || '');
-  const [unit, setUnit] = useState<'kg' | 'tons' | 'bags'>(crop?.unit || 'kg');
-  const [pricePerUnit, setPricePerUnit] = useState(crop?.pricePerUnit?.toString() || '');
-  const [harvestDate, setHarvestDate] = useState(crop?.harvestDate || '');
-
-  if (!crop) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Text style={[styles.errorText, { color: theme.text }]}>Crop not found</Text>
-      </View>
-    );
-  }
-
-  const handleUpdate = async () => {
-    if (!cropName || !quantity || !harvestDate) {
+  const handleSubmit = async () => {
+    if (!cargoName || !quantity || !readyDate) {
       Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
-    const cropData = {
-      id: crop._id || crop.id,
-      data: {
-        name: cropName,
-        quantity: parseFloat(quantity),
-        unit,
-        pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
-        harvestDate,
-      }
+    const cargoData = {
+      name: cargoName,
+      quantity: parseFloat(quantity),
+      unit,
+      pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
+      readyDate,
+      shipperId: user?._id || user?.id,
+      location: {
+        latitude: -1.9403,
+        longitude: 29.8739,
+        address: 'Kigali, Rwanda',
+      },
     };
 
     try {
-      await dispatch(updateCrop(cropData)).unwrap();
-      Alert.alert('Success', 'Crop updated successfully!');
+      await dispatch(createCargo(cargoData)).unwrap();
+      Alert.alert('Success', 'Cargo listed successfully!');
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert('Error', error || 'Failed to update crop');
+      Alert.alert('Error', error || 'Failed to list cargo');
     }
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
-        <View style={[styles.header, { backgroundColor: theme.info }]}>
+        <View style={[styles.header, { backgroundColor: theme.primary }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={[styles.backButton, { color: theme.card }]}>← Cancel</Text>
+            <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.card }]}>Edit Crop</Text>
+          <Text style={[styles.title, { color: theme.card }]}>List New Cargo</Text>
         </View>
 
         <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.text }]}>Crop Name *</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
           <TextInput
             style={[styles.input, { 
               backgroundColor: theme.card,
@@ -74,8 +66,8 @@ export default function EditCropScreen({ route, navigation }: any) {
             }]}
             placeholder="e.g., Tomatoes, Maize, Potatoes"
             placeholderTextColor={theme.textSecondary}
-            value={cropName}
-            onChangeText={setCropName}
+            value={cargoName}
+            onChangeText={setCargoName}
           />
 
           <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
@@ -99,7 +91,7 @@ export default function EditCropScreen({ route, navigation }: any) {
                   style={[
                     styles.unitButton,
                     { 
-                      backgroundColor: unit === u ? theme.info : theme.card,
+                      backgroundColor: unit === u ? theme.primary : theme.card,
                       borderColor: theme.border,
                     }
                   ]}
@@ -130,7 +122,7 @@ export default function EditCropScreen({ route, navigation }: any) {
             keyboardType="numeric"
           />
 
-          <Text style={[styles.label, { color: theme.text }]}>Harvest Date *</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
           <TextInput
             style={[styles.input, { 
               backgroundColor: theme.card,
@@ -139,17 +131,22 @@ export default function EditCropScreen({ route, navigation }: any) {
             }]}
             placeholder="YYYY-MM-DD"
             placeholderTextColor={theme.textSecondary}
-            value={harvestDate}
-            onChangeText={setHarvestDate}
+            value={readyDate}
+            onChangeText={setReadyDate}
           />
 
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 
           <TouchableOpacity 
-            style={[styles.updateButton, { backgroundColor: theme.info }]} 
-            onPress={handleUpdate}
+            style={[styles.submitButton, { backgroundColor: theme.primary }]} 
+            onPress={handleSubmit}
+            disabled={isLoading}
           >
-            <Text style={styles.updateText}>Update Crop</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitText}>List Cargo</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -212,20 +209,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 10,
   },
-  updateButton: {
+  submitButton: {
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 30,
   },
-  updateText: {
+  submitText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  errorText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 50,
   },
 });

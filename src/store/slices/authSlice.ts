@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as authService from '../../services/authService';
 import { RegisterData, LoginCredentials, User } from '../../types';
-import { clearCrops } from './cropsSlice';
+import { clearCargo } from './cargoSlice';
 import { clearOrders } from './ordersSlice';
 
 interface AuthState {
@@ -39,7 +39,7 @@ export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
   async (_, { rejectWithValue, dispatch }) => {
     try {
       // Clear all user data before logging out
-      dispatch(clearCrops());
+      dispatch(clearCargo());
       dispatch(clearOrders());
       await authService.logout();
     } catch (error: any) {

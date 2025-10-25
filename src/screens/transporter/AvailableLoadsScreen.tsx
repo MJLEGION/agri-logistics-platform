@@ -19,26 +19,60 @@ import {
   fetchTrips,
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 
 const { width } = Dimensions.get('window');
 
 export default function AvailableLoadsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { trips, isLoading } = useAppSelector((state) => state.trips);
+  const { trips, isLoading: tripsLoading } = useAppSelector((state) => state.trips);
+  const { cargo, isLoading: cargoLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Convert cargo to trip-like format for display
+  const convertCargoToTrip = (cargoItem: any) => ({
+    _id: cargoItem._id || cargoItem.id,
+    tripId: `CARGO-${cargoItem._id || cargoItem.id}`,
+    status: 'pending',
+    shipment: {
+      cargoId: cargoItem._id || cargoItem.id,
+      shipperId: cargoItem.shipperId,
+      quantity: cargoItem.quantity,
+      unit: cargoItem.unit,
+      cargoName: cargoItem.name,
+      cropName: cargoItem.name, // For backward compatibility
+    },
+    pickup: {
+      latitude: cargoItem.location?.latitude || -1.9403,
+      longitude: cargoItem.location?.longitude || 29.8739,
+      address: cargoItem.location?.address || 'Kigali, Rwanda',
+    },
+    delivery: {
+      latitude: -1.9706,
+      longitude: 29.9498,
+      address: 'Destination',
+    },
+    earnings: {
+      ratePerUnit: cargoItem.pricePerUnit || 500,
+      totalRate: (cargoItem.quantity || 0) * (cargoItem.pricePerUnit || 500),
+      status: 'pending',
+    },
+    createdAt: new Date(cargoItem.createdAt || Date.now()),
+  });
 
-  // Fetch trips when screen mounts
+  // Fetch trips and cargo when screen mounts
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('=== TRANSPORTER LOADING TRIPS ===');
+        console.log('=== TRANSPORTER LOADING TRIPS & CARGO ===');
         await dispatch(fetchTrips() as any);
-        console.log('TOTAL TRIPS FETCHED:', trips.length);
+        await dispatch(fetchCargo() as any);
+        console.log('✅ DATA LOADED');
       } catch (error) {
-        console.log('ERROR LOADING TRIPS:', error);
+        console.log('❌ ERROR LOADING DATA:', error);
       }
     };
     loadData();
@@ -49,6 +83,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     setRefreshing(true);
     try {
       await dispatch(fetchTrips() as any);
+      await dispatch(fetchCargo() as any);
     } catch (error) {
       console.log('Error refreshing:', error);
     }
@@ -60,8 +95,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          console.log('=== SCREEN FOCUSED - AUTO REFRESHING TRIPS ===');
+          console.log('=== SCREEN FOCUSED - AUTO REFRESHING TRIPS & CARGO ===');
           await dispatch(fetchTrips() as any);
+          await dispatch(fetchCargo() as any);
         } catch (error) {
           console.log('ERROR AUTO-REFRESHING:', error);
         }
@@ -70,10 +106,19 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     }, [dispatch])
   );
 
-  const pendingTrips = getPendingTripsForTransporter(trips);
+  // Combine trips with cargo that hasn't been matched yet
+  const allAvailableLoads = [
+    ...getPendingTripsForTransporter(trips),
+    ...cargo.filter(c => c.status === 'listed' || c.status === 'matched').map(convertCargoToTrip),
+  ];
+  
+  const isLoading = tripsLoading || cargoLoading;
+  const pendingTrips = allAvailableLoads;
 
-  console.log('📊 Available Trips Debug:', {
+  console.log('📊 Available Loads Debug:', {
     totalTrips: trips.length,
+    totalCargo: cargo.length,
+    availableCargo: cargo.filter(c => c.status === 'listed' || c.status === 'matched').length,
     pendingTrips: pendingTrips.length,
     tripsDetails: trips.map(t => ({
       id: t._id || t.tripId,
@@ -81,12 +126,18 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       hasTransporter: !!t.transporterId,
       isPending: t.status === 'pending' && !t.transporterId,
     })),
+    cargoDetails: cargo.map(c => ({
+      id: c._id || c.id,
+      name: c.name,
+      status: c.status,
+      shipperId: c.shipperId,
+    })),
   });
 
   if (pendingTrips.length === 0) {
-    console.warn('⚠️ NO PENDING TRIPS! Check if mock trips have status=pending and no transporterId');
+    console.warn('⚠️ NO AVAILABLE LOADS! Check if cargo is listed or if trips exist');
   } else {
-    console.log(`✅ ${pendingTrips.length} trip(s) available for acceptance`);
+    console.log(`✅ ${pendingTrips.length} load(s) available for acceptance`);
   }
 
   const handleAcceptTrip = async (tripId: string, cropName: string) => {
@@ -212,19 +263,25 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           }
           renderItem={({ item: trip }) => {
             const earnings = trip.earnings?.totalRate || 0;
+            // Support both new (cargoName) and old (cropName) field names
+            const cargoName = trip.shipment?.cargoName || trip.shipment?.cropName || 'Agricultural Load';
+            const quantity = trip.shipment?.quantity || 0;
+            const unit = trip.shipment?.unit || 'kg';
+            const pickupAddress = trip.pickup?.address || 'Not specified';
+            const deliveryAddress = trip.delivery?.address || 'Destination';
 
             return (
               <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                {/* Top Section: Crop & Earnings */}
+                {/* Top Section: Cargo & Earnings */}
                 <View style={styles.loadCardTop}>
                   <View style={styles.cropSection}>
                     <Text style={[styles.cropName, { color: theme.text }]} numberOfLines={1}>
-                      {trip.shipment?.cropName || 'Agricultural Load'}
+                      {cargoName}
                     </Text>
                     <View style={styles.quantityDistance}>
                       <View style={styles.badge}>
                         <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
-                          {trip.shipment?.quantity} {trip.shipment?.unit}
+                          {quantity} {unit}
                         </Text>
                       </View>
                     </View>
@@ -250,7 +307,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                         Pickup
                       </Text>
                       <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
-                        {trip.pickup?.address || 'Not specified'}
+                        {pickupAddress}
                       </Text>
                     </View>
                   </View>
@@ -264,7 +321,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                         Delivery
                       </Text>
                       <Text style={[styles.routeText, { color: theme.text }]} numberOfLines={1}>
-                        {trip.delivery?.address || 'Not specified'}
+                        {deliveryAddress}
                       </Text>
                     </View>
                   </View>
@@ -276,7 +333,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                   onPress={() =>
                     handleAcceptTrip(
                       trip._id || trip.tripId,
-                      trip.shipment?.cropName || 'Load'
+                      cargoName
                     )
                   }
                   activeOpacity={0.8}

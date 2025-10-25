@@ -135,7 +135,7 @@ export const initializeAllServices = async (): Promise<void> => {
   try {
     console.log('🚀 Initializing all mock services...');
     await mockAuthService.initializeMockUsers();
-    // Note: mockOrderService and mockCropService don't need explicit initialization
+    // Note: mockOrderService and mockCargoService don't need explicit initialization
     // as they use default data, but you can add them if needed
     console.log('✅ All mock services initialized');
   } catch (error) {

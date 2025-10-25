@@ -15,7 +15,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import TripMapView from '../../components/TripMapView';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { updateOrder, fetchOrders } from '../../store/slices/ordersSlice';
+import { completeTrip, fetchAllTrips } from '../../logistics/store/tripsSlice';
 
 export default function TripTrackingScreen({ route, navigation }: any) {
   const { trip } = route.params;
@@ -79,30 +79,39 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           onPress: async () => {
             try {
               setIsUpdating(true);
+              const tripId = trip._id || trip.tripId;
+              console.log('🚀 Starting trip completion for:', tripId);
+              console.log('📋 Trip object:', JSON.stringify({
+                _id: trip._id,
+                tripId: trip.tripId,
+                status: trip.status,
+                shipmentCropName: trip.shipment?.cropName,
+              }));
+              
               const result = await dispatch(
-                updateOrder({
-                  id: trip._id || trip.id,
-                  data: { status: 'completed' },
-                })
+                completeTrip(tripId) as any
               ).unwrap();
 
+              console.log('✅ Trip completion successful:', result);
               setIsUpdating(false);
               Alert.alert('Success', 'Delivery marked as completed!', [
                 {
                   text: 'OK',
                   onPress: () => {
                     // Refresh trips list
-                    dispatch(fetchOrders());
+                    console.log('🔄 Refreshing trips list after completion');
+                    dispatch(fetchAllTrips() as any);
                     navigation.goBack();
                   },
                 },
               ]);
             } catch (error: any) {
               setIsUpdating(false);
-              console.error('Update error:', error);
+              console.error('❌ Complete error:', error);
+              console.error('Error details:', JSON.stringify(error));
               Alert.alert(
                 'Error',
-                error?.message || error || 'Failed to update delivery status'
+                error?.message || String(error) || 'Failed to complete delivery'
               );
             }
           },
@@ -119,19 +128,21 @@ export default function TripTrackingScreen({ route, navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'in_progress':
+      case 'in_transit':
         return theme.info;
       case 'completed':
         return theme.success;
+      case 'accepted':
+        return theme.warning;
       default:
         return theme.textSecondary;
     }
   };
 
-  const pickupLat = trip.pickupLocation?.latitude || -2.0;
-  const pickupLng = trip.pickupLocation?.longitude || 29.7;
-  const deliveryLat = trip.deliveryLocation?.latitude || -2.0;
-  const deliveryLng = trip.deliveryLocation?.longitude || 29.8;
+  const pickupLat = trip.pickup?.latitude || -2.0;
+  const pickupLng = trip.pickup?.longitude || 29.7;
+  const deliveryLat = trip.delivery?.latitude || -2.0;
+  const deliveryLng = trip.delivery?.longitude || 29.8;
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -148,15 +159,15 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           pickupLocation={{
             latitude: pickupLat,
             longitude: pickupLng,
-            address: trip.pickupLocation?.address || 'Pickup Location',
+            address: trip.pickup?.address || 'Pickup Location',
           }}
           deliveryLocation={{
             latitude: deliveryLat,
             longitude: deliveryLng,
-            address: trip.deliveryLocation?.address || 'Delivery Location',
+            address: trip.delivery?.address || 'Delivery Location',
           }}
           currentLocation={currentLocation}
-          isTracking={trip.status === 'in_progress'}
+          isTracking={trip.status === 'in_transit'}
         />
       </View>
 
@@ -165,7 +176,7 @@ export default function TripTrackingScreen({ route, navigation }: any) {
         <Card>
           <View style={styles.tripHeader}>
             <Text style={[styles.cropName, { color: theme.text }]}>
-              {trip.cropId?.name || 'Delivery'}
+              {trip.shipment?.cargoName || trip.shipment?.cropName || 'Delivery'}
             </Text>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
               <Text style={styles.statusText}>{trip.status.toUpperCase()}</Text>
@@ -174,13 +185,13 @@ export default function TripTrackingScreen({ route, navigation }: any) {
 
           <View style={styles.detailRow}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Quantity:</Text>
-            <Text style={[styles.value, { color: theme.text }]}>{trip.quantity}</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{trip.shipment?.quantity} {trip.shipment?.unit}</Text>
           </View>
 
           <View style={styles.detailRow}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Price:</Text>
             <Text style={[styles.value, { color: theme.text }]}>
-              {trip.totalPrice.toLocaleString()} RWF
+              {(trip.earnings?.totalRate || 0).toLocaleString()} RWF
             </Text>
           </View>
 
@@ -233,7 +244,7 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <View style={styles.routeItem}>
             <Text style={[styles.routeLabel, { color: theme.success }]}>✓ Pickup</Text>
             <Text style={[styles.routeText, { color: theme.text }]}>
-              {trip.pickupLocation?.address || 'Not specified'}
+              {trip.pickup?.address || 'Not specified'}
             </Text>
           </View>
 
@@ -242,7 +253,7 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <View style={styles.routeItem}>
             <Text style={[styles.routeLabel, { color: theme.info }]}>→ In Transit</Text>
             <Text style={[styles.routeText, { color: theme.textSecondary }]}>
-              {trip.status === 'in_progress' ? 'Active' : 'Pending'}
+              {trip.status === 'in_transit' ? 'Active' : 'Pending'}
             </Text>
           </View>
 
@@ -251,7 +262,7 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <View style={styles.routeItem}>
             <Text style={[styles.routeLabel, { color: theme.info }]}>🏁 Delivery</Text>
             <Text style={[styles.routeText, { color: theme.text }]}>
-              {trip.deliveryLocation?.address || 'Not specified'}
+              {trip.delivery?.address || 'Not specified'}
             </Text>
           </View>
         </Card>

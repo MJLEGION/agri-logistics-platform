@@ -18,9 +18,9 @@ import { useTheme } from '../contexts/ThemeContext';
 import Button from '../components/Button';
 import ServiceCard from '../components/ServiceCard';
 import Testimonial from '../components/Testimonial';
-import FarmerCard from '../components/FarmerCard';
+
 import HowItWorksCard from '../components/HowItWorksCard';
-import { recommendedFarmers, howItWorks } from '../data/recommendedFarmers';
+import { howItWorks } from '../data/howItWorks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -65,13 +65,13 @@ export default function LandingScreen({ navigation }: any) {
   const services = [
     {
       icon: 'leaf',
-      title: 'Premium Crop Sourcing',
-      description: 'We find, vet, and connect you with Rwanda\'s finest farmers and their premium produce.',
+      title: 'Direct Shipping for Farmers',
+      description: 'Connect directly with transporters to ship your produce efficiently across Rwanda.',
     },
     {
       icon: 'cube',
-      title: 'Quality Assurance',
-      description: 'Every crop is sourced from verified farmers who meet our strict quality standards.',
+      title: 'Verified Transporters',
+      description: 'All transporters on our platform are vetted to ensure safe and reliable delivery of your cargo.',
     },
     {
       icon: 'car',
@@ -83,34 +83,34 @@ export default function LandingScreen({ navigation }: any) {
   const testimonials = [
     {
       rating: 5,
-      text: "I'm so glad I found this platform! It has certainly helped enable us to take on larger orders and win more business with confidence.",
-      author: 'Jean-Claude',
-      company: 'Kigali Fresh Markets',
+      text: "As a farmer, finding reliable transport used to be my biggest challenge. Now, I can easily connect with transporters and get my produce to market faster than ever.",
+      author: 'John D.',
+      company: 'Farmer, Eastern Province',
     },
     {
       rating: 5,
-      text: 'The crop shipment is beautiful! We are very pleased with the quality and varieties. I will definitely be placing another order.',
-      author: 'Marie',
-      company: 'Rwanda Organic Foods',
+      text: 'This platform has been a game-changer for my transport business. I have a steady stream of loads, and the route optimization feature helps me save time and fuel.',
+      author: 'Jane M.',
+      company: 'Transporter, Kigali',
     },
     {
       rating: 5,
-      text: 'My produce arrived today. These are some of the best looking crops I\'ve received in a while. Thank you!',
-      author: 'Patrick',
-      company: 'Musanze Wholesale',
+      text: 'The transparency and direct communication with transporters is amazing. I know exactly where my cargo is at all times.',
+      author: 'Peter G.',
+      company: 'Farmer, Western Province',
     },
     {
       rating: 5,
-      text: 'Customer service was great! Crops exceeded my expectations. My team and I are very happy with our order.',
-      author: 'Grace',
-      company: 'Huye Agricultural Co-op',
+      text: 'I have seen a significant increase in my earnings since I joined this platform. I can easily find return trips and minimize empty miles.',
+      author: 'Mary K.',
+      company: 'Transporter, Southern Province',
     },
   ];
 
   const stats = [
-    { number: '2000+', label: 'Premium Crops Listed' },
+    { number: '500,000+', label: 'Total Kilometers Covered' },
     { number: '1000+', label: 'Active Farmers' },
-    { number: '500+', label: 'Daily Orders' },
+    { number: '10,000+', label: 'Completed Trips' },
     { number: '98%', label: 'Customer Satisfaction' },
   ];
 
@@ -206,14 +206,12 @@ export default function LandingScreen({ navigation }: any) {
             </View>
 
             <Text style={styles.heroTitle}>
-              All of Rwanda's finest crops in the palm of your hand
+              Connecting Shippers and Transporters, Seamlessly.
             </Text>
 
             <Text style={styles.heroSubtitle}>
-              We <Text style={{ fontWeight: '700' }}>find</Text>,{' '}
-              <Text style={{ fontWeight: '700' }}>vet</Text>, and{' '}
-              <Text style={{ fontWeight: '700' }}>deliver</Text> premium
-              agricultural products from verified farmers to buyers nationwide.
+              The most efficient way to ship your agricultural cargo across Rwanda. 
+              We connect farmers and other shippers directly with our network of verified transporters.
             </Text>
 
             <View style={styles.heroButtons}>
@@ -238,12 +236,12 @@ export default function LandingScreen({ navigation }: any) {
             <View style={styles.heroStats}>
               <View style={styles.heroStatItem}>
                 <Text style={styles.heroStatNumber}>1000+</Text>
-                <Text style={styles.heroStatLabel}>Farmers</Text>
+                <Text style={styles.heroStatLabel}>Shippers</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStatItem}>
                 <Text style={styles.heroStatNumber}>500+</Text>
-                <Text style={styles.heroStatLabel}>Daily Orders</Text>
+                <Text style={styles.heroStatLabel}>Transporters</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStatItem}>
@@ -254,20 +252,7 @@ export default function LandingScreen({ navigation }: any) {
           </Animated.View>
         </LinearGradient>
 
-        {/* Featured Announcement Banner */}
-        <View style={[styles.banner, { backgroundColor: theme.backgroundAlt }]}>
-          <View style={styles.bannerContent}>
-            <Ionicons name="megaphone" size={24} color={theme.primary} />
-            <View style={styles.bannerText}>
-              <Text style={[styles.bannerTitle, { color: theme.text }]}>
-                New: Fast & Free Delivery Program
-              </Text>
-              <Text style={[styles.bannerSubtitle, { color: theme.textSecondary }]}>
-                Orders ship in as little as 4 days with zero freight charges
-              </Text>
-            </View>
-          </View>
-        </View>
+
 
         {/* Services Section */}
         <View style={styles.section}>
@@ -306,60 +291,25 @@ export default function LandingScreen({ navigation }: any) {
               </View>
               <Text style={[styles.roleTitle, { color: theme.text }]}>Farmers</Text>
               <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
-                List your premium crops and connect with verified buyers nationwide
+                List your cargo and connect with reliable transporters nationwide.
               </Text>
               <View style={styles.roleFeatures}>
                 <View style={styles.featureRow}>
                   <Ionicons name="checkmark-circle" size={16} color={theme.success} />
                   <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Easy crop listing
+                    Easy cargo listing
                   </Text>
                 </View>
                 <View style={styles.featureRow}>
                   <Ionicons name="checkmark-circle" size={16} color={theme.success} />
                   <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Direct buyer access
+                    Reliable transport
                   </Text>
                 </View>
                 <View style={styles.featureRow}>
                   <Ionicons name="checkmark-circle" size={16} color={theme.success} />
                   <Text style={[styles.featureText, { color: theme.textSecondary }]}>
                     Fair pricing
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Buyers Card */}
-            <TouchableOpacity
-              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-              onPress={() => navigation.navigate('RoleSelection')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
-                <Ionicons name="cart" size={32} color={theme.accent} />
-              </View>
-              <Text style={[styles.roleTitle, { color: theme.text }]}>Buyers</Text>
-              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
-                Access premium crops from verified farmers with quality assurance
-              </Text>
-              <View style={styles.roleFeatures}>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Quality guaranteed
-                  </Text>
-                </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Fast delivery
-                  </Text>
-                </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Real-time tracking
                   </Text>
                 </View>
               </View>
@@ -408,7 +358,7 @@ export default function LandingScreen({ navigation }: any) {
             What Our Users Say
           </Text>
           <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Trusted by farmers, buyers, and transporters across Rwanda
+            Trusted by farmers and transporters across Rwanda
           </Text>
 
           {testimonials.map((testimonial, index) => (
@@ -428,7 +378,7 @@ export default function LandingScreen({ navigation }: any) {
             How AgriLogistics Works
           </Text>
           <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Simple, transparent process connecting farmers with buyers
+            Simple, transparent process connecting shippers with transporters
           </Text>
 
           <View style={styles.howItWorksContainer}>
@@ -445,41 +395,7 @@ export default function LandingScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Recommended Farmers Section */}
-        <View style={[styles.section, { backgroundColor: theme.backgroundAlt }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Meet Our Recommended Farmers
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Verified farmers delivering quality crops across Rwanda
-          </Text>
 
-          <View style={styles.farmersContainer}>
-            {recommendedFarmers.map((farmer) => (
-              <FarmerCard
-                key={farmer.id}
-                id={farmer.id}
-                name={farmer.name}
-                location={farmer.location}
-                cropTypes={farmer.cropTypes}
-                rating={farmer.rating}
-                reviews={farmer.reviews}
-                onPress={() => {
-                  // Navigate to farmer details or show more info
-                  console.log('Farmer pressed:', farmer.name);
-                }}
-              />
-            ))}
-          </View>
-
-          {/* View All Farmers Button */}
-          <TouchableOpacity
-            style={[styles.viewAllButton, { backgroundColor: theme.primary }]}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.viewAllButtonText}>View All Farmers →</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* CTA Section */}
         <View style={styles.section}>
@@ -488,10 +404,9 @@ export default function LandingScreen({ navigation }: any) {
             <Text style={[styles.ctaTitle, { color: theme.text }]}>
               Ready to Transform Your Agricultural Business?
             </Text>
-            <Text style={[styles.ctaDescription, { color: theme.textSecondary }]}>
-              Join thousands of farmers, buyers, and transporters already using our platform
-            </Text>
-            <Button
+                          <Text style={[styles.ctaDescription, { color: theme.textSecondary }]}>
+                            Join thousands of shippers and transporters already using our platform
+                          </Text>            <Button
               title="Get Started Today"
               onPress={() => navigation.navigate('RoleSelection')}
               variant="primary"
@@ -524,10 +439,7 @@ export default function LandingScreen({ navigation }: any) {
               <View style={styles.footerColumn}>
                 <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Platform</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
-                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Farmers</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
-                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Buyers</Text>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Shippers</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
                   <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Transporters</Text>

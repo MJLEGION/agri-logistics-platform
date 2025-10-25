@@ -9,12 +9,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { calculateDistance as calcDistance } from '../../services/routeOptimizationService';
 
 export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { orders } = useAppSelector((state) => state.orders);
+  const { cargo } = useAppSelector((state) => state.cargo);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
@@ -22,18 +24,21 @@ export default function TransporterHomeScreen({ navigation }: any) {
   // Fetch data when screen loads
   useEffect(() => {
     dispatch(fetchAllOrders());
+    dispatch(fetchCargo());
   }, [dispatch]);
 
   // Auto-refresh when screen comes into focus (e.g., returning after creating order)
   useFocusEffect(
     React.useCallback(() => {
       dispatch(fetchAllOrders());
+      dispatch(fetchCargo());
     }, [dispatch])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchAllOrders());
+    await dispatch(fetchCargo());
     setRefreshing(false);
   };
 
@@ -59,9 +64,16 @@ export default function TransporterHomeScreen({ navigation }: any) {
     return sum + (distance * 1000);
   }, 0);
 
+  // Count available loads from both orders and cargo (that are listed and ready)
   const availableLoads = orders.filter(
     order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
   );
+  
+  const availableCargo = cargo.filter(
+    c => c.status === 'listed' || c.status === 'matched'
+  );
+  
+  const totalAvailableLoads = availableLoads.length + availableCargo.length;
 
   function calculateDistance(order: any) {
     if (!order.pickupLocation || !order.deliveryLocation) return 0;
@@ -150,7 +162,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
           >
             <View style={styles.ctaContent}>
               <Text style={styles.ctaTitle}>Ready to earn?</Text>
-              <Text style={styles.ctaSubtitle}>{availableLoads.length} loads available near you</Text>
+              <Text style={styles.ctaSubtitle}>{totalAvailableLoads} loads available near you</Text>
             </View>
             <Ionicons name="arrow-forward" size={24} color="#fff" />
           </TouchableOpacity>
@@ -178,7 +190,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 Available Loads
               </Text>
               <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                {availableLoads.length} loads waiting
+                {totalAvailableLoads} loads waiting
               </Text>
             </TouchableOpacity>
 
@@ -296,10 +308,10 @@ export default function TransporterHomeScreen({ navigation }: any) {
                     </View>
                     <View style={styles.activityInfo}>
                       <Text style={[styles.activityTitle, { color: theme.text }]}>
-                        {trip.cropId?.name || 'Order'}
+                        {trip.shipment?.cargoName || trip.shipment?.cropName || trip.cropId?.name || 'Order'}
                       </Text>
                       <Text style={[styles.activityDesc, { color: theme.textSecondary }]}>
-                        {trip.pickupLocation.address} → {trip.deliveryLocation.address}
+                        {trip.pickupLocation?.address || 'Pickup'} → {trip.deliveryLocation?.address || 'Delivery'}
                       </Text>
                     </View>
                   </View>

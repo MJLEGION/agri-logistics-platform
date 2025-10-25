@@ -1,33 +1,33 @@
-// src/screens/farmer/MyListingsScreen.tsx
+// src/screens/shipper/MyCargoScreen.tsx
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { fetchCrops } from '../../store/slices/cropsSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 
-export default function MyListingsScreen({ navigation }: any) {
+export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { crops, isLoading } = useAppSelector((state) => state.crops);
+  const { cargo, isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
 
-  // Fetch crops on screen mount
+  // Fetch cargo on screen mount
   useEffect(() => {
-    dispatch(fetchCrops());
+    dispatch(fetchCargo());
   }, [dispatch]);
 
-  // Refetch crops when screen comes into focus (after creating a new crop)
+  // Refetch cargo when screen comes into focus (after creating new cargo)
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(fetchCrops());
+      dispatch(fetchCargo());
     }, [dispatch])
   );
 
-  const myListings = crops.filter(crop => {
-    const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
-    return farmerId === user?._id || farmerId === user?.id;
+  const myListings = cargo.filter(item => {
+    const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
+    return shipperId === user?._id || shipperId === user?.id;
   });
 
   if (isLoading) {
@@ -44,18 +44,18 @@ export default function MyListingsScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>My Listings</Text>
+        <Text style={[styles.title, { color: theme.card }]}>My Cargo</Text>
       </View>
 
       {myListings.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>No crops listed yet</Text>
+          <Text style={[styles.emptyText, { color: theme.text }]}>No cargo listed yet</Text>
           <TouchableOpacity 
             style={[styles.addButton, { backgroundColor: theme.primary }]}
-            onPress={() => navigation.navigate('ListCrop')}
+            onPress={() => navigation.navigate('ListCargo')}
           >
-            <Text style={styles.addButtonText}>+ List Your First Crop</Text>
+            <Text style={styles.addButtonText}>+ List Your First Cargo</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -64,7 +64,7 @@ export default function MyListingsScreen({ navigation }: any) {
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('CropDetails', { cropId: item._id || item.id })}>
+            <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
               <Card>
                 <View style={styles.cropHeader}>
                   <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
@@ -81,7 +81,7 @@ export default function MyListingsScreen({ navigation }: any) {
                   </Text>
                 )}
                 <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                  Harvest Date: {new Date(item.harvestDate).toLocaleDateString()}
+                  Ready: {new Date(item.readyDate).toLocaleDateString()}
                 </Text>
                 <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
                   📍 {item.location.address}

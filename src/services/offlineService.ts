@@ -138,14 +138,14 @@ export const syncOfflineQueue = async (
 const syncRequest = async (request: OfflineRequest): Promise<void> => {
   // Import services dynamically to avoid circular dependencies
   const { createOrder } = require('./orderService');
-  const { createCrop } = require('./cropService');
+  const { createCargo } = require('./cargoService');
   
   switch (request.type) {
     case 'order':
       await createOrder(request.data);
       break;
-    case 'crop':
-      await createCrop(request.data);
+    case 'cargo':
+      await createCargo(request.data);
       break;
     case 'update':
       // Handle updates

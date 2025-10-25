@@ -1,25 +1,25 @@
-// src/screens/farmer/ActiveOrdersScreen.tsx
+// src/screens/shipper/ShipperActiveOrdersScreen.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppSelector } from '../../store';
 
-export default function ActiveOrdersScreen({ navigation }: any) {
+export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { orders } = useAppSelector((state) => state.orders);
-  const { crops } = useAppSelector((state) => state.crops);
+  const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
 
-  // Get farmer's crop IDs (handle both _id and id fields)
-  const farmerCropIds = crops
-    .filter(crop => {
-      const farmerId = typeof crop.farmerId === 'string' ? crop.farmerId : crop.farmerId?._id;
-      return farmerId === user?._id || farmerId === user?.id;
+  // Get shipper's cargo IDs (handle both _id and id fields)
+  const shipperCargoIds = cargo
+    .filter(item => {
+      const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
+      return shipperId === user?._id || shipperId === user?.id;
     })
-    .map(crop => crop._id || crop.id);
+    .map(item => item._id || item.id);
 
-  const farmerOrders = orders.filter(order => farmerCropIds.includes(order.cropId));
+  const shipperOrders = orders.filter(order => shipperCargoIds.includes(order.cargoId));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -32,8 +32,8 @@ export default function ActiveOrdersScreen({ navigation }: any) {
     }
   };
 
-  const getCropName = (cropId: string) => {
-    return crops.find(c => c._id === cropId || c.id === cropId)?.name || 'Unknown Crop';
+  const getCargoName = (cargoId: string) => {
+    return cargo.find(c => c._id === cargoId || c.id === cargoId)?.name || 'Unknown Cargo';
   };
 
   return (
@@ -45,24 +45,24 @@ export default function ActiveOrdersScreen({ navigation }: any) {
         <Text style={[styles.title, { color: theme.card }]}>Active Orders</Text>
       </View>
 
-      {farmerOrders.length === 0 ? (
+      {shipperOrders.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📋</Text>
           <Text style={[styles.emptyText, { color: theme.text }]}>No active orders yet</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Orders will appear here when buyers purchase your crops
+            Orders will appear here when transporters accept your cargo
           </Text>
         </View>
       ) : (
         <FlatList
-          data={farmerOrders}
+          data={shipperOrders}
           keyExtractor={(item) => item._id || item.id || ''}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
             <Card>
               <View style={styles.orderHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
-                  {getCropName(item.cropId)}
+                  {getCargoName(item.cargoId)}
                 </Text>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
                   <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
