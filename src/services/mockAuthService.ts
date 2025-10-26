@@ -21,7 +21,7 @@ let mockUsers: MockUser[] = [
   {
     _id: '1',
     name: 'John Farmer (Shipper)',
-    phone: '+250700000001',
+    phone: '+250788000001',
     password: 'password123',
     role: 'farmer', // Legacy role, will be normalized to 'shipper'
     token: 'shipper_token_123',
@@ -29,7 +29,7 @@ let mockUsers: MockUser[] = [
   {
     _id: '3',
     name: 'Mike Transporter',
-    phone: '+250700000003',
+    phone: '+250789000003',
     password: 'password123',
     role: 'transporter',
     token: 'transporter_token_123',
@@ -97,7 +97,7 @@ export const mockAuthService = {
       _id: newUser._id,
       name: newUser.name,
       phone: newUser.phone,
-      role: newUser.role,
+      role: newUser.role === 'farmer' ? 'shipper' : newUser.role, // Normalize 'farmer' to 'shipper'
       token: newUser.token,
     };
   },
@@ -139,7 +139,7 @@ export const mockAuthService = {
       _id: user._id,
       name: user.name,
       phone: user.phone,
-      role: user.role,
+      role: user.role === 'farmer' ? 'shipper' : user.role, // Normalize 'farmer' to 'shipper'
       token: user.token,
     };
   },

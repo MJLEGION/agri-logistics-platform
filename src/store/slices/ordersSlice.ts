@@ -181,6 +181,31 @@ export const completeOrder = createAsyncThunk<Order, string, { rejectValue: stri
   }
 );
 
+export const assignTransporter = createAsyncThunk<
+  Order,
+  { orderId: string; transporterId: string },
+  { rejectValue: string }
+>(
+  'orders/assignTransporter',
+  async ({ orderId, transporterId }, { rejectWithValue }) => {
+    try {
+      console.log('🎯 assignTransporter thunk started for Order:', orderId, 'Transporter:', transporterId);
+      const result = await orderService.assignTransporter(orderId, transporterId);
+      console.log('✅ assignTransporter thunk success:', result);
+      return result;
+    } catch (error: any) {
+      console.error('❌ assignTransporter thunk error:', {
+        message: error?.message,
+        response: error?.response?.data,
+        errorString: String(error)
+      });
+      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to assign transporter';
+      console.log('📤 Returning rejection value:', errorMsg);
+      return rejectWithValue(errorMsg);
+    }
+  }
+);
+
 const ordersSlice = createSlice({
   name: 'orders',
   initialState: {
@@ -292,6 +317,24 @@ const ordersSlice = createSlice({
       .addCase(completeOrder.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || 'Failed to complete order';
+      })
+      // Assign transporter
+      .addCase(assignTransporter.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(assignTransporter.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.orders.findIndex(o => o._id === action.payload._id);
+        if (index !== -1) {
+          state.orders[index] = action.payload;
+        } else {
+          state.orders.push(action.payload);
+        }
+      })
+      .addCase(assignTransporter.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Failed to assign transporter';
       });
   },
 });

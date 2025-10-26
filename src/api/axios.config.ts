@@ -1,10 +1,11 @@
 // src/api/axios.config.ts
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
+import { getApiUrl, getApiTimeout } from '../utils/platformUtils';
 
 const api = axios.create({
-  baseURL: API_BASE_URL || 'http://localhost:3000/api',
-  timeout: 30000,
+  baseURL: API_BASE_URL || getApiUrl(),
+  timeout: getApiTimeout(),
   headers: {
     'Content-Type': 'application/json',
   },
