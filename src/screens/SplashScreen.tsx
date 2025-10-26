@@ -1,10 +1,8 @@
-// src/screens/SplashScreen.tsx
+// src/screens/SplashScreen.tsx - FIXED VERSION FOR WEB
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width, height } = Dimensions.get('window');
 
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -153,7 +151,7 @@ export default function SplashScreen() {
                       {
                         translateX: rotateAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [-width, width],
+                          outputRange: Platform.OS === 'web' ? [-200, 200] : [-300, 300],
                         }),
                       },
                     ],
@@ -178,16 +176,28 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    ...(Platform.OS === 'web' && {
+      height: '100vh',
+      width: '100vw',
+      overflow: 'hidden',
+    }),
   },
   gradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      width: '100%',
+      height: '100%',
+    }),
   },
   backgroundPattern: {
     position: 'absolute',
     width: '100%',
     height: '100%',
+    ...(Platform.OS === 'web' && {
+      overflow: 'hidden',
+    }),
   },
   circle: {
     position: 'absolute',
@@ -195,10 +205,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   circle1: {
-    width: 300,
-    height: 300,
-    top: -100,
-    right: -100,
+    width: Platform.OS === 'web' ? 250 : 300,
+    height: Platform.OS === 'web' ? 250 : 300,
+    top: Platform.OS === 'web' ? -80 : -100,
+    right: Platform.OS === 'web' ? -80 : -100,
   },
   circle2: {
     width: 200,
@@ -209,13 +219,17 @@ const styles = StyleSheet.create({
   circle3: {
     width: 150,
     height: 150,
-    top: height / 2 - 75,
+    top: Platform.OS === 'web' ? '40%' : '50%',
     right: -75,
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 600,
+      paddingHorizontal: 20,
+    }),
   },
   logoContainer: {
     alignItems: 'center',
@@ -233,6 +247,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
+    ...(Platform.OS === 'web' && {
+      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+    }),
   },
   iconRow: {
     flexDirection: 'row',
@@ -251,13 +268,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+    ...(Platform.OS === 'web' && {
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+    }),
   },
   textContainer: {
     alignItems: 'center',
     marginBottom: 60,
+    ...(Platform.OS === 'web' && {
+      width: '100%',
+    }),
   },
   title: {
-    fontSize: 42,
+    fontSize: Platform.OS === 'web' ? 38 : 42,
     fontWeight: '900',
     color: '#FFF',
     textAlign: 'center',
@@ -265,6 +288,9 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+    ...(Platform.OS === 'web' && {
+      textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+    }),
   },
   subtitle: {
     fontSize: 18,
@@ -278,6 +304,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   tagItem: {
     flexDirection: 'row',
@@ -299,7 +327,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     alignItems: 'center',
-    width: width * 0.7,
+    width: Platform.OS === 'web' ? '80%' : '70%',
+    maxWidth: 400,
   },
   loadingBar: {
     width: '100%',
@@ -325,6 +354,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40,
     alignItems: 'center',
+    ...(Platform.OS === 'web' && {
+      paddingBottom: 20,
+    }),
   },
   versionText: {
     fontSize: 12,

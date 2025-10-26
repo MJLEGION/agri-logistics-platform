@@ -157,7 +157,7 @@ export default function TripMapView({
   }, [pickupLocation, deliveryLocation, currentLocation, isTracking, theme.tertiary]);
 
   return (
-    <View ref={containerRef} style={styles.container}>
+    <div ref={containerRef} style={styles.container}>
       {/* Map Container */}
       <div
         ref={mapContainerRef}
@@ -172,29 +172,27 @@ export default function TripMapView({
       />
 
       {/* Info Box */}
-      <View
-        style={[
-          styles.infoBox,
-          {
-            backgroundColor: theme.card,
-            borderTopColor: theme.border,
-          },
-        ]}
+      <div
+        style={{
+          ...styles.infoBox,
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+        }}
       >
-        <View style={styles.infoRow}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>📍 From:</Text>
-          <Text style={[styles.value, { color: theme.text }]} numberOfLines={1}>
+        <div style={styles.infoRow}>
+          <p style={{...styles.label, color: theme.textSecondary}}>📍 From:</p>
+          <p style={{...styles.value, color: theme.text}}>
             {pickupLocation.address}
-          </Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>🏁 To:</Text>
-          <Text style={[styles.value, { color: theme.text }]} numberOfLines={1}>
+          </p>
+        </div>
+        <div style={styles.infoRow}>
+          <p style={{...styles.label, color: theme.textSecondary}}>🏁 To:</p>
+          <p style={{...styles.value, color: theme.text}}>
             {deliveryLocation.address}
-          </Text>
-        </View>
-      </View>
-    </View>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
