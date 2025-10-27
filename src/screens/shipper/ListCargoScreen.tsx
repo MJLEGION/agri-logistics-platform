@@ -1,9 +1,106 @@
 // src/screens/shipper/ListCargoScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Modal } from 'react-native';
 import { createCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Simple Calendar Component for Web
+const Calendar = ({ date, onChange, theme }: any) => {
+  const [displayMonth, setDisplayMonth] = useState(new Date(date));
+
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const monthName = displayMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const daysInMonth = getDaysInMonth(displayMonth);
+  const firstDay = getFirstDayOfMonth(displayMonth);
+
+  const days = [];
+  for (let i = 0; i < firstDay; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const prevMonth = () => {
+    setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setDisplayMonth(new Date(displayMonth.getFullYear(), displayMonth.getMonth() + 1));
+  };
+
+  const selectDay = (day: number) => {
+    const newDate = new Date(displayMonth.getFullYear(), displayMonth.getMonth(), day);
+    onChange(newDate);
+  };
+
+  return (
+    <View style={[styles.calendar, { borderColor: theme.border }]}>
+      <View style={styles.calendarHeader}>
+        <TouchableOpacity onPress={prevMonth} style={styles.monthButton}>
+          <Text style={{ color: theme.primary, fontSize: 18 }}>←</Text>
+        </TouchableOpacity>
+        <Text style={[styles.monthYear, { color: theme.text }]}>{monthName}</Text>
+        <TouchableOpacity onPress={nextMonth} style={styles.monthButton}>
+          <Text style={{ color: theme.primary, fontSize: 18 }}>→</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.weekDays}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+          <Text key={day} style={[styles.weekDay, { color: theme.text }]}>
+            {day}
+          </Text>
+        ))}
+      </View>
+
+      <View style={styles.daysGrid}>
+        {days.map((day, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.dayCell,
+              {
+                backgroundColor: day === date.getDate() && 
+                  displayMonth.getMonth() === date.getMonth() && 
+                  displayMonth.getFullYear() === date.getFullYear()
+                  ? theme.primary
+                  : 'transparent',
+                borderColor: theme.border,
+              },
+            ]}
+            onPress={() => day && selectDay(day)}
+            disabled={!day}
+          >
+            <Text
+              style={[
+                styles.dayText,
+                {
+                  color: day === date.getDate() && 
+                    displayMonth.getMonth() === date.getMonth() && 
+                    displayMonth.getFullYear() === date.getFullYear()
+                    ? theme.card
+                    : day ? theme.text : theme.textSecondary,
+                },
+              ]}
+            >
+              {day}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+};
 
 export default function ListCargoScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -15,7 +112,30 @@ export default function ListCargoScreen({ navigation }: any) {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<'kg' | 'tons' | 'bags'>('kg');
   const [pricePerUnit, setPricePerUnit] = useState('');
-  const [readyDate, setReadyDate] = useState('');
+  const [readyDate, setReadyDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'ios') {
+      setTempDate(selectedDate || tempDate);
+    } else {
+      setShowDatePicker(false);
+      if (selectedDate) {
+        setReadyDate(selectedDate);
+      }
+    }
+  };
+
+  const openDatepicker = () => {
+    setTempDate(readyDate);
+    setShowDatePicker(true);
+  };
+
+  const confirmDate = () => {
+    setReadyDate(tempDate);
+    setShowDatePicker(false);
+  };
 
   const handleSubmit = async () => {
     if (!cargoName || !quantity || !readyDate) {
@@ -28,7 +148,7 @@ export default function ListCargoScreen({ navigation }: any) {
       quantity: parseFloat(quantity),
       unit,
       pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
-      readyDate,
+      readyDate: readyDate.toISOString().split('T')[0], // Format date to YYYY-MM-DD
       shipperId: user?._id || user?.id,
       location: {
         latitude: -1.9403,
@@ -123,17 +243,64 @@ export default function ListCargoScreen({ navigation }: any) {
           />
 
           <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
-          <TextInput
+          <TouchableOpacity 
+            onPress={openDatepicker} 
             style={[styles.input, { 
               backgroundColor: theme.card,
               borderColor: theme.border,
-              color: theme.text,
+              justifyContent: 'center',
             }]}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.textSecondary}
-            value={readyDate}
-            onChangeText={setReadyDate}
-          />
+          >
+            <Text style={{ color: theme.text }}>{readyDate.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+
+          {Platform.OS === 'web' ? (
+            <Modal
+              visible={showDatePicker}
+              transparent={true}
+              animationType="fade"
+            >
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Select Date</Text>
+                  
+                  <View style={styles.datePickerContainer}>
+                    <Calendar
+                      date={tempDate}
+                      onChange={setTempDate}
+                      theme={theme}
+                    />
+                  </View>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, { borderColor: theme.primary }]}
+                      onPress={() => setShowDatePicker(false)}
+                    >
+                      <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                      onPress={confirmDate}
+                    >
+                      <Text style={[styles.modalButtonText, { color: theme.card }]}>Confirm</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          ) : (
+            showDatePicker && (
+              <DateTimePicker
+                testID="nativeDateTimePicker"
+                value={readyDate}
+                mode="date"
+                is24Hour={true}
+                display="default"
+                onChange={handleDateChange}
+              />
+            )
+          )}
 
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 
@@ -219,5 +386,96 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    borderRadius: 12,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  datePickerContainer: {
+    marginVertical: 15,
+    alignItems: 'center',
+    width: '100%',
+  },
+  calendar: {
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+  monthButton: {
+    padding: 8,
+    width: 36,
+    alignItems: 'center',
+  },
+  monthYear: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  weekDays: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  weekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  dayCell: {
+    width: '14.28%',
+    aspectRatio: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  dayText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

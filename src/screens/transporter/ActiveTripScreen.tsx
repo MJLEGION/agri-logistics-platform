@@ -28,11 +28,17 @@ export default function ActiveTripScreen({ navigation }: any) {
 
   // Find active trip for this driver
   useEffect(() => {
+    console.log('🔍 DEBUG: Looking for active trip');
+    console.log('📋 User ID:', user?._id || user?.id);
+    console.log('📋 Total orders:', orders.length);
+    console.log('📋 All orders:', orders.map(o => ({ id: o._id, transporterId: o.transporterId, status: o.status })));
+    
     const myActiveTrip = orders.find(
       (order) =>
         order.transporterId === (user?._id || user?.id) &&
         order.status === 'in_progress'
     );
+    console.log('✅ Found active trip:', myActiveTrip || 'None');
     setActiveTrip(myActiveTrip || null);
   }, [orders, user?._id, user?.id]);
 
@@ -54,7 +60,14 @@ export default function ActiveTripScreen({ navigation }: any) {
   }, [activeTrip]);
 
   const handleCompleteDelivery = async () => {
-    if (!activeTrip) return;
+    console.log('🔘 COMPLETE DELIVERY BUTTON CLICKED!');
+    console.log('📋 activeTrip:', activeTrip);
+    
+    if (!activeTrip) {
+      console.log('❌ No activeTrip found!');
+      alert('No active trip found');
+      return;
+    }
 
     console.log('🔘 COMPLETE DELIVERY BUTTON CLICKED! Order ID:', activeTrip._id || activeTrip.id);
     
@@ -159,6 +172,12 @@ export default function ActiveTripScreen({ navigation }: any) {
   const distance = tripInfo?.distanceRemaining || 2;
   const eta = tripInfo?.eta || 5;
   const status = tripInfo?.status || activeTrip.status;
+  
+  // Debug logging
+  console.log('🚗 ActiveTrip Status:', status);
+  console.log('🚗 ActiveTrip:', activeTrip);
+  console.log('🚗 Should button show?', status !== 'completed');
+  
   const earnings = Math.round(
     (activeTrip.quantity * 1000) / 50 || // Simplified: 1000 RWF per unit ~
     Math.abs(
@@ -288,9 +307,16 @@ export default function ActiveTripScreen({ navigation }: any) {
         {status !== 'completed' && (
           <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.completeButton, { backgroundColor: theme.success }]}
+              style={[
+                styles.completeButton,
+                { 
+                  backgroundColor: theme.success,
+                  cursor: isLoading ? 'not-allowed' : 'pointer'
+                }
+              ]}
               onPress={handleCompleteDelivery}
               disabled={isLoading}
+              activeOpacity={0.7}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />

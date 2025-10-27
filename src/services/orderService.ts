@@ -103,6 +103,22 @@ export const assignTransporter = async (
   }
 };
 
+/**
+ * Complete delivery for an order
+ */
+export const completeDelivery = async (orderId: string): Promise<Order> => {
+  try {
+    const response = await api.put<Order>(`/orders/${orderId}`, {
+      status: 'completed',
+      completedAt: new Date().toISOString(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error('❌ Failed to complete delivery:', error);
+    throw error;
+  }
+};
+
 export default {
   getAllOrders,
   getUserOrders,
@@ -111,4 +127,5 @@ export default {
   updateOrder,
   deleteOrder,
   assignTransporter,
+  completeDelivery,
 };
