@@ -168,6 +168,7 @@ export default function ListCargoScreen({ navigation }: any) {
       pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
       readyDate: readyDate.toISOString().split('T')[0], // Format date to YYYY-MM-DD
       shipperId: user?._id || user?.id,
+      status: 'listed', // Explicitly set status to 'listed' so transporters see it
       location: {
         latitude: -1.9403,
         longitude: 29.8739,

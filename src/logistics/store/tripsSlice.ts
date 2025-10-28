@@ -368,4 +368,7 @@ const tripsSlice = createSlice({
 export const { clearError, clearTrips, selectTrip, clearSelectedTrip } =
   tripsSlice.actions;
 
+// Export fetchTrips as an alias for fetchPendingTrips for backward compatibility
+export const fetchTrips = fetchPendingTrips;
+
 export default tripsSlice.reducer;

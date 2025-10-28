@@ -44,6 +44,8 @@ export interface Cargo {
   };
   status: 'listed' | 'matched' | 'picked_up' | 'in_transit' | 'delivered';
   pricePerUnit?: number;
+  createdAt?: string | Date; // When cargo was listed
+  updatedAt?: string | Date; // When cargo was last updated
 }
 
 // Legacy alias for backward compatibility
@@ -90,7 +92,7 @@ export type Order = ShipmentOrder;
 // Helper type for async thunk parameters
 export interface UpdateCargoParams {
   id: string;
-  data: Partial<Omit<Cargo, '_id' | 'id' | 'shipperId'>>;
+  data: Partial<Omit<Cargo, '_id' | 'id'>>;
 }
 
 export interface UpdateTransportRequestParams {

@@ -10,16 +10,21 @@ export const getAllCargo = async (): Promise<Cargo[]> => {
   try {
     console.log('📦 Attempting to fetch cargo from real API...');
     const response = await api.get<Cargo[]>('/cargo');
-    console.log('✅ Fetched cargo (Real API)');
+    console.log('✅ Fetched cargo (Real API):', response.data?.length || 0, 'items');
     return response.data;
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.log('⚠️ Real API failed, using mock cargo service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    console.log('   API Error Detail:', errorMsg);
 
     // Fallback to mock cargo service
     try {
+      console.log('🔄 Loading cargo from mock service (includes AsyncStorage persistence)...');
       const result = await mockCargoService.getAllCargo();
-      console.log('✅ Fetched cargo (Mock Service)');
+      console.log('✅ Fetched cargo (Mock Service):', result?.length || 0, 'items');
+      if (result && result.length > 0) {
+        console.log('   First 3 items:', result.slice(0, 3).map(c => ({ name: c.name, status: c.status, shipperId: c.shipperId })));
+      }
       return result;
     } catch (mockError) {
       const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to fetch cargo';
@@ -59,7 +64,7 @@ export const getCargoById = async (id: string): Promise<Cargo> => {
  * Create a new cargo - tries real API first, falls back to mock
  */
 export const createCargo = async (
-  cargoData: Omit<Cargo, '_id' | 'id' | 'status'>
+  cargoData: Omit<Cargo, '_id' | 'id'>
 ): Promise<Cargo> => {
   try {
     console.log('📦 Attempting to create cargo with real API...');

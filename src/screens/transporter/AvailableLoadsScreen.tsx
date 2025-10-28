@@ -19,7 +19,7 @@ import {
   fetchTrips,
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 
 const { width } = Dimensions.get('window');
@@ -148,6 +148,20 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     })),
   });
 
+  // NEW: More detailed debugging for cargo visibility
+  console.log('%c🔍 CARGO VISIBILITY DEBUG:', 'color: #FF6B00; font-weight: bold; font-size: 14px;');
+  console.log('%cTotal cargo in Redux:', 'color: #2196F3; font-weight: bold', cargo.length);
+  if (cargo.length > 0) {
+    console.log('%cCargo items:', 'color: #2196F3; font-weight: bold');
+    cargo.forEach(c => {
+      const isVisible = c.status === 'listed' || c.status === 'matched';
+      console.log(`  • ${c.name} [ID: ${c._id || c.id}] - Status: "${c.status}" - ${isVisible ? '✅ VISIBLE' : '❌ HIDDEN'}`);
+    });
+  } else {
+    console.log('%c⚠️ NO CARGO IN REDUX!', 'color: #FF9800; font-weight: bold');
+  }
+  console.log('%cAvailable cargo (filtered):', 'color: #4CAF50; font-weight: bold', availableCargo.length);
+
   if (pendingTrips.length === 0) {
     console.warn('⚠️ NO AVAILABLE LOADS!');
     console.warn('  - Trips available:', trips.length);
@@ -160,59 +174,72 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const handleAcceptTrip = async (tripId: string, cropName: string) => {
     console.log('🔘 ACCEPT TRIP BUTTON CLICKED! Trip ID:', tripId, 'Crop:', cropName);
 
+    // Check if this is cargo (starts with "CARGO-") or a regular trip
+    const isCargo = tripId.startsWith('CARGO-');
+    const actualId = isCargo ? tripId.replace('CARGO-', '') : tripId;
+    console.log(`📦 Is Cargo: ${isCargo}, Actual ID: ${actualId}`);
+
     // Try using browser confirm as fallback for web
     const isWeb = typeof window !== 'undefined' && !window.cordova;
     console.log('🌐 Is Web Platform:', isWeb);
 
+    const performAccept = async () => {
+      try {
+        console.log(`🚀 Accepting ${isCargo ? 'cargo' : 'trip'} for ID:`, actualId);
+        
+        if (isCargo) {
+          // Handle cargo acceptance - update status to 'matched'
+          const result = await dispatch(
+            updateCargo({ id: actualId, data: { status: 'matched' } }) as any
+          ).unwrap();
+          console.log('✅ Cargo acceptance successful:', result);
+        } else {
+          // Handle regular trip acceptance
+          const result = await dispatch(acceptTrip(actualId) as any).unwrap();
+          console.log('✅ Trip acceptance successful:', result);
+        }
+
+        return true;
+      } catch (error: any) {
+        console.error(`❌ Accept ${isCargo ? 'cargo' : 'trip'} error caught:`, error);
+        const errorMessage =
+          typeof error === 'string'
+            ? error
+            : error?.message || String(error) || `Failed to accept ${isCargo ? 'cargo' : 'trip'}`;
+        console.error('📤 Error message:', errorMessage);
+        throw new Error(errorMessage);
+      }
+    };
+
     if (isWeb) {
-      const confirmed = window.confirm(`Accept this trip? Transport ${cropName}`);
+      const confirmed = window.confirm(`Accept this ${isCargo ? 'cargo' : 'trip'}? Transport ${cropName}`);
       console.log('✔️ Browser confirm result:', confirmed);
 
       if (confirmed) {
         try {
-          console.log('🚀 Accepting trip for ID:', tripId);
-          const result = await dispatch(acceptTrip(tripId) as any).unwrap();
-          console.log('✅ Accept trip successful:', result);
-
-          alert('Success! 🎉 Trip accepted. Head to pickup location!');
+          await performAccept();
+          alert('Success! 🎉 Accepted. Head to pickup location!');
           navigation.navigate('Home');
         } catch (error: any) {
-          console.error('❌ Accept trip error caught:', error);
-          const errorMessage =
-            typeof error === 'string'
-              ? error
-              : error?.message || String(error) || 'Failed to accept trip';
-
-          console.error('📤 Showing error message:', errorMessage);
-          alert('Error: ' + errorMessage);
+          alert('Error: ' + error.message);
         }
       } else {
         console.log('❌ User cancelled the action');
       }
     } else {
       // Native/mobile platform - use Alert.alert
-      Alert.alert(`Accept this trip?`, `Transport ${cropName}`, [
+      Alert.alert(`Accept this ${isCargo ? 'cargo' : 'trip'}?`, `Transport ${cropName}`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Accept',
           onPress: async () => {
             try {
-              console.log('🚀 Accepting trip for ID:', tripId);
-              const result = await dispatch(acceptTrip(tripId) as any).unwrap();
-              console.log('✅ Accept trip successful:', result);
-
-              Alert.alert('Success! 🎉', 'Trip accepted. Head to pickup location!', [
+              await performAccept();
+              Alert.alert('Success! 🎉', 'Accepted. Head to pickup location!', [
                 { text: 'OK', onPress: () => navigation.navigate('Home') },
               ]);
             } catch (error: any) {
-              console.error('❌ Accept trip error caught:', error);
-              const errorMessage =
-                typeof error === 'string'
-                  ? error
-                  : error?.message || String(error) || 'Failed to accept trip';
-
-              console.error('📤 Showing error message:', errorMessage);
-              Alert.alert('Error', errorMessage);
+              Alert.alert('Error', error.message);
             }
           },
           style: 'default',

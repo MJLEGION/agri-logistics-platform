@@ -120,6 +120,17 @@ export default function TransporterHomeScreen({ navigation }: any) {
   
   const totalAvailableLoads = availableLoads.length + availableCargo.length;
 
+  // DEBUG: Log cargo status
+  console.log('%c🏠 TransporterHomeScreen - Cargo Summary:', 'color: #2196F3; font-weight: bold; font-size: 13px;');
+  console.log(`  Total cargo in Redux: ${cargo.length}`);
+  console.log(`  Available cargo (status='listed' or 'matched'): ${availableCargo.length}`);
+  if (cargo.length > 0) {
+    console.log('  Cargo details:');
+    cargo.slice(0, 5).forEach(c => {
+      console.log(`    - ${c.name}: status="${c.status}" shipperId="${c.shipperId}"`);
+    });
+  }
+
   function calculateDistance(order: any) {
     if (!order.pickupLocation || !order.deliveryLocation) return 0;
     return calcDistance(

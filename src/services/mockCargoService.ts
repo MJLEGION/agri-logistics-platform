@@ -172,7 +172,7 @@ export const mockCargoService = {
         quantity: cargoData?.quantity || 0,
         unit: cargoData?.unit || 'kg',
         pricePerUnit: cargoData?.pricePerUnit || 0,
-        status: 'listed', // Set to 'listed' so it appears for transporters
+        status: cargoData?.status || 'listed', // Use provided status or default to 'listed'
         description: cargoData?.description || '',
         category: cargoData?.category || '',
         location: cargoData?.location || '',

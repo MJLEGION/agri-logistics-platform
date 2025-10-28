@@ -100,8 +100,8 @@ api.interceptors.response.use(
               resolve(api(originalRequest));
             });
           }).catch(() => {
-            // If refresh fails, redirect to login
-            handleTokenRefreshFailure();
+            // If refresh fails, let the caller handle it (e.g., fall back to mock service)
+            logError(error, 'Token refresh failed - caller will handle fallback');
             return Promise.reject(error);
           });
         }
@@ -112,7 +112,11 @@ api.interceptors.response.use(
         try {
           const refreshToken = await AsyncStorage.getItem(STORAGE_REFRESH_TOKEN_KEY);
           if (!refreshToken) {
-            throw new Error('No refresh token available');
+            // No refresh token - don't clear auth, let caller decide what to do
+            // This is important for mock-first architecture where token refresh may not be available
+            logError(error, 'No refresh token available - letting mock service handle this');
+            isRefreshing = false;
+            return Promise.reject(error);
           }
 
           // Attempt to refresh token
@@ -132,7 +136,8 @@ api.interceptors.response.use(
           }
         } catch (refreshError) {
           console.error('❌ Token refresh failed:', refreshError);
-          handleTokenRefreshFailure();
+          // Don't clear auth on refresh failure - let mock service try
+          logError(error, 'Token refresh attempt failed');
           return Promise.reject(refreshError);
         } finally {
           isRefreshing = false;

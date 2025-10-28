@@ -13,7 +13,7 @@ import tripsReducer from '../logistics/store/tripsSlice';
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth'],
+  whitelist: ['auth', 'cargo'], // Added 'cargo' to persist user-created cargo across navigation
 };
 
 const rootReducer = combineReducers({
