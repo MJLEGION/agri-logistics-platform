@@ -21,7 +21,7 @@ let mockUsers: MockUser[] = [
   {
     _id: '1',
     name: 'John Farmer (Shipper)',
-    phone: '+250788000001',
+    phone: '0788000001',
     password: 'password123',
     role: 'farmer', // Legacy role, will be normalized to 'shipper'
     token: 'shipper_token_123',
@@ -29,7 +29,7 @@ let mockUsers: MockUser[] = [
   {
     _id: '3',
     name: 'Mike Transporter',
-    phone: '+250789000003',
+    phone: '0789000003',
     password: 'password123',
     role: 'transporter',
     token: 'transporter_token_123',
@@ -41,6 +41,30 @@ const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
 
 // Generate token
 const generateToken = () => 'token_' + Math.random().toString(36).substr(2, 20);
+
+// Normalize phone numbers to handle both formats (0788123456 and +250788123456)
+const normalizePhone = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-digit characters
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // If starts with 250 (Rwanda country code), keep as is for now
+  if (cleaned.startsWith('250')) {
+    cleaned = cleaned.substring(3); // Remove 250
+  }
+  
+  // Remove leading zero if present (we'll add it back)
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.substring(1);
+  }
+  
+  // Get last 9 digits (in case extra leading digits)
+  cleaned = cleaned.slice(-9);
+  
+  // Return with leading 0
+  return '0' + cleaned;
+};
 
 export const mockAuthService = {
   /**
@@ -70,17 +94,20 @@ export const mockAuthService = {
       throw new Error('Password must be at least 6 characters');
     }
 
-    // Check if user already exists
-    const existingUser = mockUsers.find((u) => u.phone === userData.phone);
+    // Normalize phone number
+    const normalizedPhone = normalizePhone(userData.phone);
+
+    // Check if user already exists (compare normalized phones)
+    const existingUser = mockUsers.find((u) => normalizePhone(u.phone) === normalizedPhone);
     if (existingUser) {
       throw new Error('Phone number already registered');
     }
 
-    // Create new user
+    // Create new user with normalized phone
     const newUser: MockUser = {
       _id: generateId(),
       name: userData.name,
-      phone: userData.phone,
+      phone: normalizedPhone,
       password: userData.password,
       role: userData.role,
       token: generateToken(),
@@ -119,20 +146,35 @@ export const mockAuthService = {
       throw new Error('Password must be at least 6 characters');
     }
 
-    // Find user by phone
-    const user = mockUsers.find((u) => u.phone === credentials.phone);
+    // Normalize phone number and find user
+    const normalizedPhone = normalizePhone(credentials.phone);
+    console.log('🔐 Login attempt:');
+    console.log('  Raw input phone:', credentials.phone);
+    console.log('  Normalized to:', normalizedPhone);
+    console.log('  Total users in system:', mockUsers.length);
+    mockUsers.forEach((u, i) => {
+      const normalized = normalizePhone(u.phone);
+      console.log(`    User ${i + 1}: phone="${u.phone}" → normalized="${normalized}" (name: "${u.name}")`);
+    });
+    
+    const user = mockUsers.find((u) => normalizePhone(u.phone) === normalizedPhone);
 
     if (!user) {
+      console.error('❌ User not found for normalized phone:', normalizedPhone);
+      console.error('   Expected one of:', mockUsers.map(u => normalizePhone(u.phone)));
       throw new Error('User not found');
     }
 
     // Verify password (IMPORTANT: Compare exactly)
     if (user.password !== credentials.password) {
+      console.error('❌ Invalid password for user:', normalizedPhone);
       throw new Error('Invalid password');
     }
 
     // Save token
     await AsyncStorage.setItem('token', user.token);
+    
+    console.log('✅ Login successful for:', user.name);
 
     // Return user without password
     return {
@@ -189,13 +231,35 @@ export const mockAuthService = {
    * Initialize mock users (call on app start)
    */
   initializeMockUsers: async () => {
+    // Always reset to default demo users
+    const defaultUsers: MockUser[] = [
+      {
+        _id: '1',
+        name: 'John Farmer (Shipper)',
+        phone: '0788000001',
+        password: 'password123',
+        role: 'farmer',
+        token: 'shipper_token_123',
+      },
+      {
+        _id: '3',
+        name: 'Mike Transporter',
+        phone: '0789000003',
+        password: 'password123',
+        role: 'transporter',
+        token: 'transporter_token_123',
+      },
+    ];
+
     try {
-      const stored = await AsyncStorage.getItem('mockUsers');
-      if (stored) {
-        mockUsers = JSON.parse(stored);
-      }
+      mockUsers = defaultUsers;
+      // Clear old stored users and save defaults
+      await AsyncStorage.removeItem('mockUsers');
+      await AsyncStorage.setItem('mockUsers', JSON.stringify(mockUsers));
+      console.log('✅ Mock users initialized with defaults:', mockUsers.map(u => u.phone));
     } catch (error) {
-      console.log('Using default mock users');
+      console.log('Error initializing mock users:', error);
+      mockUsers = defaultUsers;
     }
   },
 };

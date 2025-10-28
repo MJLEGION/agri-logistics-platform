@@ -72,12 +72,12 @@ const MOCK_TRIPS: Trip[] = [
       ratePerUnit: 450,
       totalRate: 45000,
       status: 'earned',
-      completedAt: new Date('2025-01-01T10:00:00'),
+      completedAt: new Date(),
     },
-    createdAt: new Date('2025-01-01T06:00:00'),
-    acceptedAt: new Date('2025-01-01T06:20:00'),
-    startedAt: new Date('2025-01-01T06:45:00'),
-    completedAt: new Date('2025-01-01T10:00:00'),
+    createdAt: new Date(new Date().getTime() - 4 * 60 * 60 * 1000), // 4 hours ago
+    acceptedAt: new Date(new Date().getTime() - 3.67 * 60 * 60 * 1000),
+    startedAt: new Date(new Date().getTime() - 3.25 * 60 * 60 * 1000),
+    completedAt: new Date(),
     estimatedDuration: 120,
   },
   {
@@ -165,8 +165,24 @@ export const getAllTrips = async (): Promise<Trip[]> => {
  * Get trips for a specific transporter
  */
 export const getTransporterTrips = async (transporterId: string): Promise<Trip[]> => {
+  console.log('🔍 getTransporterTrips - transporterId:', transporterId);
   await new Promise(resolve => setTimeout(resolve, 300));
-  return MOCK_TRIPS.filter(trip => trip.transporterId === transporterId);
+  
+  // Get trips matching the transporter ID
+  const trips = MOCK_TRIPS.filter(trip => trip.transporterId === transporterId);
+  console.log('📦 Found trips for transporter:', trips.length, 'with ID:', transporterId);
+  
+  // If no trips found for this transporter, show a sample for demo purposes
+  if (trips.length === 0 && MOCK_TRIPS.length > 0) {
+    console.log('ℹ️ No trips found for this transporter, using sample mock data for demo');
+    // Return first 2 trips as demo data
+    return MOCK_TRIPS.slice(0, 2).map(trip => ({
+      ...trip,
+      transporterId: transporterId // Reassign to current user for display
+    }));
+  }
+  
+  return trips;
 };
 
 /**
@@ -211,11 +227,13 @@ export const acceptTrip = async (tripId: string, transporterId: string): Promise
   }
 
   // Update trip
+  const now = new Date();
   const updatedTrip: Trip = {
     ...trip,
     transporterId,
     status: 'accepted',
-    acceptedAt: new Date(),
+    acceptedAt: now,
+    updatedAt: now,
   };
 
   const index = MOCK_TRIPS.findIndex(t => t._id === tripId);
@@ -242,10 +260,12 @@ export const startTrip = async (tripId: string): Promise<Trip> => {
     throw new Error(`Trip must be accepted before starting. Current: ${trip.status}`);
   }
 
+  const now = new Date();
   const updatedTrip: Trip = {
     ...trip,
     status: 'in_transit',
-    startedAt: new Date(),
+    startedAt: now,
+    updatedAt: now,
   };
 
   const index = MOCK_TRIPS.findIndex(t => t._id === tripId);
@@ -277,6 +297,7 @@ export const completeTrip = async (tripId: string): Promise<Trip> => {
     ...trip,
     status: 'completed',
     completedAt,
+    updatedAt: completedAt, // Add updatedAt so dashboard recognizes "completed today"
     earnings: {
       ...trip.earnings,
       status: 'earned',

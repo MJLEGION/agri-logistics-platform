@@ -17,16 +17,22 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [completingTripId, setCompletingTripId] = useState<string | null>(null);
+
+  const activeTrips = getActiveTripsForTransporter(
+    trips,
+    user?.id || user?._id || ''
+  );
+
+  useEffect(() => {
+    console.log('✅ ActiveTripsScreen mounted/updated');
+    console.log('📊 State:', { activeTrips: activeTrips.length, isLoading, completingTripId });
+  }, [activeTrips, isLoading, completingTripId]);
 
   useFocusEffect(
     React.useCallback(() => {
       dispatch(fetchAllTrips() as any);
     }, [dispatch])
-  );
-
-  const activeTrips = getActiveTripsForTransporter(
-    trips,
-    user?.id || user?._id || ''
   );
 
   const handleRefresh = async () => {
@@ -43,54 +49,49 @@ export default function ActiveTripsScreen({ navigation }: any) {
   };
 
   const handleCompleteTrip = async (trip: any) => {
-    Alert.alert(
-      'Complete Delivery',
-      'Mark this delivery as completed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              const tripId = trip._id || trip.tripId;
-              console.log('🚀 Completing trip:', tripId);
-              console.log('📋 Trip object:', JSON.stringify({
-                _id: trip._id,
-                tripId: trip.tripId,
-                status: trip.status,
-                shipmentCropName: trip.shipment?.cropName,
-              }));
-              
-              const result = await dispatch(
-                completeTrip(tripId) as any
-              ).unwrap();
+    const tripId = trip._id || trip.tripId;
+    console.log('🔵 BUTTON CLICKED - handleCompleteTrip called with trip:', tripId);
+    
+    try {
+      setCompletingTripId(tripId);
+      console.log('🚀 Completing trip:', tripId);
+      
+      const result = await dispatch(
+        completeTrip(tripId) as any
+      ).unwrap();
 
-              console.log('✅ Trip completion successful:', result);
-              Alert.alert(
-                'Success',
-                'Delivery marked as completed! ✓',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      console.log('🔄 Refreshing trips list after completion');
-                      dispatch(fetchAllTrips() as any);
-                    },
-                  },
-                ]
-              );
-            } catch (error: any) {
-              console.error('❌ Complete error:', error);
-              console.error('Error details:', JSON.stringify(error));
-              Alert.alert(
-                'Error',
-                error?.message || String(error) || 'Failed to complete delivery'
-              );
-            }
+      console.log('✅ Trip completion successful:', result);
+      
+      Alert.alert(
+        'Success ✓',
+        'Delivery marked as completed!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              console.log('🔄 Refreshing trips list after completion');
+              setCompletingTripId(null);
+              dispatch(fetchAllTrips() as any);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+      setCompletingTripId(null);
+      console.error('❌ Complete error:', error);
+      console.error('Error details:', {
+        message: error?.message,
+        name: error?.name,
+        code: error?.code,
+        fullError: String(error)
+      });
+      
+      const errorMessage = error?.message || String(error) || 'Failed to complete delivery';
+      Alert.alert(
+        'Error ❌',
+        errorMessage
+      );
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -201,16 +202,28 @@ export default function ActiveTripsScreen({ navigation }: any) {
               {trip.status !== 'completed' && (
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
-                    style={[styles.mapButton, { backgroundColor: theme.info }]}
+                    style={[styles.mapButton, { backgroundColor: theme.info, opacity: completingTripId === trip._id ? 0.6 : 1 }]}
                     onPress={() => handleViewMap(trip)}
+                    disabled={completingTripId === trip._id}
+                    activeOpacity={0.7}
                   >
                     <Text style={styles.actionButtonText}>🗺️ View Map</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: theme.tertiary }]}
+                    style={[
+                      styles.actionButton, 
+                      { 
+                        backgroundColor: completingTripId === trip._id ? '#999' : theme.tertiary,
+                        opacity: completingTripId === trip._id ? 0.6 : 1
+                      }
+                    ]}
                     onPress={() => handleCompleteTrip(trip)}
+                    disabled={completingTripId === trip._id}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.actionButtonText}>✓ Complete</Text>
+                    <Text style={styles.actionButtonText}>
+                      {completingTripId === trip._id ? '⟳ Processing...' : '✓ Complete'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -319,23 +332,28 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 10,
+    marginTop: 15,
   },
   actionButton: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
   },
   mapButton: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
   },
   actionButtonText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

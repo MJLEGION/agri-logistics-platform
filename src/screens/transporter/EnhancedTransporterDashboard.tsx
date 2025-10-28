@@ -20,6 +20,7 @@ import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
+import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { findBestMatches, calculateDailyEarningPotential } from '../../services/loadMatchingService';
 import { calculateDistance } from '../../services/routeOptimizationService';
@@ -29,6 +30,7 @@ const { width } = Dimensions.get('window');
 export default function EnhancedTransporterDashboard({ navigation }: any) {
   const { user } = useAppSelector(state => state.auth);
   const { orders } = useAppSelector(state => state.orders);
+  const trips = useAppSelector(state => state.trips.trips);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
 
@@ -41,15 +43,45 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   // Fetch data when screen loads
   useEffect(() => {
     dispatch(fetchAllOrders());
+    if (user?.id || user?._id) {
+      dispatch(fetchTransporterTrips(user.id || user._id));
+    }
     getCurrentLocation();
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   // Auto-refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(fetchAllOrders());
-      getCurrentLocation();
-    }, [dispatch])
+      console.log('📲 EnhancedTransporterDashboard focused - refreshing data...');
+      
+      const refreshData = async () => {
+        try {
+          await dispatch(fetchAllOrders());
+          console.log('✅ Orders fetched');
+        } catch (err) {
+          console.error('❌ Orders fetch error:', err);
+        }
+        
+        const userId = user?.id || user?._id;
+        if (userId) {
+          try {
+            await dispatch(fetchTransporterTrips(userId));
+            console.log('✅ Transporter trips fetched');
+          } catch (err) {
+            console.error('❌ Trips fetch error:', err);
+          }
+        }
+        
+        try {
+          await getCurrentLocation();
+          console.log('✅ Location updated');
+        } catch (err) {
+          console.error('❌ Location error:', err);
+        }
+      };
+      
+      refreshData();
+    }, [dispatch, user])
   );
 
   // Get current location
@@ -98,35 +130,50 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchAllOrders());
+    if (user?.id || user?._id) {
+      await dispatch(fetchTransporterTrips(user.id || user._id));
+    }
     await getCurrentLocation();
     setRefreshing(false);
   };
 
-  // Calculate statistics
-  const myTrips = orders.filter(
-    order => order.transporterId === user?.id || order.transporterId?._id === user?.id
-  );
-
-  const activeTrips = myTrips.filter(
-    order => order.status === 'in_progress' || order.status === 'accepted'
-  );
-
-  const completedToday = myTrips.filter(order => {
-    if (order.status !== 'completed') return false;
-    const today = new Date().toDateString();
-    const orderDate = new Date(order.updatedAt || order.createdAt).toDateString();
-    return today === orderDate;
+  // Calculate statistics using trips data (which updates in real-time)
+  console.log('📊 Dashboard Data:', {
+    totalTrips: trips.length,
+    trips: trips.map(t => ({ id: t._id, status: t.status, createdAt: t.createdAt }))
   });
 
-  const todayEarnings = completedToday.reduce((sum, order) => {
-    const distance = calculateDistance(
-      order.pickupLocation.latitude,
-      order.pickupLocation.longitude,
-      order.deliveryLocation.latitude,
-      order.deliveryLocation.longitude
-    );
-    return sum + distance * 1200; // 1200 RWF per km
+  const activeTrips = trips.filter(
+    trip => trip.status === 'in_transit' || trip.status === 'accepted'
+  );
+  console.log('🚗 Active trips:', activeTrips.length);
+
+  const completedToday = trips.filter(trip => {
+    if (trip.status !== 'completed') return false;
+    const today = new Date().toDateString();
+    const tripDate = new Date(trip.updatedAt || trip.createdAt).toDateString();
+    return today === tripDate;
+  });
+  console.log('✅ Completed today:', completedToday.length);
+
+  const todayEarnings = completedToday.reduce((sum, trip) => {
+    // Use earnings from trip if available, otherwise calculate from distance
+    if (trip.earnings?.totalRate) {
+      return sum + trip.earnings.totalRate;
+    }
+    // Fallback to distance-based calculation using pickup and delivery locations
+    const pickupLat = trip.pickup?.latitude || trip.pickupLocation?.latitude;
+    const pickupLng = trip.pickup?.longitude || trip.pickupLocation?.longitude;
+    const deliveryLat = trip.delivery?.latitude || trip.deliveryLocation?.latitude;
+    const deliveryLng = trip.delivery?.longitude || trip.deliveryLocation?.longitude;
+    
+    if (pickupLat && pickupLng && deliveryLat && deliveryLng) {
+      const distance = calculateDistance(pickupLat, pickupLng, deliveryLat, deliveryLng);
+      return sum + distance * 1200; // 1200 RWF per km
+    }
+    return sum;
   }, 0);
+  console.log('💰 Today earnings:', todayEarnings);
 
   const availableLoads = orders.filter(
     order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId

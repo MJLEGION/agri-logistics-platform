@@ -49,6 +49,7 @@ export interface Trip {
 
   // Trip Metadata
   createdAt: Date;
+  updatedAt?: Date; // Last updated timestamp (for "completed today" filtering)
   acceptedAt?: Date;
   startedAt?: Date;
   completedAt?: Date;

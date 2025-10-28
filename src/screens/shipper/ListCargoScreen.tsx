@@ -138,8 +138,26 @@ export default function ListCargoScreen({ navigation }: any) {
   };
 
   const handleSubmit = async () => {
+    console.log('%c🎯 ListCargoScreen: handleSubmit called', 'color: #2196F3; font-size: 14px; font-weight: bold');
+    
+    // Validation
+    console.log('%c📋 Form validation:', 'color: #2196F3; font-weight: bold', {
+      cargoName: !!cargoName,
+      quantity: !!quantity,
+      readyDate: !!readyDate,
+      user: !!user,
+      shipperId: user?._id || user?.id
+    });
+    
     if (!cargoName || !quantity || !readyDate) {
+      console.error('%c❌ Form validation failed:', 'color: #F44336; font-weight: bold');
       Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
+    if (!user?._id && !user?.id) {
+      console.error('%c❌ User not logged in or user ID missing:', 'color: #F44336; font-weight: bold', user);
+      Alert.alert('Error', 'User ID is missing. Please try logging in again.');
       return;
     }
 
@@ -157,12 +175,40 @@ export default function ListCargoScreen({ navigation }: any) {
       },
     };
 
+    console.log('%c📦 ListCargoScreen: Submitting cargo', 'color: #4CAF50; font-weight: bold');
+    console.log('%cCargo details:', 'color: #2196F3; font-weight: bold', cargoData);
+
     try {
-      await dispatch(createCargo(cargoData)).unwrap();
-      Alert.alert('Success', 'Cargo listed successfully!');
-      navigation.goBack();
+      const result = await dispatch(createCargo(cargoData));
+      
+      // Check if the action was fulfilled
+      if (result.type.includes('fulfilled')) {
+        console.log('✅ ListCargoScreen: Cargo created successfully:', result.payload);
+        
+        // Use setTimeout to ensure alert is shown
+        setTimeout(() => {
+          Alert.alert(
+            'Success! ✅',
+            `Your cargo "${cargoName}" has been successfully listed and is now visible to transporters!`,
+            [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+          );
+        }, 100);
+      } else {
+        // Handle rejection
+        const errorMessage = result.payload || 'Failed to list cargo. Please try again.';
+        Alert.alert('Error', errorMessage);
+      }
     } catch (error: any) {
-      Alert.alert('Error', error || 'Failed to list cargo');
+      console.error('❌ ListCargoScreen: Error creating cargo:', error);
+      
+      const errorMessage = typeof error === 'string' 
+        ? error 
+        : error?.message || error?.payload || 'Failed to list cargo. Please try again.';
+      
+      Alert.alert(
+        'Error',
+        errorMessage
+      );
     }
   };
 

@@ -10,6 +10,7 @@ import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
 import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { calculateDistance as calcDistance } from '../../services/routeOptimizationService';
 
@@ -17,6 +18,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { orders } = useAppSelector((state) => state.orders);
   const { cargo } = useAppSelector((state) => state.cargo);
+  const trips = useAppSelector((state) => state.trips.trips);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
@@ -25,44 +27,87 @@ export default function TransporterHomeScreen({ navigation }: any) {
   useEffect(() => {
     dispatch(fetchAllOrders());
     dispatch(fetchCargo());
-  }, [dispatch]);
+    if (user?.id || user?._id) {
+      dispatch(fetchTransporterTrips(user.id || user._id));
+    }
+  }, [dispatch, user]);
 
-  // Auto-refresh when screen comes into focus (e.g., returning after creating order)
+  // Auto-refresh when screen comes into focus (e.g., returning after creating order or completing trip)
   useFocusEffect(
     React.useCallback(() => {
-      dispatch(fetchAllOrders());
-      dispatch(fetchCargo());
-    }, [dispatch])
+      console.log('📲 TransporterHomeScreen focused - refreshing data...');
+      console.log('User ID:', user?.id || user?._id);
+      
+      const refreshData = async () => {
+        try {
+          await dispatch(fetchAllOrders());
+          console.log('✅ Orders fetched');
+        } catch (err) {
+          console.error('❌ Orders fetch error:', err);
+        }
+        
+        try {
+          await dispatch(fetchCargo());
+          console.log('✅ Cargo fetched');
+        } catch (err) {
+          console.error('❌ Cargo fetch error:', err);
+        }
+        
+        const userId = user?.id || user?._id;
+        if (userId) {
+          try {
+            await dispatch(fetchTransporterTrips(userId));
+            console.log('✅ Transporter trips fetched');
+          } catch (err) {
+            console.error('❌ Trips fetch error:', err);
+          }
+        } else {
+          console.warn('⚠️ No user ID available');
+        }
+      };
+      
+      refreshData();
+    }, [dispatch, user])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchAllOrders());
     await dispatch(fetchCargo());
+    if (user?.id || user?._id) {
+      await dispatch(fetchTransporterTrips(user.id || user._id));
+    }
     setRefreshing(false);
   };
 
-  // Calculate statistics
-  const myTrips = orders.filter(order => 
-    order.transporterId === user?.id || order.transporterId?._id === user?.id
-  );
-  
-  const activeTrips = myTrips.filter(order => 
-    order.status === 'in_progress' || order.status === 'accepted'
-  );
-  
-  const completedToday = myTrips.filter(order => {
-    if (order.status !== 'completed') return false;
-    const today = new Date().toDateString();
-    const orderDate = new Date(order.updatedAt || order.createdAt).toDateString();
-    return today === orderDate;
+  // Calculate statistics using trips data (which updates in real-time)
+  console.log('📊 Dashboard Data:', {
+    totalTrips: trips.length,
+    trips: trips.map(t => ({ id: t._id, status: t.status, createdAt: t.createdAt }))
   });
 
-  const todayEarnings = completedToday.reduce((sum, order) => {
-    // Calculate earnings: distance * 1000 RWF/km
-    const distance = calculateDistance(order);
+  const activeTrips = trips.filter(trip => 
+    trip.status === 'in_transit' || trip.status === 'accepted'
+  );
+  console.log('🚗 Active trips:', activeTrips.length);
+  
+  const completedToday = trips.filter(trip => {
+    if (trip.status !== 'completed') return false;
+    const today = new Date().toDateString();
+    const tripDate = new Date(trip.updatedAt || trip.createdAt).toDateString();
+    return today === tripDate;
+  });
+  console.log('✅ Completed today:', completedToday.length);
+
+  const todayEarnings = completedToday.reduce((sum, trip) => {
+    // Use earnings from trip if available, otherwise calculate from distance
+    if (trip.earnings?.totalRate) {
+      return sum + trip.earnings.totalRate;
+    }
+    const distance = calculateDistance(trip);
     return sum + (distance * 1000);
   }, 0);
+  console.log('💰 Today earnings:', todayEarnings);
 
   // Count available loads from both orders and cargo (that are listed and ready)
   const availableLoads = orders.filter(

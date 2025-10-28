@@ -67,12 +67,12 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('=== TRANSPORTER LOADING TRIPS & CARGO ===');
+        console.log('🔄 AvailableLoadsScreen: Mounting - loading trips & cargo...');
         await dispatch(fetchTrips() as any);
         await dispatch(fetchCargo() as any);
-        console.log('✅ DATA LOADED');
+        console.log('✅ AvailableLoadsScreen: Initial data loaded');
       } catch (error) {
-        console.log('❌ ERROR LOADING DATA:', error);
+        console.error('❌ AvailableLoadsScreen: Error loading data:', error);
       }
     };
     loadData();
@@ -82,10 +82,12 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
+      console.log('🔄 AvailableLoadsScreen: Manual refresh triggered');
       await dispatch(fetchTrips() as any);
       await dispatch(fetchCargo() as any);
+      console.log('✅ AvailableLoadsScreen: Manual refresh complete');
     } catch (error) {
-      console.log('Error refreshing:', error);
+      console.error('❌ AvailableLoadsScreen: Error during refresh:', error);
     }
     setRefreshing(false);
   };
@@ -95,11 +97,12 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          console.log('=== SCREEN FOCUSED - AUTO REFRESHING TRIPS & CARGO ===');
+          console.log('🎯 AvailableLoadsScreen: Screen focused - auto-refreshing trips & cargo...');
           await dispatch(fetchTrips() as any);
           await dispatch(fetchCargo() as any);
+          console.log('✅ AvailableLoadsScreen: Auto-refresh complete on focus');
         } catch (error) {
-          console.log('ERROR AUTO-REFRESHING:', error);
+          console.error('❌ AvailableLoadsScreen: Error during auto-refresh:', error);
         }
       };
       refreshData();
@@ -115,10 +118,15 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const isLoading = tripsLoading || cargoLoading;
   const pendingTrips = allAvailableLoads;
 
-  console.log('📊 Available Loads Debug:', {
+  // Enhanced debug logging
+  const availableCargo = cargo.filter(c => c.status === 'listed' || c.status === 'matched');
+  const pendingTripsFromTrips = getPendingTripsForTransporter(trips);
+  
+  console.log('📊 AvailableLoadsScreen Debug Info:', {
     totalTrips: trips.length,
     totalCargo: cargo.length,
-    availableCargo: cargo.filter(c => c.status === 'listed' || c.status === 'matched').length,
+    availableCargo: availableCargo.length,
+    pendingTripsFromTrips: pendingTripsFromTrips.length,
     pendingTrips: pendingTrips.length,
     tripsDetails: trips.map(t => ({
       id: t._id || t.tripId,
@@ -131,13 +139,22 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       name: c.name,
       status: c.status,
       shipperId: c.shipperId,
+      createdAt: c.createdAt,
+    })),
+    availableCargoDetails: availableCargo.map(c => ({
+      id: c._id || c.id,
+      name: c.name,
+      status: c.status,
     })),
   });
 
   if (pendingTrips.length === 0) {
-    console.warn('⚠️ NO AVAILABLE LOADS! Check if cargo is listed or if trips exist');
+    console.warn('⚠️ NO AVAILABLE LOADS!');
+    console.warn('  - Trips available:', trips.length);
+    console.warn('  - Cargo available:', availableCargo.length);
+    console.warn('  - Check if cargo was created with status "listed"');
   } else {
-    console.log(`✅ ${pendingTrips.length} load(s) available for acceptance`);
+    console.log(`✅ ${pendingTrips.length} load(s) available for transporter to accept`);
   }
 
   const handleAcceptTrip = async (tripId: string, cropName: string) => {

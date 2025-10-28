@@ -12,6 +12,7 @@ import {
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrders } from '../../store/slices/ordersSlice';
+import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import TripMapView from '../../components/TripMapView';
 import tripService from '../../services/tripService';
 import * as orderService from '../../services/orderService';
@@ -89,7 +90,12 @@ export default function ActiveTripScreen({ navigation }: any) {
           console.log('✅ Complete delivery successful:', result);
           
           tripService.completeTrip(tripId);
+          // Refresh BOTH orders and trips so dashboard updates
           await dispatch(fetchOrders());
+          const transporterId = user?._id || user?.id;
+          if (transporterId) {
+            await dispatch(fetchTransporterTrips(transporterId));
+          }
           
           alert('🎉 Success! Delivery completed. Earnings added to your account.');
           navigation.goBack();
@@ -125,7 +131,12 @@ export default function ActiveTripScreen({ navigation }: any) {
               console.log('✅ Complete delivery successful:', result);
               
               tripService.completeTrip(tripId);
+              // Refresh BOTH orders and trips so dashboard updates
               await dispatch(fetchOrders());
+              const transporterId = user?._id || user?.id;
+              if (transporterId) {
+                await dispatch(fetchTransporterTrips(transporterId));
+              }
               
               Alert.alert('Success! 🎉', 'Delivery completed. Earnings added to your account.', [
                 { text: 'OK', onPress: () => navigation.goBack() }

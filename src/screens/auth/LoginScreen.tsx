@@ -26,14 +26,14 @@ const { width, height } = Dimensions.get('window');
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
   shipper: {
-    phone: '+250788000001',
+    phone: '0788000001',
     password: 'password123',
-    name: 'Test Shipper',
+    name: 'Test Shipper (John Farmer)',
   },
   transporter: {
-    phone: '+250789000003',
+    phone: '0789000003',
     password: 'password123',
-    name: 'Test Transporter',
+    name: 'Test Transporter (Mike)',
   },
 };
 

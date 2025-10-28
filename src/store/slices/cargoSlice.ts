@@ -24,9 +24,15 @@ export const createCargo = createAsyncThunk<Cargo, any, { rejectValue: string }>
   'cargo/create',
   async (cargoData, { rejectWithValue }) => {
     try {
-      return await cargoService.createCargo(cargoData);
+      console.log('🎯 cargoSlice: Creating cargo...');
+      const result = await cargoService.createCargo(cargoData);
+      console.log('✅ cargoSlice: Cargo created successfully:', result);
+      return result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create cargo');
+      console.error('❌ cargoSlice: Error creating cargo:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create cargo';
+      console.error('❌ cargoSlice: Error message:', errorMessage);
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -46,11 +52,15 @@ export const deleteCargo = createAsyncThunk<string, string, { rejectValue: strin
   'cargo/delete',
   async (id, { rejectWithValue }) => {
     try {
+      console.log('🎯 cargoSlice: Deleting cargo with ID:', id);
       await cargoService.deleteCargo(id);
+      console.log('✅ cargoSlice: Cargo deleted successfully:', id);
       return id;
     }
     catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete cargo');
+      console.error('❌ cargoSlice: Error deleting cargo:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete cargo';
+      return rejectWithValue(errorMessage);
     }
   }
 );

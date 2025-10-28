@@ -63,8 +63,9 @@ export const createCargo = async (
 ): Promise<Cargo> => {
   try {
     console.log('📦 Attempting to create cargo with real API...');
+    console.log('📦 Cargo data:', cargoData);
     const response = await api.post<Cargo>('/cargo', cargoData);
-    console.log('✅ Cargo created (Real API)');
+    console.log('✅ Cargo created (Real API):', response.data);
     return response.data;
   } catch (error) {
     console.log('⚠️ Real API failed, using mock cargo service...');
@@ -72,12 +73,14 @@ export const createCargo = async (
 
     // Fallback to mock cargo service
     try {
+      console.log('📦 Calling mockCargoService.createCargo...');
       const result = await mockCargoService.createCargo(cargoData);
-      console.log('✅ Cargo created (Mock Service)');
+      console.log('✅ Cargo created (Mock Service):', result);
       return result;
     } catch (mockError) {
       const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to create cargo';
       console.error('❌ Mock cargo creation failed:', errorMessage);
+      console.error('❌ Mock error details:', mockError);
       throw new Error(errorMessage);
     }
   }

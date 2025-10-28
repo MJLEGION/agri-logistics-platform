@@ -1,10 +1,11 @@
 // src/screens/shipper/MyCargoScreen.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
+import { fetchCargo, deleteCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 
 export default function MyCargoScreen({ navigation }: any) {
@@ -12,6 +13,11 @@ export default function MyCargoScreen({ navigation }: any) {
   const { cargo, isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
+  
+  // State for confirmation dialog
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteName, setPendingDeleteName] = useState<string>('');
 
   // Fetch cargo on screen mount
   useEffect(() => {
@@ -29,6 +35,56 @@ export default function MyCargoScreen({ navigation }: any) {
     const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
     return shipperId === user?._id || shipperId === user?.id;
   });
+
+  React.useEffect(() => {
+    console.log('%c📦 MyCargoScreen: myListings updated', 'color: #4CAF50; font-size: 14px; font-weight: bold');
+    console.log('%cTotal cargo:', 'color: #2196F3; font-weight: bold', cargo.length);
+    console.log('%cMy listings:', 'color: #2196F3; font-weight: bold', myListings.length);
+    console.log('%cCargo details:', 'color: #2196F3; font-weight: bold', myListings.map(c => ({ id: c._id || c.id, name: c.name })));
+    console.log('%cUser:', 'color: #2196F3; font-weight: bold', { userId: user?._id || user?.id, userName: user?.name });
+  }, [myListings, cargo, user]);
+
+  const handleDelete = (cargoId: string, cargoName: string) => {
+    console.log('%c🗑️ DELETE BUTTON PRESSED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
+    console.log('%cCargo ID:', 'color: #2196F3; font-weight: bold', cargoId);
+    console.log('%cCargo Name:', 'color: #2196F3; font-weight: bold', cargoName);
+    
+    setPendingDeleteId(cargoId);
+    setPendingDeleteName(cargoName);
+    setDialogVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    
+    console.log('%c✅ Confirmed delete for:', 'color: #4CAF50; font-weight: bold', pendingDeleteId);
+    setDialogVisible(false);
+    
+    try {
+      console.log('%c🚀 Dispatching deleteCargo action...', 'color: #2196F3; font-weight: bold');
+      const result = await dispatch(deleteCargo(pendingDeleteId));
+      console.log('%c📦 Delete result:', 'color: #2196F3; font-weight: bold', result);
+      console.log('%c📦 Result type:', 'color: #2196F3; font-weight: bold', result.type);
+      
+      if (result.type.includes('fulfilled')) {
+        console.log('%c✅ Cargo deleted successfully!', 'color: #4CAF50; font-weight: bold');
+      } else {
+        console.log('%c❌ Delete failed:', 'color: #F44336; font-weight: bold', result.payload);
+      }
+    } catch (error: any) {
+      console.error('%c❌ Error in handleDelete:', 'color: #F44336; font-weight: bold', error);
+    }
+    
+    setPendingDeleteId(null);
+    setPendingDeleteName('');
+  };
+
+  const handleCancelDelete = () => {
+    console.log('%c❌ Delete cancelled', 'color: #FF9800; font-weight: bold');
+    setDialogVisible(false);
+    setPendingDeleteId(null);
+    setPendingDeleteName('');
+  };
 
   if (isLoading) {
     return (
@@ -64,8 +120,8 @@ export default function MyCargoScreen({ navigation }: any) {
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
-              <Card>
+            <Card>
+              <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
                 <View style={styles.cropHeader}>
                   <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: theme.info + '20' }]}>
@@ -86,11 +142,32 @@ export default function MyCargoScreen({ navigation }: any) {
                 <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
                   📍 {item.location.address}
                 </Text>
-              </Card>
-            </TouchableOpacity>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.deleteButton, { borderColor: theme.error || '#FF6B6B' }]}
+                onPress={() => {
+                  console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
+                  handleDelete(item._id || item.id, item.name);
+                }}
+              >
+                <Text style={[styles.deleteButtonText, { color: theme.error || '#FF6B6B' }]}>🗑️ Delete</Text>
+              </TouchableOpacity>
+            </Card>
           )}
         />
       )}
+      
+      <ConfirmDialog
+        visible={dialogVisible}
+        title="Delete Cargo"
+        message={`Are you sure you want to delete "${pendingDeleteName}"?`}
+        cancelText="Cancel"
+        confirmText="Delete"
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        isDestructive={true}
+      />
     </View>
   );
 }
@@ -164,5 +241,17 @@ const styles = StyleSheet.create({
   cropLocation: {
     fontSize: 12,
     marginTop: 5,
+  },
+  deleteButton: {
+    marginTop: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
