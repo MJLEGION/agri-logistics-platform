@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -132,9 +133,12 @@ export default function ActiveTripsScreen({ navigation }: any) {
             disabled={isRefreshing}
             style={styles.refreshButton}
           >
-            <Text style={[styles.refreshIcon, { opacity: isRefreshing ? 0.5 : 1 }]}>
-              {isRefreshing ? '⟳' : '🔄'}
-            </Text>
+            <FontAwesome 
+              name="refresh" 
+              size={20} 
+              color={theme.card} 
+              style={{ opacity: isRefreshing ? 0.5 : 1 }}
+            />
           </TouchableOpacity>
         </View>
         <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
@@ -142,7 +146,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
       {activeTrips.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🚛</Text>
+          <FontAwesome name="truck" size={48} color={theme.textSecondary} />
           <Text style={[styles.emptyText, { color: theme.text }]}>No active trips</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Accept loads to start transporting
@@ -221,9 +225,16 @@ export default function ActiveTripsScreen({ navigation }: any) {
                     disabled={completingTripId === trip._id}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.actionButtonText}>
-                      {completingTripId === trip._id ? '⟳ Processing...' : '✓ Complete'}
-                    </Text>
+                    <View style={styles.actionButtonContent}>
+                      <FontAwesome 
+                        name={completingTripId === trip._id ? 'spinner' : 'check'} 
+                        size={14} 
+                        color="#fff"
+                      />
+                      <Text style={styles.actionButtonText}>
+                        {completingTripId === trip._id ? 'Processing...' : 'Complete'}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
               )}
@@ -256,9 +267,6 @@ const styles = StyleSheet.create({
   refreshButton: {
     padding: 8,
   },
-  refreshIcon: {
-    fontSize: 20,
-  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -268,10 +276,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 20,
   },
   emptyText: {
     fontSize: 18,
@@ -341,6 +345,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
+  },
+  actionButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   mapButton: {
     flex: 1,

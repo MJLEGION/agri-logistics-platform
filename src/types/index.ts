@@ -42,8 +42,26 @@ export interface Cargo {
     longitude: number;
     address: string;
   };
-  status: 'listed' | 'matched' | 'picked_up' | 'in_transit' | 'delivered';
+  destination?: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  status: 'listed' | 'matched' | 'picked_up' | 'in_transit' | 'delivered' | 'payment_completed';
   pricePerUnit?: number;
+  // Transportation details
+  distance?: number; // Distance in km from origin to destination
+  eta?: number; // Estimated time in minutes
+  shippingCost?: number; // Pre-calculated shipping cost in RWF
+  suggestedVehicle?: string; // Suggested vehicle type (moto, van, truck)
+  // Payment details
+  paymentDetails?: {
+    transactionId: string;
+    referenceId: string;
+    amount: number;
+    timestamp: string;
+    method: string;
+  };
   createdAt?: string | Date; // When cargo was listed
   updatedAt?: string | Date; // When cargo was last updated
 }

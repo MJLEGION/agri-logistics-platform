@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +19,7 @@ import {
   getTripsByPeriod,
 } from '../../logistics/utils/tripCalculations';
 import { fetchAllTrips } from '../../logistics/store/tripsSlice';
+import PaymentModal from '../../components/PaymentModal';
 
 type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
@@ -27,6 +29,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('today');
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [minimumWithdrawal] = useState(5000); // Minimum withdrawal amount
 
   // Fetch trips when screen loads
   useEffect(() => {
@@ -97,6 +101,41 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     year: 'This Year',
   };
 
+  const handleRequestPayout = () => {
+    if (stats.netEarnings < minimumWithdrawal) {
+      Alert.alert(
+        'Insufficient Balance',
+        `You need at least ${minimumWithdrawal.toLocaleString()} RWF to request a payout. Your current balance is ${stats.netEarnings.toLocaleString()} RWF.`,
+        [{ text: 'OK', style: 'cancel' }]
+      );
+      return;
+    }
+
+    setShowPayoutModal(true);
+  };
+
+  const handlePayoutSuccess = async (transactionId: string, referenceId: string) => {
+    try {
+      setShowPayoutModal(false);
+      Alert.alert(
+        '✅ Payout Request Successful!',
+        `Your request for ${stats.netEarnings.toLocaleString()} RWF has been submitted.\n\nTransaction ID: ${referenceId.substring(0, 12)}...\n\nYou should receive the funds within 1-2 business days.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Could navigate to a transaction history or refresh
+              dispatch(fetchAllTrips() as any);
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error processing payout:', error);
+      Alert.alert('Error', 'There was an issue processing your payout request. Please try again.');
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
@@ -161,6 +200,24 @@ export default function EarningsDashboardScreen({ navigation }: any) {
             <Ionicons name="wallet" size={48} color="#F59E0B" />
           </View>
         </View>
+
+        {/* Payout Button */}
+        <TouchableOpacity
+          style={[
+            styles.payoutButton,
+            {
+              backgroundColor: stats.netEarnings >= minimumWithdrawal ? '#10B981' : '#ccc',
+              opacity: stats.netEarnings >= minimumWithdrawal ? 1 : 0.6,
+            },
+          ]}
+          onPress={handleRequestPayout}
+          disabled={stats.netEarnings < minimumWithdrawal}
+        >
+          <Ionicons name="send" size={20} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.payoutButtonText}>
+            Request Payout • {stats.netEarnings.toLocaleString()} RWF
+          </Text>
+        </TouchableOpacity>
 
         {/* Statistics Grid */}
         <View style={styles.statsGrid}>
@@ -379,6 +436,18 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Payout Modal */}
+      <PaymentModal
+        visible={showPayoutModal}
+        amount={stats.netEarnings}
+        orderId={`payout_${user?.id || user?._id || 'unknown'}_${Date.now()}`}
+        userEmail={user?.email || 'user@example.com'}
+        userName={user?.name || 'User'}
+        purpose="payout"
+        onSuccess={handlePayoutSuccess}
+        onCancel={() => setShowPayoutModal(false)}
+      />
     </View>
   );
 }
@@ -594,5 +663,19 @@ const styles = StyleSheet.create({
   tipText: {
     fontSize: 13,
     flex: 1,
+  },
+  payoutButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 15,
+    marginVertical: 15,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  payoutButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

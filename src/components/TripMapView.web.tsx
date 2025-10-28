@@ -1,6 +1,7 @@
 // Web-only version of TripMapView using Leaflet
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -116,16 +117,16 @@ export default function TripMapView({
 
       // Add markers
       L.marker([pickupLocation.latitude, pickupLocation.longitude], { icon: GreenIcon })
-        .bindPopup(`<b>📍 Pickup</b><br/><small>${pickupLocation.address}</small>`)
+        .bindPopup(`<b>📦 Pickup</b><br/><small>${pickupLocation.address}</small>`)
         .addTo(map);
 
       L.marker([deliveryLocation.latitude, deliveryLocation.longitude], { icon: RedIcon })
-        .bindPopup(`<b>🏁 Delivery</b><br/><small>${deliveryLocation.address}</small>`)
+        .bindPopup(`<b>🎯 Delivery</b><br/><small>${deliveryLocation.address}</small>`)
         .addTo(map);
 
       if (currentLocation && isTracking) {
         L.marker([currentLocation.latitude, currentLocation.longitude], { icon: BlueIcon })
-          .bindPopup('<b>🔵 Current Location</b>')
+          .bindPopup('<b>📍 Current Location</b>')
           .addTo(map);
       }
 
@@ -180,13 +181,19 @@ export default function TripMapView({
         }}
       >
         <div style={styles.infoRow}>
-          <p style={{...styles.label, color: theme.textSecondary}}>📍 From:</p>
+          <div style={styles.labelRow}>
+            <i className="fas fa-cube" style={{marginRight: '6px', color: theme.textSecondary, fontSize: '12px'}}></i>
+            <p style={{...styles.label, color: theme.textSecondary, margin: 0}}>From:</p>
+          </div>
           <p style={{...styles.value, color: theme.text}}>
             {pickupLocation.address}
           </p>
         </div>
         <div style={styles.infoRow}>
-          <p style={{...styles.label, color: theme.textSecondary}}>🏁 To:</p>
+          <div style={styles.labelRow}>
+            <i className="fas fa-flag" style={{marginRight: '6px', color: theme.textSecondary, fontSize: '12px'}}></i>
+            <p style={{...styles.label, color: theme.textSecondary, margin: 0}}>To:</p>
+          </div>
           <p style={{...styles.value, color: theme.text}}>
             {deliveryLocation.address}
           </p>
@@ -217,10 +224,16 @@ const styles = StyleSheet.create({
   infoRow: {
     marginVertical: 6,
   },
+  labelRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '4px',
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 0,
   },
   value: {
     fontSize: 14,

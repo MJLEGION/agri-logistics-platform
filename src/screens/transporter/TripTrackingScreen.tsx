@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import TripMapView from '../../components/TripMapView';
@@ -198,9 +199,12 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           {/* Current Location Info */}
           {currentLocation && (
             <View style={[styles.currentLocationBox, { borderColor: theme.tertiary }]}>
-              <Text style={[styles.currentLocationLabel, { color: theme.tertiary }]}>
-                📍 Your Current Location
-              </Text>
+              <View style={styles.locationLabelRow}>
+                <FontAwesome name="map-marker" size={14} color={theme.tertiary} />
+                <Text style={[styles.currentLocationLabel, { color: theme.tertiary }]}>
+                  Your Current Location
+                </Text>
+              </View>
               <Text style={[styles.currentLocationCoords, { color: theme.text }]}>
                 {currentLocation.latitude.toFixed(4)}, {currentLocation.longitude.toFixed(4)}
               </Text>
@@ -217,7 +221,10 @@ export default function TripTrackingScreen({ route, navigation }: any) {
               {isUpdating ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.buttonText}>🔄 Refresh Location</Text>
+                <View style={styles.buttonContent}>
+                  <FontAwesome name="refresh" size={16} color="#fff" />
+                  <Text style={styles.buttonText}>Refresh Location</Text>
+                </View>
               )}
             </TouchableOpacity>
 
@@ -230,7 +237,10 @@ export default function TripTrackingScreen({ route, navigation }: any) {
                 {isUpdating ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>✓ Mark as Completed</Text>
+                  <View style={styles.buttonContent}>
+                    <FontAwesome name="check" size={16} color="#fff" />
+                    <Text style={styles.buttonText}>Mark Completed</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             )}
@@ -242,7 +252,10 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Route Details</Text>
 
           <View style={styles.routeItem}>
-            <Text style={[styles.routeLabel, { color: theme.success }]}>✓ Pickup</Text>
+            <View style={styles.routeLabelRow}>
+              <FontAwesome name="cube" size={14} color={theme.success} />
+              <Text style={[styles.routeLabel, { color: theme.success }]}>Pickup</Text>
+            </View>
             <Text style={[styles.routeText, { color: theme.text }]}>
               {trip.pickup?.address || 'Not specified'}
             </Text>
@@ -251,7 +264,10 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <View style={[styles.routeSeparator, { backgroundColor: theme.border }]} />
 
           <View style={styles.routeItem}>
-            <Text style={[styles.routeLabel, { color: theme.info }]}>→ In Transit</Text>
+            <View style={styles.routeLabelRow}>
+              <FontAwesome name="truck" size={14} color={theme.info} />
+              <Text style={[styles.routeLabel, { color: theme.info }]}>In Transit</Text>
+            </View>
             <Text style={[styles.routeText, { color: theme.textSecondary }]}>
               {trip.status === 'in_transit' ? 'Active' : 'Pending'}
             </Text>
@@ -260,7 +276,10 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           <View style={[styles.routeSeparator, { backgroundColor: theme.border }]} />
 
           <View style={styles.routeItem}>
-            <Text style={[styles.routeLabel, { color: theme.info }]}>🏁 Delivery</Text>
+            <View style={styles.routeLabelRow}>
+              <FontAwesome name="flag" size={14} color={theme.info} />
+              <Text style={[styles.routeLabel, { color: theme.info }]}>Delivery</Text>
+            </View>
             <Text style={[styles.routeText, { color: theme.text }]}>
               {trip.delivery?.address || 'Not specified'}
             </Text>
@@ -353,11 +372,16 @@ const styles = StyleSheet.create({
   currentLocationLabel: {
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
   },
   currentLocationCoords: {
     fontSize: 12,
     fontFamily: 'monospace',
+  },
+  locationLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -369,12 +393,19 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   completeButton: {
     flex: 1,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   buttonText: {
     color: '#fff',
@@ -389,10 +420,15 @@ const styles = StyleSheet.create({
   routeItem: {
     paddingVertical: 10,
   },
+  routeLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   routeLabel: {
     fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
   },
   routeText: {
     fontSize: 13,

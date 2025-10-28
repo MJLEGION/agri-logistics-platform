@@ -7,7 +7,7 @@ import { RootState, useAppDispatch } from '../store';
 import { clearOrders } from '../store/slices/ordersSlice';
 import AuthNavigator from './AuthNavigator';
 import ShipperHomeScreen from '../screens/shipper/ShipperHomeScreen';
-import ListCargoScreen from '../screens/shipper/ListCargoScreen';
+import ListCargoScreen from '../screens/shipper/ListCargoScreen.enhanced';
 import MyCargoScreen from '../screens/shipper/MyCargoScreen';
 import CargoDetailsScreen from '../screens/shipper/CargoDetailsScreen';
 import EditCargoScreen from '../screens/shipper/EditCargoScreen';
@@ -23,6 +23,7 @@ import TripHistoryScreen from '../screens/transporter/TripHistoryScreen';
 import VehicleProfileScreen from '../screens/transporter/VehicleProfileScreen';
 import TestScreen from '../screens/TestScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
+import TransportRequestScreen from '../screens/TransportRequestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -94,6 +95,7 @@ export default function AppNavigator() {
             <Stack.Screen name="EditCargo" component={EditCargoScreen} />
             <Stack.Screen name="ShipperActiveOrders" component={ShipperActiveOrdersScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+            <Stack.Screen name="TransportRequest" component={TransportRequestScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />

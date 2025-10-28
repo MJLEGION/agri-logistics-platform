@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface Location {
@@ -124,13 +125,19 @@ export default function TripMapView({
         style={[styles.infoBox, { backgroundColor: theme.card, borderTopColor: theme.border }]}
       >
         <View style={styles.infoRow}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>📍 From:</Text>
+          <View style={styles.labelRow}>
+            <FontAwesome name="cube" size={12} color={theme.textSecondary} />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>From:</Text>
+          </View>
           <Text style={[styles.value, { color: theme.text }]} numberOfLines={1}>
             {pickupLocation.address}
           </Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>🏁 To:</Text>
+          <View style={styles.labelRow}>
+            <FontAwesome name="flag" size={12} color={theme.textSecondary} />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>To:</Text>
+          </View>
           <Text style={[styles.value, { color: theme.text }]} numberOfLines={1}>
             {deliveryLocation.address}
           </Text>
@@ -156,10 +163,15 @@ const styles = StyleSheet.create({
   infoRow: {
     marginVertical: 6,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
   },
   value: {
     fontSize: 14,

@@ -1,16 +1,21 @@
 // src/screens/shipper/CargoDetailsScreen.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import { deleteCargo } from '../../store/slices/cargoSlice';
+import { Ionicons } from '@expo/vector-icons';
+import { deleteCargo, updateCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppDispatch, useAppSelector } from '../../store';
+import PaymentModal from '../../components/PaymentModal';
 
 export default function CargoDetailsScreen({ route, navigation }: any) {
   const { cargoId } = route.params;
   const dispatch = useAppDispatch();
   const { cargo } = useAppSelector((state) => state.cargo);
+  const { user } = useAppSelector((state) => state.auth);
   const { theme } = useTheme();
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   
   const cargoItem = cargo.find(c => c._id === cargoId || c.id === cargoId);
 
@@ -38,6 +43,58 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
         },
       ]
     );
+  };
+
+  const calculateShippingFee = () => {
+    // Use pre-calculated shipping cost from cargo, or fallback to legacy calculation
+    if (cargoItem.shippingCost) {
+      return cargoItem.shippingCost;
+    }
+    // Fallback for old cargo items
+    const cargoValue = (cargoItem.quantity * (cargoItem.pricePerUnit || 0)) || 0;
+    const fee = Math.max(cargoValue * 0.1, 5000);
+    return Math.round(fee);
+  };
+
+  const handlePaymentSuccess = async (transactionId: string, referenceId: string) => {
+    setIsPaymentLoading(true);
+    try {
+      // Update cargo status to 'payment_completed' and add payment details
+      await dispatch(
+        updateCargo({
+          id: cargoItem._id || cargoItem.id,
+          data: {
+            status: 'payment_completed',
+            paymentDetails: {
+              transactionId,
+              referenceId,
+              amount: calculateShippingFee(),
+              timestamp: new Date().toISOString(),
+              method: 'flutterwave_momo',
+            },
+          },
+        }) as any
+      ).unwrap();
+
+      setShowPaymentModal(false);
+      Alert.alert(
+        '✅ Payment Successful!',
+        `Shipping fee of ${calculateShippingFee().toLocaleString()} RWF has been paid.\n\nYour cargo is ready for pickup!`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              navigation.navigate('MyCargo');
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error updating cargo:', error);
+      Alert.alert('Success', 'Payment was successful, but there was an issue updating the cargo status. Please refresh the screen.');
+    } finally {
+      setIsPaymentLoading(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -94,14 +151,96 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
           </Card>
 
           <Card>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Location</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Origin Location</Text>
             <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.location.address}</Text>
             <Text style={[styles.coordinates, { color: theme.textSecondary }]}>
               {cargoItem.location.latitude.toFixed(4)}, {cargoItem.location.longitude.toFixed(4)}
             </Text>
           </Card>
 
+          {cargoItem.destination && (
+            <Card>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Destination Location</Text>
+              <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.destination.address}</Text>
+              <Text style={[styles.coordinates, { color: theme.textSecondary }]}>
+                {cargoItem.destination.latitude.toFixed(4)}, {cargoItem.destination.longitude.toFixed(4)}
+              </Text>
+            </Card>
+          )}
+
+          {cargoItem.distance && (
+            <Card>
+              <View style={styles.infoRow}>
+                <View style={styles.infoPart}>
+                  <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Distance</Text>
+                  <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.distance.toFixed(1)} km</Text>
+                </View>
+                {cargoItem.eta && (
+                  <View style={styles.infoPart}>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>⏱️ Estimated Time</Text>
+                    <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.eta} minutes</Text>
+                  </View>
+                )}
+              </View>
+            </Card>
+          )}
+
+          {cargoItem.suggestedVehicle && (
+            <Card>
+              <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>🚚 Suggested Vehicle</Text>
+              <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.suggestedVehicle}</Text>
+            </Card>
+          )}
+
           <View style={styles.actions}>
+            {/* Payment Fee Display */}
+            {cargoItem.status === 'listed' && (
+              <View style={[styles.feeCard, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B' }]}>
+                <View>
+                  <Text style={[styles.feeLabel, { color: '#F59E0B' }]}>Shipping Fee</Text>
+                  <Text style={[styles.feeAmount, { color: '#F59E0B' }]}>
+                    {calculateShippingFee().toLocaleString()} RWF
+                  </Text>
+                </View>
+                <Ionicons name="wallet" size={32} color="#F59E0B" />
+              </View>
+            )}
+
+            {/* Payment Button */}
+            {cargoItem.status === 'listed' && (
+              <TouchableOpacity 
+                style={[styles.paymentButton, { backgroundColor: '#F59E0B' }]}
+                onPress={() => setShowPaymentModal(true)}
+                disabled={isPaymentLoading}
+              >
+                <Ionicons name="card" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.paymentButtonText}>
+                  {isPaymentLoading ? 'Processing...' : 'Pay for Shipping'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Status Badge for Paid Cargo */}
+            {cargoItem.status !== 'listed' && (
+              <View style={[styles.statusCard, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
+                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                <Text style={[styles.statusCardText, { color: '#10B981' }]}>
+                  {cargoItem.status === 'payment_completed' ? 'Payment Complete - Ready for Pickup' : 'Cargo Processing'}
+                </Text>
+              </View>
+            )}
+
+            {/* Request Transport Button - for cargo that's ready */}
+            {cargoItem.status === 'payment_completed' && (
+              <TouchableOpacity 
+                style={[styles.requestTransportButton, { backgroundColor: '#8B5CF6' }]}
+                onPress={() => navigation.navigate('TransportRequest', { cargo: cargoItem })}
+              >
+                <Ionicons name="send" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.requestTransportButtonText}>Request Transport</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity 
               style={[styles.editButton, { backgroundColor: theme.info }]}
               onPress={() => navigation.navigate('EditCargo', { cargoId: cargoItem._id || cargoItem.id || cargoId })}
@@ -121,6 +260,18 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        visible={showPaymentModal}
+        amount={calculateShippingFee()}
+        orderId={`cargo_${cargoItem._id || cargoItem.id}`}
+        userEmail={user?.email || 'user@example.com'}
+        userName={user?.name || 'User'}
+        purpose="shipping"
+        onSuccess={handlePaymentSuccess}
+        onCancel={() => setShowPaymentModal(false)}
+      />
     </View>
   );
 }
@@ -179,6 +330,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
   },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  infoPart: {
+    flex: 1,
+  },
   actions: {
     marginTop: 20,
   },
@@ -193,6 +352,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  requestTransportButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  requestTransportButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   deleteButton: {
     borderWidth: 2,
     padding: 16,
@@ -202,6 +374,51 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  feeCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  feeLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  feeAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  paymentButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  paymentButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  statusCard: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12,
+    gap: 12,
+  },
+  statusCardText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   errorText: {
     fontSize: 18,

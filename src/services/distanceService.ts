@@ -53,10 +53,12 @@ export const distanceService = {
    * Rwanda average speed: 40-50 km/h
    * @param distance - Distance in kilometers
    * @param speedKmh - Speed in km/h (default: 45)
+   * @param trafficFactor - Traffic congestion multiplier (default: 1.0)
    * @returns ETA in minutes
    */
-  calculateETA: (distance: number, speedKmh: number = 45): number => {
-    const hours = distance / speedKmh;
+  calculateETA: (distance: number, speedKmh: number = 45, trafficFactor: number = 1.0): number => {
+    const adjustedSpeed = speedKmh / trafficFactor; // Slower in traffic
+    const hours = distance / adjustedSpeed;
     const minutes = Math.ceil(hours * 60);
     return Math.max(5, minutes); // Minimum 5 minutes
   },

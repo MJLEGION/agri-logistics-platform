@@ -9,6 +9,7 @@ import cargoReducer from './slices/cargoSlice';
 import ordersReducer from './slices/ordersSlice';
 import transportersReducer from './slices/transportersSlice';
 import tripsReducer from '../logistics/store/tripsSlice';
+import matchingReducer from '../logistics/store/matchingSlice';
 
 const persistConfig = {
   key: 'root',
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   orders: ordersReducer,
   transporters: transportersReducer,
   trips: tripsReducer,
+  matching: matchingReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
