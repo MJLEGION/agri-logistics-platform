@@ -234,7 +234,9 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.orders = action.payload;
+        // Ensure orders is always an array
+        state.orders = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ Orders fetched, state.orders is now:', state.orders.length, 'items');
       })
       .addCase(fetchOrders.rejected, (state, action) => {
         state.isLoading = false;
@@ -247,7 +249,9 @@ const ordersSlice = createSlice({
       })
       .addCase(fetchAllOrders.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.orders = action.payload;
+        // Ensure orders is always an array
+        state.orders = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ All orders fetched, state.orders is now:', state.orders.length, 'items');
       })
       .addCase(fetchAllOrders.rejected, (state, action) => {
         state.isLoading = false;
@@ -260,7 +264,12 @@ const ordersSlice = createSlice({
       })
       .addCase(createOrder.fulfilled, (state, action) => {
         state.isLoading = false;
+        // Ensure state.orders is an array before pushing
+        if (!Array.isArray(state.orders)) {
+          state.orders = [];
+        }
         state.orders.push(action.payload);
+        console.log('✅ Order created, total items now:', state.orders.length);
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;

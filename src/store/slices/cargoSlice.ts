@@ -92,7 +92,9 @@ const cargoSlice = createSlice({
       })
       .addCase(fetchCargo.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cargo = action.payload;
+        // Ensure cargo is always an array
+        state.cargo = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ Cargo fetched, state.cargo is now:', state.cargo.length, 'items');
       })
       .addCase(fetchCargo.rejected, (state, action) => {
         state.isLoading = false;
@@ -105,7 +107,12 @@ const cargoSlice = createSlice({
       })
       .addCase(createCargo.fulfilled, (state, action) => {
         state.isLoading = false;
+        // Ensure state.cargo is an array before pushing
+        if (!Array.isArray(state.cargo)) {
+          state.cargo = [];
+        }
         state.cargo.push(action.payload);
+        console.log('✅ Cargo created, total items now:', state.cargo.length);
       })
       .addCase(createCargo.rejected, (state, action) => {
         state.isLoading = false;
@@ -134,7 +141,11 @@ const cargoSlice = createSlice({
       })
       .addCase(deleteCargo.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cargo = state.cargo.filter(c => c._id !== action.payload && c.id !== action.payload);
+        // Ensure state.cargo is an array before filtering
+        if (Array.isArray(state.cargo)) {
+          state.cargo = state.cargo.filter(c => c._id !== action.payload && c.id !== action.payload);
+          console.log('✅ Cargo deleted, remaining items:', state.cargo.length);
+        }
       })
       .addCase(deleteCargo.rejected, (state, action) => {
         state.isLoading = false;

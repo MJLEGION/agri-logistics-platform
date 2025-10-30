@@ -50,6 +50,11 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   const userId = user?._id || user?.id;
   
   const myCargo = useMemo(() => {
+    console.log('🔍 ShipperHomeScreen: cargo type check:', typeof cargo, 'is array?', Array.isArray(cargo), 'value:', cargo);
+    if (!Array.isArray(cargo)) {
+      console.error('❌ cargo is not an array:', cargo);
+      return [];
+    }
     return cargo.filter((c) => {
       const shipperId = typeof c.shipperId === 'string' ? c.shipperId : c.shipperId?._id;
       return shipperId === userId && c.status === 'listed';
@@ -57,6 +62,11 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   }, [cargo, userId]);
 
   const myOrders = useMemo(() => {
+    console.log('🔍 ShipperHomeScreen: orders type check:', typeof orders, 'is array?', Array.isArray(orders), 'value:', orders);
+    if (!Array.isArray(orders)) {
+      console.error('❌ orders is not an array:', orders);
+      return [];
+    }
     return orders.filter((order) => {
       const shipperId = typeof order.shipperId === 'string' ? order.shipperId : order.shipperId?._id;
       return shipperId === userId;

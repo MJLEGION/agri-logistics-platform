@@ -9,9 +9,16 @@ import { Cargo } from '../types';
 export const getAllCargo = async (): Promise<Cargo[]> => {
   try {
     console.log('📦 Attempting to fetch cargo from real API...');
-    const response = await api.get<Cargo[]>('/cargo');
-    console.log('✅ Fetched cargo (Real API):', response.data?.length || 0, 'items');
-    return response.data;
+    const response = await api.get<any>('/cargo');
+    console.log('✅ Fetched cargo (Real API) raw response:', response.data);
+    
+    // Handle wrapped API response: { success: true, data: [...] }
+    const cargoData = response.data?.data || response.data;
+    
+    // Ensure it's always an array
+    const cargoArray = Array.isArray(cargoData) ? cargoData : [];
+    console.log('✅ Fetched cargo (Real API):', cargoArray.length, 'items');
+    return cargoArray;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.log('⚠️ Real API failed, using mock cargo service...');
@@ -69,9 +76,13 @@ export const createCargo = async (
   try {
     console.log('📦 Attempting to create cargo with real API...');
     console.log('📦 Cargo data:', cargoData);
-    const response = await api.post<Cargo>('/cargo', cargoData);
-    console.log('✅ Cargo created (Real API):', response.data);
-    return response.data;
+    const response = await api.post<any>('/cargo', cargoData);
+    console.log('✅ Cargo created (Real API) raw response:', response.data);
+    
+    // Handle wrapped API response: { success: true, data: {...} }
+    const newCargo = response.data?.data || response.data;
+    console.log('✅ Cargo created (Real API):', newCargo);
+    return newCargo;
   } catch (error) {
     console.log('⚠️ Real API failed, using mock cargo service...');
     console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');

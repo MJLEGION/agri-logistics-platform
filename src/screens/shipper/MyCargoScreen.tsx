@@ -31,14 +31,14 @@ export default function MyCargoScreen({ navigation }: any) {
     }, [dispatch])
   );
 
-  const myListings = cargo.filter(item => {
+  const myListings = Array.isArray(cargo) ? cargo.filter(item => {
     const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
     return shipperId === user?._id || shipperId === user?.id;
-  });
+  }) : [];
 
   React.useEffect(() => {
     console.log('%c📦 MyCargoScreen: myListings updated', 'color: #4CAF50; font-size: 14px; font-weight: bold');
-    console.log('%cTotal cargo:', 'color: #2196F3; font-weight: bold', cargo.length);
+    console.log('%cTotal cargo:', 'color: #2196F3; font-weight: bold', Array.isArray(cargo) ? cargo.length : 0);
     console.log('%cMy listings:', 'color: #2196F3; font-weight: bold', myListings.length);
     console.log('%cCargo details:', 'color: #2196F3; font-weight: bold', myListings.map(c => ({ id: c._id || c.id, name: c.name })));
     console.log('%cUser:', 'color: #2196F3; font-weight: bold', { userId: user?._id || user?.id, userName: user?.name });
