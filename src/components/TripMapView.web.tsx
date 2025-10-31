@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { calculateRouteETA, calculateRemainingETA, formatDuration, formatArrivalTime } from '../services/etaService';
+import { ensureCoordinates, isValidLocation } from '../services/geocodingService';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -18,6 +20,7 @@ interface Location {
   latitude: number;
   longitude: number;
   address: string;
+  speed?: number;
 }
 
 interface TripMapViewProps {
@@ -65,6 +68,12 @@ export default function TripMapView({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [etaData, setEtaData] = useState<any>(null);
+
+  // Ensure locations have valid coordinates
+  const validPickup = ensureCoordinates(pickupLocation);
+  const validDelivery = ensureCoordinates(deliveryLocation);
+  const validCurrent = currentLocation ? ensureCoordinates(currentLocation) : null;
 
   useEffect(() => {
     // Wait for DOM to be ready
@@ -74,8 +83,8 @@ export default function TripMapView({
       // Initialize map only once
       if (!leafletMapRef.current) {
         try {
-          const centerLat = (pickupLocation.latitude + deliveryLocation.latitude) / 2;
-          const centerLng = (pickupLocation.longitude + deliveryLocation.longitude) / 2;
+          const centerLat = (validPickup.latitude + validDelivery.latitude) / 2;
+          const centerLng = (validPickup.longitude + validDelivery.longitude) / 2;
 
           const map = L.map(mapContainerRef.current, {
             attributionControl: true,
@@ -116,27 +125,27 @@ export default function TripMapView({
       });
 
       // Add markers
-      L.marker([pickupLocation.latitude, pickupLocation.longitude], { icon: GreenIcon })
-        .bindPopup(`<b>📦 Pickup</b><br/><small>${pickupLocation.address}</small>`)
+      L.marker([validPickup.latitude, validPickup.longitude], { icon: GreenIcon })
+        .bindPopup(`<b>📦 Pickup</b><br/><small>${validPickup.address}</small>`)
         .addTo(map);
 
-      L.marker([deliveryLocation.latitude, deliveryLocation.longitude], { icon: RedIcon })
-        .bindPopup(`<b>🎯 Delivery</b><br/><small>${deliveryLocation.address}</small>`)
+      L.marker([validDelivery.latitude, validDelivery.longitude], { icon: RedIcon })
+        .bindPopup(`<b>🎯 Delivery</b><br/><small>${validDelivery.address}</small>`)
         .addTo(map);
 
-      if (currentLocation && isTracking) {
-        L.marker([currentLocation.latitude, currentLocation.longitude], { icon: BlueIcon })
+      if (validCurrent && isTracking) {
+        L.marker([validCurrent.latitude, validCurrent.longitude], { icon: BlueIcon })
           .bindPopup('<b>📍 Current Location</b>')
           .addTo(map);
       }
 
       // Draw route
       const routeCoordinates: [number, number][] = [
-        [pickupLocation.latitude, pickupLocation.longitude],
-        ...(currentLocation
-          ? [[currentLocation.latitude, currentLocation.longitude] as [number, number]]
+        [validPickup.latitude, validPickup.longitude],
+        ...(validCurrent
+          ? [[validCurrent.latitude, validCurrent.longitude] as [number, number]]
           : []),
-        [deliveryLocation.latitude, deliveryLocation.longitude],
+        [validDelivery.latitude, validDelivery.longitude],
       ];
 
       L.polyline(routeCoordinates, {
@@ -148,17 +157,40 @@ export default function TripMapView({
 
       // Fit bounds
       const bounds = L.latLngBounds([
-        [pickupLocation.latitude, pickupLocation.longitude],
-        [deliveryLocation.latitude, deliveryLocation.longitude],
+        [validPickup.latitude, validPickup.longitude],
+        [validDelivery.latitude, validDelivery.longitude],
       ]);
       map.fitBounds(bounds, { padding: [50, 50] });
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [pickupLocation, deliveryLocation, currentLocation, isTracking, theme.tertiary]);
+  }, [validPickup, validDelivery, validCurrent, isTracking, theme.tertiary]);
+
+  // Calculate ETA when locations change
+  useEffect(() => {
+    if (isTracking && validCurrent) {
+      // Calculate remaining ETA from current location to delivery
+      const eta = calculateRemainingETA(
+        validCurrent.latitude,
+        validCurrent.longitude,
+        validDelivery.latitude,
+        validDelivery.longitude,
+        validCurrent.speed || 50
+      );
+      setEtaData(eta);
+    } else {
+      // Calculate full route ETA
+      const eta = calculateRouteETA({
+        from: validPickup,
+        to: validDelivery,
+        currentLocation: validCurrent,
+      });
+      setEtaData(eta);
+    }
+  }, [validPickup, validDelivery, validCurrent, isTracking]);
 
   return (
-    <div ref={containerRef} style={styles.container}>
+    <div ref={containerRef} style={{...styles.container, minHeight: '500px', height: '100%'}}>
       {/* Map Container */}
       <div
         ref={mapContainerRef}
@@ -180,13 +212,14 @@ export default function TripMapView({
           borderTopColor: theme.border,
         }}
       >
+        {/* Route Info */}
         <div style={styles.infoRow}>
           <div style={styles.labelRow}>
             <i className="fas fa-cube" style={{marginRight: '6px', color: theme.textSecondary, fontSize: '12px'}}></i>
             <p style={{...styles.label, color: theme.textSecondary, margin: 0}}>From:</p>
           </div>
           <p style={{...styles.value, color: theme.text}}>
-            {pickupLocation.address}
+            {validPickup.address}
           </p>
         </div>
         <div style={styles.infoRow}>
@@ -195,9 +228,46 @@ export default function TripMapView({
             <p style={{...styles.label, color: theme.textSecondary, margin: 0}}>To:</p>
           </div>
           <p style={{...styles.value, color: theme.text}}>
-            {deliveryLocation.address}
+            {validDelivery.address}
           </p>
         </div>
+
+        {/* ETA Section */}
+        {etaData && (
+          <>
+            <div style={{...styles.divider, borderColor: theme.border}} />
+            
+            {/* ETA Info Row */}
+            <div style={styles.etaContainer}>
+              <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+                <div style={{
+                  ...styles.etaIcon,
+                  backgroundColor: etaData.trafficInfo.color + '20',
+                }}>
+                  <span style={{fontSize: '20px'}}>{etaData.trafficInfo.icon}</span>
+                </div>
+                <div>
+                  <p style={{...styles.etaTime, color: etaData.trafficInfo.color}}>
+                    🕐 {formatArrivalTime(etaData.arrivalTime)}
+                  </p>
+                  <p style={{...styles.etaDuration, color: theme.textSecondary}}>
+                    {formatDuration(etaData.durationMinutes)} ({etaData.distanceKm} km)
+                  </p>
+                </div>
+              </div>
+
+              {/* Traffic Status */}
+              <div style={{
+                ...styles.trafficStatus,
+                borderColor: etaData.trafficInfo.color,
+              }}>
+                <p style={{...styles.trafficLevel, color: etaData.trafficInfo.color}}>
+                  {etaData.trafficInfo.description}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -220,6 +290,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     zIndex: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    maxHeight: '40vh',
+    overflowY: 'auto',
   },
   infoRow: {
     marginVertical: 6,
@@ -238,5 +310,42 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 10,
+    backgroundColor: '#e0e0e0',
+  },
+  etaContainer: {
+    marginTop: 8,
+  },
+  etaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  etaTime: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  etaDuration: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  trafficStatus: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderLeftWidth: 3,
+    borderRadius: 4,
+  },
+  trafficLevel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 0,
   },
 });

@@ -171,11 +171,11 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     console.log(`✅ ${pendingTrips.length} load(s) available for transporter to accept`);
   }
 
-  const handleAcceptTrip = async (tripId: string, cropName: string) => {
-    console.log('🔘 ACCEPT TRIP BUTTON CLICKED! Trip ID:', tripId, 'Crop:', cropName);
+  const handleAcceptTrip = async (tripId: string, tripIdFormatted: string, cropName: string) => {
+    console.log('🔘 ACCEPT TRIP BUTTON CLICKED! Trip ID:', tripId, 'Formatted ID:', tripIdFormatted, 'Crop:', cropName);
 
-    // Check if this is cargo (starts with "CARGO-") or a regular trip
-    const isCargo = tripId.startsWith('CARGO-');
+    // Check if this is cargo (tripIdFormatted starts with "CARGO-") or a regular trip
+    const isCargo = tripIdFormatted.startsWith('CARGO-');
     const actualId = isCargo ? tripId.replace('CARGO-', '') : tripId;
     console.log(`📦 Is Cargo: ${isCargo}, Actual ID: ${actualId}`);
 
@@ -376,7 +376,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                   style={[styles.acceptBtn, { backgroundColor: theme.tertiary }]}
                   onPress={() =>
                     handleAcceptTrip(
-                      trip._id || trip.tripId,
+                      trip._id,
+                      trip.tripId || trip._id,
                       cargoName
                     )
                   }

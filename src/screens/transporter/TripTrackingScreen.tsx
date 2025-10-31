@@ -1,5 +1,5 @@
 // src/screens/transporter/TripTrackingScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import { Card } from '../../components/common/Card';
 import TripMapView from '../../components/TripMapView';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { completeTrip, fetchAllTrips } from '../../logistics/store/tripsSlice';
+import { useLocation } from '../../utils/useLocation';
+import locationService from '../../services/locationService';
 
 export default function TripTrackingScreen({ route, navigation }: any) {
   const { trip } = route.params;
@@ -25,20 +27,98 @@ export default function TripTrackingScreen({ route, navigation }: any) {
   const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
+  const [isPollingActive, setIsPollingActive] = useState(false);
+  
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize real-time GPS tracking with 5-second updates
+  const {
+    location: trackedLocation,
+    error: locationError,
+    isTracking,
+    startTracking,
+    stopTracking,
+  } = useLocation({
+    enabled: trip.status === 'in_transit' && locationPermission !== false,
+    orderId: trip._id || trip.tripId,
+    updateInterval: 5000, // Send location every 5 seconds
+  });
 
   useEffect(() => {
     requestLocationPermission();
-    startLocationTracking();
 
     return () => {
       // Cleanup
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
   }, []);
+
+  // Update location when tracked location changes
+  useEffect(() => {
+    if (trackedLocation) {
+      setCurrentLocation({
+        latitude: trackedLocation.latitude,
+        longitude: trackedLocation.longitude,
+        accuracy: trackedLocation.accuracy,
+        speed: trackedLocation.speed,
+        heading: trackedLocation.heading,
+        address: trackedLocation.address || 'Current Location',
+      });
+    }
+  }, [trackedLocation]);
+
+  // Fallback: Poll active locations from backend every 3 seconds
+  useEffect(() => {
+    if (trip.status !== 'in_transit') {
+      return;
+    }
+
+    setIsPollingActive(true);
+
+    const pollActiveLocations = async () => {
+      try {
+        const response = await locationService.getActiveLocations();
+        if (response?.data && Array.isArray(response.data)) {
+          // Find current transporter's location
+          const transporterLocation = response.data.find(
+            (loc: any) => loc.transporterId === trip.transporterId || loc.transporterId === trip.driverId
+          );
+
+          if (transporterLocation) {
+            console.log('📍 Polled location from backend:', transporterLocation);
+            setCurrentLocation({
+              latitude: transporterLocation.latitude,
+              longitude: transporterLocation.longitude,
+              accuracy: transporterLocation.accuracy,
+              speed: transporterLocation.speed,
+              heading: transporterLocation.heading,
+              address: transporterLocation.address || 'Current Location',
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to poll active locations:', err);
+      }
+    };
+
+    // Poll immediately and then every 3 seconds
+    pollActiveLocations();
+    pollingIntervalRef.current = setInterval(pollActiveLocations, 3000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+      setIsPollingActive(false);
+    };
+  }, [trip.status, trip.transporterId, trip.driverId]);
 
   const requestLocationPermission = async () => {
     try {
       if (Platform.OS === 'web') {
-        setLocationPermission(false); // Location not available on web
+        setLocationPermission(true); // Allow web geolocation
         return;
       }
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -46,26 +126,6 @@ export default function TripTrackingScreen({ route, navigation }: any) {
     } catch (error) {
       console.error('Location permission error:', error);
       setLocationPermission(false);
-    }
-  };
-
-  const startLocationTracking = async () => {
-    try {
-      if (locationPermission === false) {
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      setCurrentLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        address: 'Current Location',
-      });
-    } catch (error) {
-      console.error('Location tracking error:', error);
     }
   };
 
@@ -123,8 +183,45 @@ export default function TripTrackingScreen({ route, navigation }: any) {
 
   const handleRefreshLocation = async () => {
     setIsUpdating(true);
-    await startLocationTracking();
-    setIsUpdating(false);
+    try {
+      // Manually fetch current position
+      if (locationPermission === true && Platform.OS !== 'web') {
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          accuracy: location.coords.accuracy,
+          speed: (location.coords.speed || 0) * 3.6,
+          heading: location.coords.heading || 0,
+          address: 'Current Location',
+        });
+      } else {
+        // For web, fetch from backend
+        const response = await locationService.getActiveLocations();
+        if (response?.data && Array.isArray(response.data)) {
+          const transporterLocation = response.data.find(
+            (loc: any) => loc.transporterId === trip.transporterId || loc.transporterId === trip.driverId
+          );
+          if (transporterLocation) {
+            setCurrentLocation({
+              latitude: transporterLocation.latitude,
+              longitude: transporterLocation.longitude,
+              accuracy: transporterLocation.accuracy,
+              speed: transporterLocation.speed,
+              heading: transporterLocation.heading,
+              address: transporterLocation.address || 'Current Location',
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing location:', error);
+      Alert.alert('Error', 'Failed to refresh location');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
