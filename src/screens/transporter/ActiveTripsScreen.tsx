@@ -1,8 +1,8 @@
 // src/screens/transporter/ActiveTripsScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -11,6 +11,11 @@ import {
   completeTrip,
 } from '../../logistics/store/tripsSlice';
 import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import IconButton from '../../components/IconButton';
+import EmptyState from '../../components/EmptyState';
+import Toast, { useToast } from '../../components/Toast';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -19,6 +24,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [completingTripId, setCompletingTripId] = useState<string | null>(null);
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   const activeTrips = getActiveTripsForTransporter(
     trips,
@@ -62,21 +68,11 @@ export default function ActiveTripsScreen({ navigation }: any) {
       ).unwrap();
 
       console.log('✅ Trip completion successful:', result);
-      
-      Alert.alert(
-        'Success ✓',
-        'Delivery marked as completed!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('🔄 Refreshing trips list after completion');
-              setCompletingTripId(null);
-              dispatch(fetchAllTrips() as any);
-            },
-          },
-        ]
-      );
+
+      showSuccess('Delivery marked as completed!');
+      console.log('🔄 Refreshing trips list after completion');
+      setCompletingTripId(null);
+      dispatch(fetchAllTrips() as any);
     } catch (error: any) {
       setCompletingTripId(null);
       console.error('❌ Complete error:', error);
@@ -86,12 +82,9 @@ export default function ActiveTripsScreen({ navigation }: any) {
         code: error?.code,
         fullError: String(error)
       });
-      
+
       const errorMessage = error?.message || String(error) || 'Failed to complete delivery';
-      Alert.alert(
-        'Error ❌',
-        errorMessage
-      );
+      showError(errorMessage);
     }
   };
 
@@ -145,13 +138,13 @@ export default function ActiveTripsScreen({ navigation }: any) {
       </View>
 
       {activeTrips.length === 0 ? (
-        <View style={styles.emptyState}>
-          <FontAwesome name="truck" size={48} color={theme.textSecondary} />
-          <Text style={[styles.emptyText, { color: theme.text }]}>No active trips</Text>
-          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Accept loads to start transporting
-          </Text>
-        </View>
+        <EmptyState
+          icon="car-sport-outline"
+          title="No active trips"
+          description="Accept loads to start transporting"
+          actionText="Find Loads"
+          onActionPress={() => navigation.navigate('AvailableLoads')}
+        />
       ) : (
         <FlatList
           data={activeTrips}
@@ -165,9 +158,11 @@ export default function ActiveTripsScreen({ navigation }: any) {
                 <Text style={[styles.cropName, { color: theme.text }]}>
                   {trip.shipment?.cropName || 'Delivery'}
                 </Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(trip.status) }]}>
-                  <Text style={styles.statusText}>{getStatusLabel(trip.status).toUpperCase()}</Text>
-                </View>
+                <Badge
+                  label={getStatusLabel(trip.status).toUpperCase()}
+                  variant={trip.status === 'in_transit' ? 'primary' : trip.status === 'accepted' ? 'warning' : 'success'}
+                  size="sm"
+                />
               </View>
 
               <View style={styles.detailRow}>
@@ -205,43 +200,39 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
               {trip.status !== 'completed' && (
                 <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.mapButton, { backgroundColor: theme.info, opacity: completingTripId === trip._id ? 0.6 : 1 }]}
+                  <Button
+                    title="View Map"
                     onPress={() => handleViewMap(trip)}
+                    variant="secondary"
+                    size="md"
                     disabled={completingTripId === trip._id}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.actionButtonText}>🗺️ View Map</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.actionButton, 
-                      { 
-                        backgroundColor: completingTripId === trip._id ? '#999' : theme.tertiary,
-                        opacity: completingTripId === trip._id ? 0.6 : 1
-                      }
-                    ]}
+                    icon={<Ionicons name="map-outline" size={16} color="#fff" />}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    title={completingTripId === trip._id ? 'Processing...' : 'Complete'}
                     onPress={() => handleCompleteTrip(trip)}
+                    variant="primary"
+                    size="md"
                     disabled={completingTripId === trip._id}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.actionButtonContent}>
-                      <FontAwesome 
-                        name={completingTripId === trip._id ? 'spinner' : 'check'} 
-                        size={14} 
-                        color="#fff"
-                      />
-                      <Text style={styles.actionButtonText}>
-                        {completingTripId === trip._id ? 'Processing...' : 'Complete'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                    loading={completingTripId === trip._id}
+                    icon={<Ionicons name="checkmark-circle-outline" size={16} color="#fff" />}
+                    style={{ flex: 1 }}
+                  />
                 </View>
               )}
             </Card>
           )}
         />
       )}
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }

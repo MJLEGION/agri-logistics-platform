@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +18,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Divider from '../../components/Divider';
+import Toast, { useToast } from '../../components/Toast';
+import Card from '../../components/Card';
 import { UserRole, LoginScreenProps } from '../../types';
 
 const { width, height } = Dimensions.get('window');
@@ -50,13 +52,13 @@ const ROLE_INFO: Record<
     icon: 'leaf',
     label: 'Shipper',
     description: 'List and ship your cargo',
-    gradient: ['#2E7D32', '#66BB6A'],
+    gradient: ['#27AE60', '#2ECC71'],
   },
   transporter: {
     icon: 'car',
     label: 'Transporter',
     description: 'Deliver crops efficiently',
-    gradient: ['#F57C00', '#FFB74D'],
+    gradient: ['#1E8449', '#27AE60'],
   },
 };
 
@@ -64,6 +66,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { toast, showError, showSuccess, hideToast } = useToast();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -133,9 +136,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
     try {
       await dispatch(login({ phone, password })).unwrap();
+      showSuccess('Login successful!');
       // Navigation happens automatically based on user's role
     } catch (err: any) {
-      Alert.alert('Login Failed', err || 'Invalid credentials');
+      showError(err || 'Invalid credentials. Please try again.');
     }
   };
 
@@ -156,9 +160,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
+          {/* Header - Gold, White, Green Theme */}
           <LinearGradient
-            colors={['#F77F00', '#FCBF49', '#27AE60']}
+            colors={['#27AE60', '#2ECC71', '#27AE60']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -313,15 +317,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               loading={isLoading}
               disabled={isLoading}
               fullWidth
-              size="large"
+              size="lg"
               icon={<Ionicons name="log-in-outline" size={20} color="#FFFFFF" />}
             />
 
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-              <Text style={[styles.dividerText, { color: theme.textSecondary }]}>OR</Text>
-              <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-            </View>
+            <Divider text="OR" spacing="lg" />
 
             <View style={styles.registerContainer}>
               <Text style={[styles.registerText, { color: theme.textSecondary }]}>
@@ -336,6 +336,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }
@@ -415,20 +423,6 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 32,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    fontWeight: '500',
   },
   registerContainer: {
     flexDirection: 'row',

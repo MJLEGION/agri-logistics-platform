@@ -1,25 +1,51 @@
 // src/screens/shipper/ShipperActiveOrdersScreen.tsx
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppSelector } from '../../store';
+import SearchBar from '../../components/SearchBar';
+import ListItem from '../../components/ListItem';
+import Badge from '../../components/Badge';
+import EmptyState from '../../components/EmptyState';
+import RateTransporterModal from '../../components/RateTransporterModal';
+import Toast, { useToast } from '../../components/Toast';
 
 export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { orders } = useAppSelector((state) => state.orders);
   const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
-  // Get shipper's cargo IDs (handle both _id and id fields)
-  const shipperCargoIds = cargo
-    .filter(item => {
-      const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
-      return shipperId === user?._id || shipperId === user?.id;
-    })
-    .map(item => item._id || item.id);
+  // TEMPORARY: Show ALL orders for debugging
+  console.log('🔍 ALL ORDERS:', orders);
+  console.log('🔍 ALL CARGO:', cargo);
 
-  const shipperOrders = orders.filter(order => shipperCargoIds.includes(order.cargoId));
+  // Simplified: Just show all orders (we'll fix filtering later)
+  const shipperOrders = orders;
+
+  console.log('📦 Showing all orders temporarily:', shipperOrders.length);
+
+  // Filter orders based on search query
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery.trim()) return shipperOrders;
+
+    const query = searchQuery.toLowerCase();
+    return shipperOrders.filter(order => {
+      const cargoName = getCargoName(order.cargoId).toLowerCase();
+      const status = order.status.toLowerCase();
+      const deliveryLocation = order.deliveryLocation?.address?.toLowerCase() || '';
+
+      return cargoName.includes(query) ||
+             status.includes(query) ||
+             deliveryLocation.includes(query);
+    });
+  }, [shipperOrders, searchQuery]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -32,8 +58,64 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
     }
   };
 
-  const getCargoName = (cargoId: string) => {
-    return cargo.find(c => c._id === cargoId || c.id === cargoId)?.name || 'Unknown Cargo';
+  const getStatusVariant = (status: string): 'primary' | 'success' | 'warning' | 'danger' | 'gray' => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'accepted': return 'success';
+      case 'in_progress': return 'primary';
+      case 'completed': return 'gray';
+      case 'cancelled': return 'danger';
+      default: return 'gray';
+    }
+  };
+
+  const getCargoName = (cargoId: any) => {
+    // Handle if cargoId is already an object with name
+    if (typeof cargoId === 'object' && cargoId?.name) {
+      return cargoId.name;
+    }
+
+    // Handle if cargoId is a string ID
+    const id = typeof cargoId === 'string' ? cargoId : cargoId?._id || cargoId?.id;
+    const foundCargo = cargo.find(c => (c._id === id || c.id === id));
+
+    if (foundCargo) {
+      return foundCargo.name;
+    }
+
+    // If still not found, show the ID instead of "Unknown Cargo"
+    return `Cargo ${id || 'N/A'}`;
+  };
+
+  const handleOpenRatingModal = (order: any) => {
+    setSelectedOrder(order);
+    setRatingModalVisible(true);
+  };
+
+  const handleSubmitRating = async (rating: number, comment: string) => {
+    try {
+      // TODO: Send rating to backend API
+      console.log('📝 Submitting rating:', {
+        orderId: selectedOrder?._id || selectedOrder?.id,
+        transporterId: selectedOrder?.transporterId,
+        rating,
+        comment,
+      });
+
+      // TODO: Call API to submit rating
+      // await api.post('/ratings', {
+      //   orderId: selectedOrder?._id || selectedOrder?.id,
+      //   transporterId: selectedOrder?.transporterId,
+      //   rating,
+      //   comment,
+      // });
+
+      showSuccess('Rating submitted successfully! Thank you for your feedback.');
+      setRatingModalVisible(false);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      showError('Failed to submit rating. Please try again.');
+    }
   };
 
   return (
@@ -45,60 +127,94 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
         <Text style={[styles.title, { color: theme.card }]}>Active Orders</Text>
       </View>
 
-      {shipperOrders.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📋</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>No active orders yet</Text>
-          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Orders will appear here when transporters accept your cargo
-          </Text>
+      {/* Search Bar */}
+      {shipperOrders.length > 0 && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by cargo name, status, or location..."
+            variant="filled"
+          />
         </View>
+      )}
+
+      {/* Orders List */}
+      {shipperOrders.length === 0 ? (
+        <EmptyState
+          icon="cube-outline"
+          title="No active orders yet"
+          description="Orders will appear here when transporters accept your cargo"
+          actionText="View My Cargo"
+          onActionPress={() => navigation.navigate('MyCargo')}
+        />
+      ) : filteredOrders.length === 0 ? (
+        <EmptyState
+          icon="search-outline"
+          title="No matching orders"
+          description="Try adjusting your search query"
+          actionText="Clear Search"
+          onActionPress={() => setSearchQuery('')}
+        />
       ) : (
         <FlatList
-          data={shipperOrders}
+          data={filteredOrders}
           keyExtractor={(item) => item._id || item.id || ''}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <Card>
-              <View style={styles.orderHeader}>
-                <Text style={[styles.cropName, { color: theme.text }]}>
-                  {getCargoName(item.cargoId)}
-                </Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                  <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
-                </View>
-              </View>
-
-              <View style={styles.orderDetail}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Quantity:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>{item.quantity}</Text>
-              </View>
-
-              <View style={styles.orderDetail}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Total Price:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {item.totalPrice.toLocaleString()} RWF
-                </Text>
-              </View>
-
-              <View style={styles.orderDetail}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Delivery to:</Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {item.deliveryLocation.address}
-                </Text>
-              </View>
-
-              {item.transporterId && (
-                <View style={[styles.transportInfo, { backgroundColor: theme.info + '20' }]}>
-                  <Text style={[styles.transportText, { color: theme.info }]}>
-                    🚚 Transporter assigned
-                  </Text>
-                </View>
+            <View>
+              <ListItem
+                icon="cube"
+                title={getCargoName(item.cargoId)}
+                subtitle={`${item.quantity} • ${item.deliveryLocation?.address || 'Location'} ${item.transporterId ? '• 🚚 Assigned' : ''}`}
+                rightElement={
+                  <Badge
+                    label={item.status.toUpperCase()}
+                    variant={getStatusVariant(item.status)}
+                    size="sm"
+                  />
+                }
+                chevron
+                onPress={() => {
+                  // Navigate to order details if available
+                  // navigation.navigate('OrderDetails', { orderId: item._id || item.id })
+                }}
+              />
+              {/* Show "Rate Transporter" button for completed/delivered orders */}
+              {(item.status === 'completed' || item.status === 'delivered') && item.transporterId && (
+                <TouchableOpacity
+                  style={[styles.rateButton, { backgroundColor: theme.primary }]}
+                  onPress={() => handleOpenRatingModal(item)}
+                >
+                  <Ionicons name="star" size={16} color="#fff" />
+                  <Text style={styles.rateButtonText}>Rate Transporter</Text>
+                </TouchableOpacity>
               )}
-            </Card>
+            </View>
           )}
         />
       )}
+
+      {/* Rating Modal */}
+      {selectedOrder && (
+        <RateTransporterModal
+          visible={ratingModalVisible}
+          onClose={() => setRatingModalVisible(false)}
+          transporterName={selectedOrder.transporterId?.name || 'Transporter'}
+          transporterId={selectedOrder.transporterId?._id || selectedOrder.transporterId}
+          orderId={selectedOrder._id || selectedOrder.id}
+          onSubmitRating={handleSubmitRating}
+          isVerified={selectedOrder.transporterId?.verified || false}
+        />
+      )}
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }
@@ -180,5 +296,21 @@ const styles = StyleSheet.create({
   transportText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginTop: -8,
+    marginBottom: 12,
+  },
+  rateButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

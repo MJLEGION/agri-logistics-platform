@@ -42,3 +42,7 @@ yarn-error.*
 
 # local IDE/editor config
 .claude/
+.zencoder/
+
+# Windows reserved names that cause Git issues
+nul

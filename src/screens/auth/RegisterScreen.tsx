@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +18,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import Toast, { useToast } from '../../components/Toast';
+import ProgressBar from '../../components/ProgressBar';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ export default function RegisterScreen({ route, navigation }: any) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { toast, showError, showSuccess, showWarning, hideToast } = useToast();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -146,11 +148,12 @@ export default function RegisterScreen({ route, navigation }: any) {
       console.log('🔐 Attempting registration:', { name, phone, role });
       await dispatch(register({ name, phone, password, role })).unwrap();
       console.log('✅ Registration successful!');
+      showSuccess('Account created successfully!');
       // Navigation happens automatically via AppNavigator
     } catch (err: any) {
       console.error('❌ Registration failed:', err);
       const errorMessage = err || 'Could not register. Please check your connection and try again.';
-      Alert.alert('Registration Failed', errorMessage);
+      showError(errorMessage);
     }
   };
 
@@ -164,9 +167,9 @@ export default function RegisterScreen({ route, navigation }: any) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
+          {/* Header - Gold, White, Green Theme */}
           <LinearGradient
-            colors={['#F77F00', '#FCBF49', '#27AE60']}
+            colors={['#27AE60', '#2ECC71', '#27AE60']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -316,6 +319,14 @@ export default function RegisterScreen({ route, navigation }: any) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }

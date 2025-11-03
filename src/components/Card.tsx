@@ -1,53 +1,90 @@
-// src/components/Card.tsx
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  TouchableOpacity,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { Spacing, BorderRadius, Shadows } from '../config/ModernDesignSystem';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
-  elevated?: boolean;
+  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
+  padding?: 'sm' | 'md' | 'lg';
   onPress?: () => void;
-  padding?: number;
+  style?: ViewStyle;
 }
 
-export default function Card({ children, style, elevated = false, onPress, padding = 16 }: CardProps) {
+const Card: React.FC<CardProps> = ({
+  children,
+  variant = 'default',
+  padding = 'md',
+  onPress,
+  style,
+}) => {
   const { theme } = useTheme();
 
-  const cardStyle: ViewStyle = {
-    backgroundColor: elevated ? theme.cardElevated : theme.card,
-    borderRadius: 12,  // Slightly less rounded for professional look
-    padding,
-    maxWidth: 600,
-    marginHorizontal: 'auto',
-    width: '100%',
-    alignSelf: 'center',
-    ...(elevated && {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 3,
-    }),
-    ...(!elevated && {
-      borderWidth: 1,
-      borderColor: theme.border,
-    }),
+  const getPaddingStyle = (): ViewStyle => {
+    const paddingMap = {
+      sm: { padding: Spacing.md },
+      md: { padding: Spacing.lg },
+      lg: { padding: Spacing.xl },
+    };
+    return paddingMap[padding];
   };
 
-  if (onPress) {
-    return (
-      <TouchableOpacity
-        style={[cardStyle, style]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        {children}
-      </TouchableOpacity>
-    );
-  }
+  const getVariantStyle = (): ViewStyle => {
+    const variantMap: Record<string, ViewStyle> = {
+      default: {
+        backgroundColor: theme.surface,
+        borderRadius: BorderRadius.lg,
+        ...Shadows.sm,
+      },
+      elevated: {
+        backgroundColor: theme.surface,
+        borderRadius: BorderRadius.lg,
+        ...Shadows.lg,
+      },
+      outlined: {
+        backgroundColor: theme.isDark ? theme.surface : 'transparent',
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1,
+        borderColor: theme.border,
+      },
+      filled: {
+        backgroundColor: theme.gray100,
+        borderRadius: BorderRadius.lg,
+      },
+    };
+    return variantMap[variant];
+  };
 
-  return <View style={[cardStyle, style]}>{children}</View>;
-}
+  const Container = onPress ? TouchableOpacity : View;
+  const containerProps = onPress
+    ? { onPress, activeOpacity: 0.7 }
+    : {};
 
-const styles = StyleSheet.create({});
+  return (
+    <Container
+      style={[
+        styles.card,
+        getPaddingStyle(),
+        getVariantStyle(),
+        style,
+      ]}
+      {...containerProps}
+    >
+      {children}
+    </Container>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+  },
+});
+
+export default Card;

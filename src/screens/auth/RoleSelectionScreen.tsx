@@ -15,6 +15,8 @@ import { UserRole } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import Card from '../../components/Card';
+import Button from '../../components/Button';
+import Divider from '../../components/Divider';
 
 const { width, height } = Dimensions.get('window');
 
@@ -61,8 +63,8 @@ export default function RoleSelectionScreen({ navigation }: any) {
       icon: 'leaf',
       title: 'Shipper',
       description: 'List and ship your cargo',
-      color: theme.primary,
-      gradient: [theme.primary, theme.primaryLight],
+      color: '#27AE60',
+      gradient: ['#27AE60', '#2ECC71'],
       features: ['List cargo', 'Manage shipments', 'Track deliveries'],
     },
     {
@@ -70,8 +72,8 @@ export default function RoleSelectionScreen({ navigation }: any) {
       icon: 'car',
       title: 'Transporter',
       description: 'Find loads and deliver crops efficiently',
-      color: theme.secondary,
-      gradient: [theme.secondary, theme.secondaryLight],
+      color: '#1E8449',
+      gradient: ['#1E8449', '#27AE60'],
       features: ['Find loads', 'Optimize routes', 'Earn more'],
     },
   ];
@@ -79,9 +81,9 @@ export default function RoleSelectionScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header - Gold, White, Green Theme */}
         <LinearGradient
-          colors={['#F77F00', '#FCBF49', '#27AE60']}
+          colors={['#27AE60', '#2ECC71', '#27AE60']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -142,11 +144,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
         {/* Roles */}
         <View style={styles.rolesContainer}>
           {roles.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => navigation.navigate('Register', { role: item.role })}
-              activeOpacity={0.9}
-            >
+            <View key={index}>
               <Card elevated style={styles.roleCard}>
                 <LinearGradient
                   colors={item.gradient}
@@ -182,17 +180,21 @@ export default function RoleSelectionScreen({ navigation }: any) {
                     ))}
                   </View>
 
-                  <View style={[styles.selectButton, { backgroundColor: `${item.color}15` }]}>
-                    <Text style={[styles.selectButtonText, { color: item.color }]}>
-                      Select {item.title}
-                    </Text>
-                    <Ionicons name="arrow-forward" size={18} color={item.color} />
-                  </View>
+                  <Button
+                    title={`Select ${item.title}`}
+                    onPress={() => navigation.navigate('Register', { role: item.role })}
+                    variant={item.role === 'shipper' ? 'primary' : 'secondary'}
+                    size="lg"
+                    fullWidth
+                    icon={<Ionicons name="arrow-forward" size={20} color="#FFFFFF" />}
+                  />
                 </View>
               </Card>
-            </TouchableOpacity>
+            </View>
           ))}
         </View>
+
+        <Divider spacing="lg" />
 
         {/* Login Link */}
         <View style={styles.loginContainer}>

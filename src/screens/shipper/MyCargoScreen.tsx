@@ -2,22 +2,31 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { fetchCargo, deleteCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+import SearchBar from '../../components/SearchBar';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import EmptyState from '../../components/EmptyState';
+import Toast, { useToast } from '../../components/Toast';
+import Divider from '../../components/Divider';
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { cargo, isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
-  
+  const { toast, showSuccess, showError, hideToast } = useToast();
+
   // State for confirmation dialog
   const [dialogVisible, setDialogVisible] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [pendingDeleteName, setPendingDeleteName] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch cargo on screen mount
   useEffect(() => {
@@ -35,6 +44,15 @@ export default function MyCargoScreen({ navigation }: any) {
     const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
     return shipperId === user?._id || shipperId === user?.id;
   }) : [];
+
+  // Filter by search query
+  const filteredListings = searchQuery.trim()
+    ? myListings.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.location.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.status.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : myListings;
 
   React.useEffect(() => {
     console.log('%c📦 MyCargoScreen: myListings updated', 'color: #4CAF50; font-size: 14px; font-weight: bold');
@@ -68,11 +86,14 @@ export default function MyCargoScreen({ navigation }: any) {
       
       if (result.type.includes('fulfilled')) {
         console.log('%c✅ Cargo deleted successfully!', 'color: #4CAF50; font-weight: bold');
+        showSuccess('Cargo deleted successfully!');
       } else {
         console.log('%c❌ Delete failed:', 'color: #F44336; font-weight: bold', result.payload);
+        showError('Failed to delete cargo. Please try again.');
       }
     } catch (error: any) {
       console.error('%c❌ Error in handleDelete:', 'color: #F44336; font-weight: bold', error);
+      showError('An error occurred while deleting cargo.');
     }
     
     setPendingDeleteId(null);
@@ -100,23 +121,39 @@ export default function MyCargoScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>My Cargo</Text>
+        <Text style={[styles.title, { color: theme.card }]}>My Cargo ({myListings.length})</Text>
       </View>
 
-      {myListings.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>No cargo listed yet</Text>
-          <TouchableOpacity 
-            style={[styles.addButton, { backgroundColor: theme.primary }]}
-            onPress={() => navigation.navigate('ListCargo')}
-          >
-            <Text style={styles.addButtonText}>+ List Your First Cargo</Text>
-          </TouchableOpacity>
+      {myListings.length > 0 && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search cargo by name, location, or status..."
+            variant="filled"
+          />
         </View>
+      )}
+
+      {myListings.length === 0 ? (
+        <EmptyState
+          icon="cube-outline"
+          title="No cargo listed yet"
+          description="Start by listing your first cargo to begin shipping"
+          actionText="+ List Your First Cargo"
+          onActionPress={() => navigation.navigate('ListCargo')}
+        />
+      ) : filteredListings.length === 0 ? (
+        <EmptyState
+          icon="search-outline"
+          title="No matching cargo"
+          description="Try adjusting your search query"
+          actionText="Clear Search"
+          onActionPress={() => setSearchQuery('')}
+        />
       ) : (
         <FlatList
-          data={myListings}
+          data={filteredListings}
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
@@ -124,9 +161,11 @@ export default function MyCargoScreen({ navigation }: any) {
               <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
                 <View style={styles.cropHeader}>
                   <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
-                  <View style={[styles.statusBadge, { backgroundColor: theme.info + '20' }]}>
-                    <Text style={[styles.statusText, { color: theme.info }]}>{item.status}</Text>
-                  </View>
+                  <Badge
+                    label={item.status}
+                    variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
+                    size="sm"
+                  />
                 </View>
                 <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
                   Quantity: {item.quantity} {item.unit}
@@ -143,16 +182,20 @@ export default function MyCargoScreen({ navigation }: any) {
                   📍 {item.location.address}
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.deleteButton, { borderColor: theme.error || '#FF6B6B' }]}
+
+              <Divider spacing="sm" />
+
+              <Button
+                title="Delete Cargo"
                 onPress={() => {
                   console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
                   handleDelete(item._id || item.id, item.name);
                 }}
-              >
-                <Text style={[styles.deleteButtonText, { color: theme.error || '#FF6B6B' }]}>🗑️ Delete</Text>
-              </TouchableOpacity>
+                variant="danger"
+                size="sm"
+                fullWidth
+                icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
+              />
             </Card>
           )}
         />
@@ -167,6 +210,14 @@ export default function MyCargoScreen({ navigation }: any) {
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         isDestructive={true}
+      />
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
       />
     </View>
   );

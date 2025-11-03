@@ -18,6 +18,11 @@ import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Card from '../../components/Card';
+import Avatar from '../../components/Avatar';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import ListItem from '../../components/ListItem';
+import Divider from '../../components/Divider';
 import { ShipperHomeScreenProps } from '../../types';
 
 const { width } = Dimensions.get('window');
@@ -123,13 +128,19 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
         >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <View style={styles.avatarCircle}>
-                <Ionicons name="leaf" size={32} color="#FFF" />
-              </View>
+              <Avatar
+                name={user?.name || 'User'}
+                size="lg"
+                icon="leaf"
+                style={{ marginRight: 16 }}
+              />
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>Welcome back!</Text>
                 <Text style={styles.userName}>{user?.name}</Text>
-                <Text style={styles.role}>📦 Shipper</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <Text style={styles.role}>Shipper</Text>
+                  <Badge label="Active" variant="success" size="sm" />
+                </View>
               </View>
             </View>
             <ThemeToggle />
@@ -248,42 +259,36 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               Active Orders
             </Text>
             {activeOrders.slice(0, 3).map((order) => (
-              <TouchableOpacity
+              <ListItem
                 key={order._id || order.id}
-                style={[styles.activityCardNew, { backgroundColor: theme.card }]}
+                icon="cube"
+                title={order.cargoId?.name || 'Order'}
+                subtitle={`${order.pickupLocation?.address || 'Pickup location'} → ${order.deliveryLocation?.address || 'Delivery location'}`}
+                rightElement={
+                  <Badge
+                    label={order.status === 'pending' ? 'PENDING' : 'IN TRANSIT'}
+                    variant={order.status === 'pending' ? 'warning' : 'primary'}
+                    size="sm"
+                  />
+                }
+                chevron
                 onPress={() => navigation.navigate('ShipperActiveOrders')}
-              >
-                <View style={styles.activityLeft}>
-                  <View style={[styles.activityIconNew, { backgroundColor: '#F59E0B' + '20' }]}>
-                    <Ionicons name="cube" size={20} color="#F59E0B" />
-                  </View>
-                  <View style={styles.activityInfo}>
-                    <Text style={[styles.activityTitleNew, { color: theme.text }]}>
-                      {order.cargoId?.name || 'Order'}
-                    </Text>
-                    <Text style={[styles.activityDescNew, { color: theme.textSecondary }]}>
-                      {order.pickupLocation?.address || 'Pickup location'} → {order.deliveryLocation?.address || 'Delivery location'}
-                    </Text>
-                  </View>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: order.status === 'pending' ? '#F59E0B' : '#3B82F6' }]}>
-                  <Text style={styles.statusText}>
-                    {order.status === 'pending' ? 'PENDING' : 'IN TRANSIT'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         )}
 
+        <Divider spacing="lg" />
+
         <View style={styles.content}>
-          <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: theme.error }]}
+          <Button
+            title="Logout"
             onPress={() => dispatch(logout())}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#FFF" />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+            variant="danger"
+            size="lg"
+            fullWidth
+            icon={<Ionicons name="log-out-outline" size={20} color="#FFF" />}
+          />
         </View>
       </ScrollView>
     </View>

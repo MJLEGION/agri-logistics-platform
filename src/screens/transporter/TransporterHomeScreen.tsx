@@ -8,6 +8,11 @@ import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
+import Avatar from '../../components/Avatar';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import ListItem from '../../components/ListItem';
+import Divider from '../../components/Divider';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
 import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
@@ -109,21 +114,30 @@ export default function TransporterHomeScreen({ navigation }: any) {
   }, 0);
   console.log('💰 Today earnings:', todayEarnings);
 
+  // Total completed trips (all time)
+  const totalCompletedTrips = trips.filter(trip => trip.status === 'completed').length;
+  console.log('📜 Total completed trips:', totalCompletedTrips);
+
   // Count available loads from both orders and cargo (that are listed and ready)
+  // Only count cargo with status 'listed' - 'matched' means it's been accepted
   const availableLoads = orders.filter(
     order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
   );
-  
+  console.log('📋 Available orders (pending/accepted without transporter):', availableLoads.length);
+
   const availableCargo = cargo.filter(
-    c => c.status === 'listed' || c.status === 'matched'
+    c => c.status === 'listed'
   );
-  
+  console.log('📦 Available cargo (status="listed" only):', availableCargo.length);
+  console.log('📦 Cargo details:', availableCargo.map(c => ({ name: c.name, status: c.status })));
+
   const totalAvailableLoads = availableLoads.length + availableCargo.length;
+  console.log('🎯 TOTAL AVAILABLE LOADS:', totalAvailableLoads);
 
   // DEBUG: Log cargo status
   console.log('%c🏠 TransporterHomeScreen - Cargo Summary:', 'color: #2196F3; font-weight: bold; font-size: 13px;');
   console.log(`  Total cargo in Redux: ${cargo.length}`);
-  console.log(`  Available cargo (status='listed' or 'matched'): ${availableCargo.length}`);
+  console.log(`  Available cargo (status='listed' only): ${availableCargo.length}`);
   if (cargo.length > 0) {
     console.log('  Cargo details:');
     cargo.slice(0, 5).forEach(c => {
@@ -157,13 +171,19 @@ export default function TransporterHomeScreen({ navigation }: any) {
         >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <View style={styles.avatarCircle}>
-                <Ionicons name="car-sport" size={32} color="#FFF" />
-              </View>
+              <Avatar
+                name={user?.name || 'User'}
+                size="lg"
+                icon="car-sport"
+                style={{ marginRight: 16 }}
+              />
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>Welcome back!</Text>
                 <Text style={styles.userName}>{user?.name}</Text>
-                <Text style={styles.role}>🚛 Transporter</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <Text style={styles.role}>Transporter</Text>
+                  <Badge label="Active" variant="success" size="sm" />
+                </View>
               </View>
             </View>
             <ThemeToggle />
@@ -341,7 +361,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 Trip History
               </Text>
               <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                Past deliveries
+                {totalCompletedTrips} completed
               </Text>
             </TouchableOpacity>
           </View>
@@ -353,41 +373,35 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 Active Trips
               </Text>
               {activeTrips.slice(0, 3).map((trip) => (
-                <TouchableOpacity
+                <ListItem
                   key={trip._id || trip.id}
-                  style={[styles.activityCard, { backgroundColor: theme.card }]}
+                  icon="car-sport"
+                  title={trip.shipment?.cargoName || trip.shipment?.cropName || trip.cropId?.name || 'Order'}
+                  subtitle={`${trip.pickupLocation?.address || 'Pickup'} → ${trip.deliveryLocation?.address || 'Delivery'}`}
+                  rightElement={
+                    <Badge
+                      label={trip.status === 'in_progress' ? 'IN TRANSIT' : 'ACCEPTED'}
+                      variant="primary"
+                      size="sm"
+                    />
+                  }
+                  chevron
                   onPress={() => navigation.navigate('ActiveTrips')}
-                >
-                  <View style={styles.activityLeft}>
-                    <View style={[styles.activityIcon, { backgroundColor: '#3B82F6' + '20' }]}>
-                      <Ionicons name="car-sport" size={20} color="#3B82F6" />
-                    </View>
-                    <View style={styles.activityInfo}>
-                      <Text style={[styles.activityTitle, { color: theme.text }]}>
-                        {trip.shipment?.cargoName || trip.shipment?.cropName || trip.cropId?.name || 'Order'}
-                      </Text>
-                      <Text style={[styles.activityDesc, { color: theme.textSecondary }]}>
-                        {trip.pickupLocation?.address || 'Pickup'} → {trip.deliveryLocation?.address || 'Delivery'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: '#3B82F6' }]}>
-                    <Text style={styles.statusText}>
-                      {trip.status === 'in_progress' ? 'IN TRANSIT' : 'ACCEPTED'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                />
               ))}
             </View>
           )}
 
-          <TouchableOpacity 
-            style={[styles.logoutButton, { backgroundColor: theme.error }]}
+          <Divider spacing="lg" />
+
+          <Button
+            title="Logout"
             onPress={() => dispatch(logout())}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#FFF" />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
+            variant="danger"
+            size="lg"
+            fullWidth
+            icon={<Ionicons name="log-out-outline" size={20} color="#FFF" />}
+          />
         </View>
       </ScrollView>
     </View>
@@ -447,14 +461,20 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
     marginTop: -20,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    maxWidth: 400,
+    width: '100%',
   },
   statCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 16,
+    maxWidth: 110,
+    padding: 12,
+    borderRadius: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -463,20 +483,20 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   statIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center',
     fontWeight: '600',
   },
@@ -510,10 +530,7 @@ const styles = StyleSheet.create({
 
   content: {
     padding: 16,
-    maxWidth: 600,
-    marginHorizontal: 'auto',
-    width: '100%',
-    alignItems: 'stretch',
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 20,
@@ -524,13 +541,19 @@ const styles = StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     marginBottom: 24,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    maxWidth: 450,
+    width: '100%',
   },
   actionCard: {
-    width: '48%',
-    padding: 16,
-    borderRadius: 16,
+    width: '30%',
+    minWidth: 100,
+    maxWidth: 120,
+    padding: 14,
+    borderRadius: 14,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -539,21 +562,21 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   actionGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   actionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
     textAlign: 'center',
   },
   actionDesc: {
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
   },
   recentSection: {

@@ -1,120 +1,173 @@
-// src/components/Input.tsx
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
+import {
+  TextInput,
+  View,
+  Text,
+  StyleSheet,
+  TextInputProps,
+  ViewStyle,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { Spacing, BorderRadius, Typography } from '../config/ModernDesignSystem';
 import { Ionicons } from '@expo/vector-icons';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  variant?: 'default' | 'filled';
   helperText?: string;
-  containerStyle?: any;
+  icon?: string;
+  containerStyle?: ViewStyle;
 }
 
-export default function Input({
-  label,
-  error,
-  icon,
-  helperText,
-  containerStyle,
-  secureTextEntry,
-  ...props
-}: InputProps) {
-  const { theme } = useTheme();
-  const [isSecure, setIsSecure] = useState(secureTextEntry);
-  const [isFocused, setIsFocused] = useState(false);
+const Input = React.forwardRef<TextInput, InputProps>(
+  ({
+    label,
+    error,
+    variant = 'default',
+    helperText,
+    icon,
+    containerStyle,
+    style,
+    ...props
+  }, ref) => {
+    const { theme } = useTheme();
+    const [isFocused, setIsFocused] = useState(false);
 
-  return (
-    <View style={[styles.container, containerStyle]}>
-      {label && (
-        <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
-      )}
-      
-      <View
-        style={[
-          styles.inputContainer,
-          {
-            backgroundColor: theme.card,
-            borderColor: error ? theme.error : isFocused ? theme.primary : theme.border,
-            borderWidth: isFocused ? 2 : 1,
-          },
-        ]}
-      >
-        {icon && (
-          <Ionicons
-            name={icon}
-            size={20}
-            color={isFocused ? theme.primary : theme.textSecondary}
-            style={styles.icon}
-          />
+    const getInputStyle = (): any => {
+      const baseStyle = {
+        borderRadius: BorderRadius.md,
+        paddingVertical: Spacing.md,
+        paddingHorizontal: Spacing.md,
+        fontSize: 16,
+        color: theme.text,
+        backgroundColor: variant === 'filled' ? theme.gray100 : theme.surface,
+      };
+
+      const focusedStyle = isFocused && {
+        borderColor: theme.primary,
+        backgroundColor: theme.surface,
+      };
+
+      const errorStyle = error && {
+        borderColor: theme.danger,
+        backgroundColor: theme.isDark
+          ? theme.surface
+          : 'rgba(239, 68, 68, 0.05)',
+      };
+
+      const borderStyle =
+        variant === 'default'
+          ? {
+              borderWidth: 1,
+              borderColor: error ? theme.danger : theme.border,
+            }
+          : {
+              borderBottomWidth: isFocused ? 2 : 1,
+              borderBottomColor: isFocused ? theme.primary : theme.border,
+            };
+
+      return {
+        ...baseStyle,
+        ...borderStyle,
+        ...(isFocused && focusedStyle),
+        ...(error && errorStyle),
+        paddingLeft: icon ? Spacing.xxxl + Spacing.md : Spacing.md,
+      };
+    };
+
+    return (
+      <View style={containerStyle}>
+        {label && (
+          <Text
+            style={[
+              styles.label,
+              {
+                color: error ? theme.danger : theme.text,
+                fontWeight: '600',
+              },
+            ]}
+          >
+            {label}
+          </Text>
         )}
-        
-        <TextInput
-          style={[
-            styles.input,
-            { color: theme.text, flex: 1 },
-          ]}
-          placeholderTextColor={theme.textSecondary}
-          secureTextEntry={isSecure}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
-        />
-        
-        {secureTextEntry && (
-          <TouchableOpacity onPress={() => setIsSecure(!isSecure)}>
+
+        <View style={styles.inputContainer}>
+          {icon && (
             <Ionicons
-              name={isSecure ? 'eye-off-outline' : 'eye-outline'}
+              name={icon as any}
               size={20}
-              color={theme.textSecondary}
+              color={isFocused ? theme.primary : theme.textTertiary}
+              style={styles.icon}
             />
-          </TouchableOpacity>
+          )}
+          <TextInput
+            ref={ref}
+            style={[getInputStyle(), style]}
+            placeholderTextColor={theme.textMuted}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            {...props}
+          />
+        </View>
+
+        {error && (
+          <Text
+            style={[
+              styles.errorText,
+              {
+                color: theme.danger,
+              },
+            ]}
+          >
+            {error}
+          </Text>
+        )}
+
+        {helperText && !error && (
+          <Text
+            style={[
+              styles.helperText,
+              {
+                color: theme.textTertiary,
+              },
+            ]}
+          >
+            {helperText}
+          </Text>
         )}
       </View>
-      
-      {error && (
-        <Text style={[styles.errorText, { color: theme.error }]}>{error}</Text>
-      )}
-      
-      {helperText && !error && (
-        <Text style={[styles.helperText, { color: theme.textSecondary }]}>{helperText}</Text>
-      )}
-    </View>
-  );
-}
+    );
+  }
+);
+
+Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
   label: {
     fontSize: 14,
+    marginBottom: Spacing.sm,
     fontWeight: '600',
-    marginBottom: 8,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    minHeight: 52,
+    position: 'relative',
+    width: '100%',
   },
   icon: {
-    marginRight: 12,
-  },
-  input: {
-    fontSize: 16,
-    paddingVertical: 12,
+    position: 'absolute',
+    left: Spacing.md,
+    top: Spacing.md,
+    zIndex: 1,
   },
   errorText: {
     fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
+    marginTop: Spacing.xs,
+    fontWeight: '500',
   },
   helperText: {
     fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
+    marginTop: Spacing.xs,
   },
 });
+
+export default Input;

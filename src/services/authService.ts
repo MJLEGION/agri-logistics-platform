@@ -2,6 +2,7 @@
 import api, { setAuthToken, clearAuth } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import mockAuthService from './mockAuthService';
+import mockCargoService from './mockCargoService';
 import { LoginCredentials, RegisterData, User } from '../types';
 import { STORAGE_TOKEN_KEY, ERROR_REGISTRATION_FAILED, ERROR_LOGIN_FAILED } from '../constants';
 
@@ -201,7 +202,6 @@ export const initializeAllServices = async (): Promise<void> => {
     
     // Initialize cargo service to load persisted data from AsyncStorage
     console.log('  → Initializing mock cargo service...');
-    const mockCargoService = await import('./mockCargoService').then(m => m.default);
     if (mockCargoService?.initializeMockCargo) {
       await mockCargoService.initializeMockCargo();
       console.log('  ✅ Mock cargo service initialized');

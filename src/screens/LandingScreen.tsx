@@ -116,302 +116,380 @@ export default function LandingScreen({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Navigation Bar */}
-      <LinearGradient
-        colors={['#F77F00', '#FCBF49']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[styles.navbar, { borderBottomColor: theme.border }]}
-      >
+      {/* Navigation Bar - Modern Design */}
+      <View style={[styles.navbar, { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderBottomColor: 'transparent' }]}>
         <View style={styles.navbarContent}>
           {/* Logo */}
           <View style={styles.navLogo}>
-            <View style={[styles.navLogoIcon, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
-              <Ionicons name="leaf" size={20} color="#FFF" />
+            <View style={[styles.navLogoIcon, { backgroundColor: '#27AE60' }]}>
+              <Ionicons name="leaf" size={20} color="#FFFFFF" />
             </View>
-            <Text style={[styles.navLogoText, { color: '#FFF', fontWeight: '700' }]}>AgriLogistics</Text>
+            <Text style={[styles.navLogoText, { color: '#1a1a1a', fontWeight: '700' }]}>agrilogistics.</Text>
+          </View>
+
+          {/* Nav Menu Items */}
+          <View style={styles.navMenu}>
+            <TouchableOpacity style={styles.navMenuItem}>
+              <Text style={styles.navMenuText}>Product</Text>
+              <Ionicons name="chevron-down" size={14} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navMenuItem}>
+              <Text style={styles.navMenuText}>About</Text>
+              <Ionicons name="chevron-down" size={14} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navMenuItem}>
+              <Text style={styles.navMenuText}>Resources</Text>
+              <Ionicons name="chevron-down" size={14} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navMenuItem}>
+              <Text style={styles.navMenuText}>Pricing</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Nav Actions */}
           <View style={styles.navActions}>
             <TouchableOpacity
-              style={styles.themeToggle}
-              onPress={toggleTheme}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isDark ? 'sunny' : 'moon'}
-                size={20}
-                color="#FFF"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.navButton, { borderColor: '#FFF' }]}
+              style={styles.navLoginButton}
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.navButtonText, { color: '#FFF' }]}>Sign In</Text>
+              <Text style={styles.navLoginText}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navTalkButton}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.navButtonText, { color: '#2d3748' }]}>Get started free</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
-        {/* Hero Section - Full-width gradient */}
-        <LinearGradient
-          colors={['#F77F00', '#FCBF49', '#27AE60']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          {/* Animated Background Pattern */}
-          <View style={styles.backgroundPattern}>
-            <Animated.View
-              style={[
-                styles.circle,
-                styles.circle1,
-                { transform: [{ rotate: spin }] },
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.circle,
-                styles.circle2,
-                {
-                  transform: [
-                    {
-                      rotate: rotateAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['360deg', '0deg'],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            />
-            <Animated.View
-              style={[
-                styles.circle,
-                styles.circle3,
-                { transform: [{ rotate: spin }] },
-              ]}
-            />
-          </View>
+        {/* Hero Section - Modern Gradient Design */}
+        <View style={styles.hero}>
+          {/* Background Image with Gradient Overlay */}
+          <Image
+            source={require('../../assets/trucker-2946821.jpg')}
+            style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['rgba(128, 239, 128, 0.60)',
+                     'rgba(128, 239, 128, 0.55)',
+                     'rgba(128, 239, 128, 0.50)',
+                     'rgba(128, 239, 128, 0.45)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroBackground}
+          />
 
-          <Animated.View style={[styles.heroContent, { opacity: fadeAnim }]}>
-            {/* Hero Badge */}
-            <View style={styles.heroBadge}>
-              <Ionicons name="star" size={12} color={theme.accent} />
-              <Text style={styles.heroBadgeText}>Rwanda's #1 Agricultural Platform</Text>
-            </View>
+          <View style={styles.heroContainer}>
+            {/* Left Content */}
+            <Animated.View style={[styles.heroLeftContent, { opacity: fadeAnim }]}>
+              <Text style={styles.modernHeroTitle}>
+                The intuitive logistics{'\n'}platform for fast-growing agricultural businesses
+              </Text>
 
-            <Text style={styles.heroTitle}>
-              Connecting Shippers and Transporters, Seamlessly.
-            </Text>
+              <Text style={styles.modernHeroSubtitle}>
+                Streamline your cargo shipping with AgriLogistics' smart matching, real-time tracking, and transparent pricing platform
+              </Text>
 
-            <Text style={styles.heroSubtitle}>
-              The most efficient way to ship your agricultural cargo across Rwanda. 
-              We connect farmers and other shippers directly with our network of verified transporters.
-            </Text>
+              {/* Feature Highlights */}
+              <View style={styles.featureHighlights}>
+                <View style={styles.featureItem}>
+                  <Ionicons name="flash" size={16} color="#FFFFFF" />
+                  <Text style={styles.featureItemText}>Instant transporter matching</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
+                  <Text style={styles.featureItemText}>Secure escrow payments</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Ionicons name="trending-up" size={16} color="#FFFFFF" />
+                  <Text style={styles.featureItemText}>Optimize your routes</Text>
+                </View>
+              </View>
 
-            <View style={styles.heroButtons}>
+              {/* CTA Button */}
               <TouchableOpacity
-                style={styles.heroPrimaryButton}
+                style={styles.modernCTAButton}
                 onPress={() => navigation.navigate('RoleSelection')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.heroPrimaryButtonText}>Get Started</Text>
-                <Ionicons name="arrow-forward" size={20} color="#FFF" />
+                <Text style={styles.modernCTAText}>Get started free</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.heroSecondaryButton}
-                onPress={() => navigation.navigate('Login')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.heroSecondaryButtonText}>Sign In</Text>
-              </TouchableOpacity>
+
+              {/* Rating & Trust Indicators */}
+              <View style={styles.trustIndicators}>
+                <View style={styles.ratingContainer}>
+                  <View style={styles.stars}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons key={star} name="star" size={14} color="#FFA500" />
+                    ))}
+                  </View>
+                  <Text style={styles.ratingText}>4.9/5.0 RATING</Text>
+                </View>
+                <Text style={styles.noCreditCard}>no credit card required</Text>
+              </View>
+            </Animated.View>
+
+            {/* Right Content - Dashboard Preview */}
+            <View style={styles.heroRightContent}>
+              <View style={styles.dashboardMockup}>
+                {/* Profile Cards */}
+                <View style={styles.profileCard1}>
+                  <View style={styles.avatar1} />
+                  <View>
+                    <Text style={styles.profileName}>John Mukiza</Text>
+                    <Text style={styles.profileRole}>Farmer</Text>
+                  </View>
+                </View>
+
+                {/* Stats Card */}
+                <View style={styles.statsCard}>
+                  <Text style={styles.statsTitle}>Overview</Text>
+                  <Text style={styles.statsSubtitle}>Real-time insights</Text>
+
+                  {/* Pie Chart Placeholder */}
+                  <View style={styles.chartPlaceholder}>
+                    <View style={[styles.chartSegment, { backgroundColor: '#27AE60' }]} />
+                    <View style={[styles.chartSegment, { backgroundColor: '#F1C40F' }]} />
+                    <View style={[styles.chartSegment, { backgroundColor: '#3498DB' }]} />
+                    <View style={[styles.chartSegment, { backgroundColor: '#E74C3C' }]} />
+                  </View>
+
+                  <View style={styles.statsRow}>
+                    <Text style={styles.statLabel}>Active Trips</Text>
+                    <Text style={styles.statValue}>24</Text>
+                  </View>
+                  <View style={styles.statsRow}>
+                    <Text style={styles.statLabel}>Revenue</Text>
+                    <Text style={styles.statValue}>RWF 2.4M</Text>
+                  </View>
+                </View>
+
+                {/* Profile Card 2 */}
+                <View style={styles.profileCard2}>
+                  <View style={styles.avatar2} />
+                  <View>
+                    <Text style={styles.profileName}>Sarah K.</Text>
+                    <Text style={styles.profileRole}>Transporter</Text>
+                  </View>
+                </View>
+
+                {/* Activity Feed */}
+                <View style={styles.activityCard}>
+                  <Text style={styles.activityTitle}>Recent Activity</Text>
+                  <View style={styles.activityItem}>
+                    <View style={styles.activityDot} />
+                    <Text style={styles.activityText}>New cargo posted</Text>
+                  </View>
+                  <View style={styles.activityItem}>
+                    <View style={styles.activityDot} />
+                    <Text style={styles.activityText}>Trip completed</Text>
+                  </View>
+                </View>
+              </View>
             </View>
-
-            {/* Hero Stats */}
-            <View style={styles.heroStats}>
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatNumber}>1000+</Text>
-                <Text style={styles.heroStatLabel}>Shippers</Text>
-              </View>
-              <View style={styles.heroStatDivider} />
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatNumber}>500+</Text>
-                <Text style={styles.heroStatLabel}>Transporters</Text>
-              </View>
-              <View style={styles.heroStatDivider} />
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatNumber}>98%</Text>
-                <Text style={styles.heroStatLabel}>Satisfaction</Text>
-              </View>
-            </View>
-          </Animated.View>
-        </LinearGradient>
-
-
-
-        {/* Services Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            How We Serve You
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Professional agricultural logistics for every stakeholder
-          </Text>
-
-          {services.map((service, index) => (
-            <ServiceCard
-              key={index}
-              icon={service.icon}
-              title={service.title}
-              description={service.description}
-            />
-          ))}
+          </View>
         </View>
 
-        {/* Who We Serve Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            Who We Serve
-          </Text>
 
-          <View style={styles.rolesGrid}>
+
+        {/* Services Section - Modern Design */}
+        <View style={styles.modernServicesSection}>
+          <View style={styles.modernSectionHeader}>
+            <Text style={styles.modernSectionTitle}>
+              How We Serve You
+            </Text>
+            <Text style={styles.modernSectionSubtitle}>
+              Professional agricultural logistics for every stakeholder
+            </Text>
+          </View>
+
+          <View style={styles.servicesGrid}>
+            {services.map((service, index) => (
+              <View key={index} style={styles.modernServiceCard}>
+                <View style={styles.serviceIconWrapper}>
+                  <View style={[styles.serviceIconBg, {
+                    backgroundColor: index === 0 ? '#10B981' : index === 1 ? '#6366F1' : '#F59E0B'
+                  }]}>
+                    <Ionicons name={service.icon as any} size={24} color="#FFFFFF" />
+                  </View>
+                </View>
+                <Text style={styles.serviceTitle}>{service.title}</Text>
+                <Text style={styles.serviceDescription}>{service.description}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Who We Serve Section - Modern Design */}
+        <View style={styles.modernWhoWeServeSection}>
+          <View style={styles.modernSectionHeader}>
+            <Text style={styles.modernSectionTitle}>
+              Who We Serve
+            </Text>
+          </View>
+
+          <View style={styles.modernRolesGrid}>
             {/* Farmers Card */}
             <TouchableOpacity
-              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+              style={styles.modernRoleCard}
               onPress={() => navigation.navigate('RoleSelection')}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
-                <Ionicons name="leaf" size={32} color={theme.primary} />
+              <View style={styles.modernRoleIconWrapper}>
+                <View style={[styles.modernRoleIcon, { backgroundColor: '#10B981' }]}>
+                  <Ionicons name="leaf" size={32} color="#FFFFFF" />
+                </View>
               </View>
-              <Text style={[styles.roleTitle, { color: theme.text }]}>Farmers</Text>
-              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+              <Text style={styles.modernRoleTitle}>Farmers</Text>
+              <Text style={styles.modernRoleDescription}>
                 List your cargo and connect with reliable transporters nationwide.
               </Text>
-              <View style={styles.roleFeatures}>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Easy cargo listing
-                  </Text>
+              <View style={styles.modernRoleFeatures}>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={styles.modernFeatureText}>Easy cargo listing</Text>
                 </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Reliable transport
-                  </Text>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={styles.modernFeatureText}>Reliable transport</Text>
                 </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Fair pricing
-                  </Text>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={styles.modernFeatureText}>Fair pricing</Text>
                 </View>
               </View>
             </TouchableOpacity>
 
             {/* Transporters Card */}
             <TouchableOpacity
-              style={[styles.roleCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+              style={styles.modernRoleCard}
               onPress={() => navigation.navigate('RoleSelection')}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <View style={[styles.roleIconContainer, { backgroundColor: theme.gradientOverlay }]}>
-                <Ionicons name="car" size={32} color={theme.secondary} />
+              <View style={styles.modernRoleIconWrapper}>
+                <View style={[styles.modernRoleIcon, { backgroundColor: '#6366F1' }]}>
+                  <Ionicons name="car" size={32} color="#FFFFFF" />
+                </View>
               </View>
-              <Text style={[styles.roleTitle, { color: theme.text }]}>Transporters</Text>
-              <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+              <Text style={styles.modernRoleTitle}>Transporters</Text>
+              <Text style={styles.modernRoleDescription}>
                 Find loads, optimize routes, and maximize earnings efficiently
               </Text>
-              <View style={styles.roleFeatures}>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Available loads
-                  </Text>
+              <View style={styles.modernRoleFeatures}>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Text style={styles.modernFeatureText}>Available loads</Text>
                 </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Route optimization
-                  </Text>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Text style={styles.modernFeatureText}>Route optimization</Text>
                 </View>
-                <View style={styles.featureRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={theme.success} />
-                  <Text style={[styles.featureText, { color: theme.textSecondary }]}>
-                    Best rates
-                  </Text>
+                <View style={styles.modernFeatureRow}>
+                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Text style={styles.modernFeatureText}>Best rates</Text>
                 </View>
               </View>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Testimonials Section */}
-        <View style={[styles.section, { backgroundColor: theme.backgroundAlt }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            What Our Users Say
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Trusted by farmers and transporters across Rwanda
-          </Text>
+        {/* Testimonials Section - Modern Design */}
+        <View style={styles.modernTestimonialsSection}>
+          <View style={styles.modernSectionHeader}>
+            <Text style={styles.modernSectionTitle}>
+              What Our Users Say
+            </Text>
+            <Text style={styles.modernSectionSubtitle}>
+              Trusted by farmers and transporters across Rwanda
+            </Text>
+          </View>
 
-          {testimonials.map((testimonial, index) => (
-            <Testimonial
-              key={index}
-              rating={testimonial.rating}
-              text={testimonial.text}
-              author={testimonial.author}
-              company={testimonial.company}
-            />
-          ))}
-        </View>
-
-        {/* How It Works Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            How AgriLogistics Works
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: theme.textSecondary }]}>
-            Simple, transparent process connecting shippers with transporters
-          </Text>
-
-          <View style={styles.howItWorksContainer}>
-            {howItWorks.map((item, index) => (
-              <HowItWorksCard
-                key={index}
-                step={item.step}
-                icon={item.icon}
-                title={item.title}
-                description={item.description}
-                color={item.color}
-              />
+          <View style={styles.testimonialsGrid}>
+            {testimonials.map((testimonial, index) => (
+              <View key={index} style={styles.modernTestimonialCard}>
+                <View style={styles.testimonialStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Ionicons key={star} name="star" size={16} color="#F59E0B" />
+                  ))}
+                </View>
+                <Text style={styles.testimonialText}>"{testimonial.text}"</Text>
+                <View style={styles.testimonialAuthor}>
+                  <View style={styles.testimonialAvatar}>
+                    <Text style={styles.testimonialInitial}>
+                      {testimonial.author.charAt(0)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={styles.testimonialAuthorName}>{testimonial.author}</Text>
+                    <Text style={styles.testimonialCompany}>{testimonial.company}</Text>
+                  </View>
+                </View>
+              </View>
             ))}
           </View>
         </View>
 
+        {/* How It Works Section - Modern Design */}
+        <View style={styles.modernHowItWorksSection}>
+          <View style={styles.modernSectionHeader}>
+            <Text style={styles.modernSectionTitle}>
+              How AgriLogistics Works
+            </Text>
+            <Text style={styles.modernSectionSubtitle}>
+              Simple, transparent process connecting shippers with transporters
+            </Text>
+          </View>
 
+          <View style={styles.modernStepsContainer}>
+            {howItWorks.map((item, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.modernStepCard,
+                  index % 2 === 1 && styles.modernStepCardReverse
+                ]}
+              >
+                <View style={styles.modernStepIconContainer}>
+                  <View style={[styles.modernStepIcon, { backgroundColor: item.color }]}>
+                    <Ionicons name={item.icon as any} size={28} color="#FFFFFF" />
+                  </View>
+                </View>
+                <View style={styles.modernStepContent}>
+                  <Text style={styles.modernStepLabel}>Step {item.step}</Text>
+                  <Text style={styles.modernStepTitle}>{item.title}</Text>
+                  <Text style={styles.modernStepDescription}>{item.description}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
 
-        {/* CTA Section */}
-        <View style={styles.section}>
-          <View style={[styles.ctaCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Ionicons name="rocket" size={48} color={theme.primary} />
-            <Text style={[styles.ctaTitle, { color: theme.text }]}>
+        {/* CTA Section - Modern Design */}
+        <View style={styles.modernCTASection}>
+          <View style={styles.modernCTAContainer}>
+            <View style={styles.modernCTAIconWrapper}>
+              <View style={styles.modernCTAIconBg}>
+                <Ionicons name="rocket" size={40} color="#FFFFFF" />
+              </View>
+            </View>
+            <Text style={styles.modernCTATitle}>
               Ready to Transform Your Agricultural Business?
             </Text>
-                          <Text style={[styles.ctaDescription, { color: theme.textSecondary }]}>
-                            Join thousands of shippers and transporters already using our platform
-                          </Text>            <Button
-              title="Get Started Today"
+            <Text style={styles.modernCTASubtitle}>
+              Join thousands of shippers and transporters already using our platform
+            </Text>
+            <TouchableOpacity
+              style={styles.modernCTAPrimaryButton}
               onPress={() => navigation.navigate('RoleSelection')}
-              variant="primary"
-              size="large"
-            />
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modernCTAPrimaryButtonText}>Get Started Today</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -505,14 +583,15 @@ const styles = StyleSheet.create({
   // Navigation Bar
   navbar: {
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingBottom: 16,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    borderBottomWidth: 0,
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   navbarContent: {
     flexDirection: 'row',
@@ -522,29 +601,72 @@ const styles = StyleSheet.create({
   navLogo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   navLogoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navLogoText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  navMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+    flex: 1,
+    marginLeft: 48,
+    display: width > 768 ? 'flex' : 'none',
+  },
+  navMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  navMenuText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4a5568',
   },
   navActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  themeToggle: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
+  navLoginButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    display: width > 768 ? 'flex' : 'none',
+  },
+  navLoginText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4a5568',
+  },
+  navTalkButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    backgroundColor: '#ffffff',
+    display: width > 768 ? 'flex' : 'none',
+  },
+  navTalkText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2d3748',
+  },
+  navGetStartedButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 6,
   },
   navButton: {
     paddingHorizontal: 16,
@@ -553,87 +675,603 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   navButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  // Hero Section
+  // Hero Section - Modern Design
   hero: {
-    paddingTop: 48,
-    paddingBottom: 48,
-    paddingHorizontal: 24,
+    minHeight: height > 600 ? height : 700,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  heroContent: {
+  heroBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroContainer: {
+    flex: 1,
+    flexDirection: width > 768 ? 'row' : 'column',
+    paddingHorizontal: width > 768 ? 60 : 24,
+    paddingTop: Platform.OS === 'ios' ? 140 : 120,
+    paddingBottom: 60,
     alignItems: 'center',
+    gap: 40,
   },
-  heroBadge: {
+  heroLeftContent: {
+    flex: 1,
+    maxWidth: width > 768 ? 550 : '100%',
+    zIndex: 10,
+  },
+  modernHeroTitle: {
+    fontSize: width > 768 ? 52 : 36,
+    fontWeight: '800',
+    lineHeight: width > 768 ? 62 : 44,
+    color: '#FFFFFF',
+    marginBottom: 20,
+    letterSpacing: -1,
+  },
+  modernHeroSubtitle: {
+    fontSize: width > 768 ? 18 : 16,
+    lineHeight: width > 768 ? 28 : 24,
+    color: '#FFFFFF',
+    marginBottom: 24,
+    fontWeight: '400',
+  },
+  featureHighlights: {
+    flexDirection: 'column',
+    gap: 12,
+    marginBottom: 32,
+  },
+  featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    gap: 10,
+  },
+  featureItemText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  modernCTAButton: {
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 5,
     marginBottom: 20,
   },
-  heroBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFF',
-  },
-  heroTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 40,
-    color: '#FFF',
-  },
-  heroSubtitle: {
+  modernCTAText: {
     fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-    paddingHorizontal: 8,
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
-  heroButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 40,
+  trustIndicators: {
+    flexDirection: 'column',
+    gap: 8,
   },
-  heroPrimaryButton: {
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FFF',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+  },
+  stars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4a5568',
+    letterSpacing: 0.5,
+  },
+  noCreditCard: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#718096',
+    fontFamily: Platform.OS === 'ios' ? 'Bradley Hand' : 'cursive',
+  },
+  heroRightContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    display: width > 768 ? 'flex' : 'none',
+  },
+  dashboardMockup: {
+    width: 400,
+    height: 500,
+    position: 'relative',
+  },
+  profileCard1: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    zIndex: 3,
+  },
+  avatar1: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFA500',
+  },
+  profileName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2d3748',
+  },
+  profileRole: {
+    fontSize: 11,
+    color: '#718096',
+  },
+  statsCard: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    width: 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 5,
+    zIndex: 2,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  statsSubtitle: {
+    fontSize: 12,
+    color: '#718096',
+    marginBottom: 16,
+  },
+  chartPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    marginBottom: 16,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    flexDirection: 'row',
+    transform: [{ rotate: '45deg' }],
+  },
+  chartSegment: {
+    flex: 1,
+    height: '100%',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#718096',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2d3748',
+  },
+  profileCard2: {
+    position: 'absolute',
+    bottom: 160,
+    right: 30,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    zIndex: 3,
+  },
+  avatar2: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6366F1',
+  },
+  activityCard: {
+    position: 'absolute',
+    bottom: 40,
+    left: 40,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+    zIndex: 1,
+  },
+  activityTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2d3748',
+    marginBottom: 12,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  activityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#27AE60',
+  },
+  activityText: {
+    fontSize: 11,
+    color: '#718096',
+  },
+  // Modern Services Section
+  modernServicesSection: {
+    paddingVertical: 80,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    backgroundColor: '#FFFFFF',
+  },
+  modernSectionHeader: {
+    alignItems: 'center',
+    marginBottom: 56,
+  },
+  modernSectionTitle: {
+    fontSize: width > 768 ? 42 : 32,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  modernSectionSubtitle: {
+    fontSize: width > 768 ? 18 : 16,
+    color: '#64748b',
+    textAlign: 'center',
+    maxWidth: 600,
+    lineHeight: 26,
+  },
+  servicesGrid: {
+    flexDirection: width > 768 ? 'row' : 'column',
+    gap: 24,
+    justifyContent: 'center',
+    maxWidth: 1200,
+    marginHorizontal: 'auto',
+  },
+  modernServiceCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    minWidth: width > 768 ? 300 : undefined,
+  },
+  serviceIconWrapper: {
+    marginBottom: 20,
+  },
+  serviceIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  serviceTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  serviceDescription: {
+    fontSize: 15,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  // Modern Who We Serve Section
+  modernWhoWeServeSection: {
+    paddingVertical: 80,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    backgroundColor: '#F9FAFB',
+  },
+  modernRolesGrid: {
+    flexDirection: width > 768 ? 'row' : 'column',
+    gap: 24,
+    justifyContent: 'center',
+    maxWidth: 1200,
+    marginHorizontal: 'auto',
+  },
+  modernRoleCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  modernRoleIconWrapper: {
+    marginBottom: 24,
+  },
+  modernRoleIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modernRoleTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  modernRoleDescription: {
+    fontSize: 16,
+    color: '#64748b',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  modernRoleFeatures: {
+    gap: 12,
+    width: '100%',
+  },
+  modernFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modernFeatureText: {
+    fontSize: 15,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  // Modern Testimonials Section
+  modernTestimonialsSection: {
+    paddingVertical: 80,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    backgroundColor: '#FFFFFF',
+  },
+  testimonialsGrid: {
+    flexDirection: width > 768 ? 'row' : 'column',
+    flexWrap: 'wrap',
+    gap: 24,
+    justifyContent: 'center',
+    maxWidth: 1200,
+    marginHorizontal: 'auto',
+  },
+  modernTestimonialCard: {
+    flex: width > 768 ? 1 : undefined,
+    minWidth: width > 768 ? 280 : undefined,
+    maxWidth: width > 768 ? 500 : undefined,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  testimonialStars: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 16,
+  },
+  testimonialText: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 24,
+    marginBottom: 20,
+    fontStyle: 'italic',
+  },
+  testimonialAuthor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  testimonialAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6366F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  testimonialInitial: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  testimonialAuthorName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  testimonialCompany: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  // Modern How It Works Section
+  modernHowItWorksSection: {
+    paddingVertical: 80,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    backgroundColor: '#F9FAFB',
+  },
+  modernStepsContainer: {
+    gap: 32,
+    maxWidth: 900,
+    marginHorizontal: 'auto',
+    width: '100%',
+  },
+  modernStepCard: {
+    flexDirection: width > 768 ? 'row' : 'column',
+    alignItems: width > 768 ? 'flex-start' : 'center',
+    gap: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  modernStepCardReverse: {
+    flexDirection: width > 768 ? 'row-reverse' : 'column',
+  },
+  modernStepIconContainer: {
+    marginBottom: width > 768 ? 0 : 8,
+  },
+  modernStepIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modernStepContent: {
+    flex: 1,
+    alignItems: width > 768 ? 'flex-start' : 'center',
+  },
+  modernStepLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#10B981',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  modernStepTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textAlign: width > 768 ? 'left' : 'center',
+  },
+  modernStepDescription: {
+    fontSize: 15,
+    color: '#64748b',
+    lineHeight: 22,
+    textAlign: width > 768 ? 'left' : 'center',
+  },
+  // Modern CTA Section
+  modernCTASection: {
+    paddingVertical: 80,
+    paddingHorizontal: width > 768 ? 60 : 24,
+    backgroundColor: '#FFFFFF',
+  },
+  modernCTAContainer: {
+    alignItems: 'center',
+    backgroundColor: '#6366F1',
+    borderRadius: 24,
+    padding: width > 768 ? 60 : 40,
+    maxWidth: 800,
+    marginHorizontal: 'auto',
+    width: '100%',
+  },
+  modernCTAIconWrapper: {
+    marginBottom: 24,
+  },
+  modernCTAIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modernCTATitle: {
+    fontSize: width > 768 ? 36 : 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: width > 768 ? 44 : 36,
+  },
+  modernCTASubtitle: {
+    fontSize: width > 768 ? 18 : 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 26,
+    maxWidth: 600,
+  },
+  modernCTAPrimaryButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  heroPrimaryButtonText: {
-    fontSize: 16,
+  modernCTAPrimaryButtonText: {
+    fontSize: 17,
     fontWeight: '700',
-    color: '#2D6A4F',
-  },
-  heroSecondaryButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  heroSecondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFF',
+    color: '#6366F1',
   },
   heroStats: {
     flexDirection: 'row',

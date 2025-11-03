@@ -8,7 +8,6 @@ import {
   FlatList,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +20,12 @@ import {
   getTripHistoryForTransporter,
   sortTripsByDate,
 } from '../../logistics/utils/tripCalculations';
+import SearchBar from '../../components/SearchBar';
+import ListItem from '../../components/ListItem';
+import Badge from '../../components/Badge';
+import EmptyState from '../../components/EmptyState';
+import Chip from '../../components/Chip';
+import Toast, { useToast } from '../../components/Toast';
 
 type TripStatus = 'all' | 'completed' | 'cancelled';
 
@@ -31,23 +36,59 @@ export default function TripHistoryScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const [filterStatus, setFilterStatus] = useState<TripStatus>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'earnings'>('recent');
+  const [searchQuery, setSearchQuery] = useState('');
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Fetch trips when screen loads
   useEffect(() => {
     dispatch(fetchTrips() as any);
   }, [dispatch]);
 
-  // Get trip history for user
-  const myTrips = useMemo(
-    () => getTripHistoryForTransporter(trips, user?.id || user?._id || ''),
-    [trips, user?.id, user?._id]
-  );
+  // TEMPORARY: Log all trips for debugging
+  console.log('🔍 TripHistoryScreen - All trips:', trips);
+  console.log('🔍 User ID:', user?.id || user?._id);
 
-  // Apply status filter
+  // Get trip history for user
+  const myTrips = useMemo(() => {
+    const userId = user?.id || user?._id || '';
+    const filtered = getTripHistoryForTransporter(trips, userId);
+    console.log('🚗 My trips after filtering:', filtered.length, 'out of', trips.length);
+    console.log('🚗 My trips:', filtered);
+
+    // TEMPORARY: Show ALL trips for debugging
+    console.log('⚠️ TEMPORARILY SHOWING ALL TRIPS');
+    return trips; // Show all trips temporarily
+  }, [trips, user?.id, user?._id]);
+
+  // Apply status filter and search
   const filteredTrips = useMemo(() => {
-    if (filterStatus === 'all') return myTrips;
-    return myTrips.filter((trip) => trip.status === filterStatus);
-  }, [myTrips, filterStatus]);
+    let filtered = myTrips;
+
+    // Apply status filter
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter((trip) => trip.status === filterStatus);
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((trip) => {
+        const cropName = trip.shipment?.cropName?.toLowerCase() || '';
+        const pickupAddress = trip.pickup?.address?.toLowerCase() || '';
+        const deliveryAddress = trip.delivery?.address?.toLowerCase() || '';
+        const status = trip.status?.toLowerCase() || '';
+
+        return (
+          cropName.includes(query) ||
+          pickupAddress.includes(query) ||
+          deliveryAddress.includes(query) ||
+          status.includes(query)
+        );
+      });
+    }
+
+    return filtered;
+  }, [myTrips, filterStatus, searchQuery]);
 
   // Sort trips
   const sortedTrips = useMemo(() => {
@@ -95,6 +136,21 @@ export default function TripHistoryScreen({ navigation }: any) {
         return '#EF4444';
       default:
         return theme.textSecondary;
+    }
+  };
+
+  const getStatusVariant = (status: string): 'primary' | 'success' | 'warning' | 'danger' | 'gray' => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'in_transit':
+        return 'primary';
+      case 'accepted':
+        return 'warning';
+      case 'cancelled':
+        return 'danger';
+      default:
+        return 'gray';
     }
   };
 
@@ -155,78 +211,52 @@ export default function TripHistoryScreen({ navigation }: any) {
     const earnings = trip.earnings?.totalRate || 0;
 
     return (
-      <TouchableOpacity
-        style={[styles.tripCard, { backgroundColor: theme.card }]}
-        onPress={() =>
-          Alert.alert(
-            'Trip Details',
-            `${trip.shipment?.cropName || 'Delivery'}\n\n` +
-              `Quantity: ${trip.shipment?.quantity} ${trip.shipment?.unit}\n` +
-              `Earnings: ${earnings.toLocaleString()} RWF\n` +
-              `Status: ${getStatusLabel(trip.status)}`
-          )
+      <ListItem
+        icon={getStatusIcon(trip.status) as any}
+        title={trip.shipment?.cropName || 'Delivery'}
+        subtitle={`${trip.pickup?.address?.split(',')[0] || 'Pickup'} → ${trip.delivery?.address?.split(',')[0] || 'Delivery'} • ${earnings.toLocaleString()} RWF • ${formatDate(trip.completedAt || trip.createdAt)}`}
+        rightElement={
+          <Badge
+            label={getStatusLabel(trip.status).toUpperCase()}
+            variant={getStatusVariant(trip.status)}
+            size="sm"
+          />
         }
-      >
-        <View style={styles.tripHeader}>
-          <View style={styles.tripLeft}>
-            <View
-              style={[
-                styles.tripIcon,
-                { backgroundColor: getStatusColor(trip.status) + '20' },
-              ]}
-            >
-              <Ionicons
-                name={getStatusIcon(trip.status)}
-                size={20}
-                color={getStatusColor(trip.status)}
-              />
-            </View>
-            <View style={styles.tripInfo}>
-              <Text style={[styles.tripTitle, { color: theme.text }]}>
-                {trip.shipment?.cropName || 'Delivery'}
-              </Text>
-              <Text style={[styles.tripRoute, { color: theme.textSecondary }]}>
-                {trip.pickup?.address?.split(',')[0]} → {trip.delivery?.address?.split(',')[0]}
-              </Text>
-              <Text style={[styles.tripDate, { color: theme.textSecondary }]}>
-                {formatDate(trip.completedAt || trip.createdAt)}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.tripRight}>
-            <Text style={[styles.tripEarnings, { color: '#10B981' }]}>
-              {earnings.toLocaleString()} RWF
-            </Text>
-            <Text style={[styles.tripDistance, { color: theme.textSecondary }]}>
-              {trip.shipment?.quantity} {trip.shipment?.unit}
-            </Text>
-            <View
-              style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(trip.status) },
-              ]}
-            >
-              <Text style={styles.statusBadgeText}>
-                {getStatusLabel(trip.status).charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
+        chevron
+        onPress={() => {
+          showSuccess(`Trip: ${trip.shipment?.cropName || 'Delivery'} - ${getStatusLabel(trip.status)}`);
+        }}
+      />
     );
   };
 
-  const renderEmpty = () => (
-    <View style={styles.emptyState}>
-      <Text style={styles.emptyIcon}>🚗</Text>
-      <Text style={[styles.emptyText, { color: theme.text }]}>
-        {filterStatus === 'all' ? 'No trips yet' : `No ${filterStatus} trips`}
-      </Text>
-      <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-        Your trip history will appear here
-      </Text>
-    </View>
-  );
+  const renderEmpty = () => {
+    const isSearching = searchQuery.trim().length > 0;
+    const title = isSearching
+      ? 'No matching trips'
+      : filterStatus === 'all'
+      ? 'No trips yet'
+      : `No ${filterStatus} trips`;
+    const description = isSearching
+      ? 'Try adjusting your search or filters'
+      : 'Your trip history will appear here';
+
+    return (
+      <EmptyState
+        icon={isSearching ? 'search-outline' : 'car-sport-outline'}
+        title={title}
+        description={description}
+        actionText={isSearching ? 'Clear Search' : 'Find Loads'}
+        onActionPress={() => {
+          if (isSearching) {
+            setSearchQuery('');
+          } else {
+            navigation.navigate('AvailableLoads');
+          }
+        }}
+      />
+    );
+  };
 
   if (isLoading && myTrips.length === 0) {
     return (
@@ -261,6 +291,18 @@ export default function TripHistoryScreen({ navigation }: any) {
       </LinearGradient>
 
       <ScrollView style={styles.content}>
+        {/* Search Bar */}
+        {myTrips.length > 0 && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search by cargo, location, or status..."
+              variant="filled"
+            />
+          </View>
+        )}
+
         {/* Summary Stats */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, { backgroundColor: theme.card }]}>
@@ -291,7 +333,7 @@ export default function TripHistoryScreen({ navigation }: any) {
 
         {/* Filters and Sort */}
         <View style={styles.controlsContainer}>
-          {/* Status Filter */}
+          {/* Status Filter with Chip */}
           <View style={styles.filterContainer}>
             <Text style={[styles.filterLabel, { color: theme.text }]}>Status:</Text>
             <ScrollView
@@ -299,30 +341,18 @@ export default function TripHistoryScreen({ navigation }: any) {
               showsHorizontalScrollIndicator={false}
               style={styles.filterScroll}
             >
-              {(['all', 'completed', 'in_progress', 'accepted'] as const).map(
-                (status) => (
-                  <TouchableOpacity
-                    key={status}
-                    style={[
-                      styles.filterButton,
-                      filterStatus === status && styles.filterButtonActive,
-                      filterStatus === status && {
-                        backgroundColor: '#06B6D4',
-                      },
-                    ]}
-                    onPress={() => setFilterStatus(status)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterButtonText,
-                        filterStatus === status && styles.filterButtonTextActive,
-                      ]}
-                    >
-                      {status === 'all' ? 'All' : getStatusLabel(status)}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              )}
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {(['all', 'completed', 'in_transit', 'accepted', 'cancelled'] as const).map(
+                  (status) => (
+                    <Chip
+                      key={status}
+                      label={status === 'all' ? 'All' : getStatusLabel(status)}
+                      selected={filterStatus === status}
+                      onPress={() => setFilterStatus(status as TripStatus)}
+                    />
+                  )
+                )}
+              </View>
             </ScrollView>
           </View>
 
@@ -347,12 +377,22 @@ export default function TripHistoryScreen({ navigation }: any) {
         </View>
 
         {/* Trips List */}
-        {sortedTrips.length > 0 ? (
-          sortedTrips.map((trip) => renderTrip({ item: trip }))
-        ) : (
-          renderEmpty()
-        )}
+        <View style={{ paddingHorizontal: 16 }}>
+          {sortedTrips.length > 0 ? (
+            sortedTrips.map((trip) => renderTrip({ item: trip }))
+          ) : (
+            renderEmpty()
+          )}
+        </View>
       </ScrollView>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }

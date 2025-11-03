@@ -20,6 +20,7 @@ import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { findBestMatches, calculateDailyEarningPotential } from '../../services/loadMatchingService';
@@ -30,6 +31,7 @@ const { width } = Dimensions.get('window');
 export default function EnhancedTransporterDashboard({ navigation }: any) {
   const { user } = useAppSelector(state => state.auth);
   const { orders } = useAppSelector(state => state.orders);
+  const { cargo } = useAppSelector(state => state.cargo);
   const trips = useAppSelector(state => state.trips.trips);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
@@ -43,6 +45,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   // Fetch data when screen loads
   useEffect(() => {
     dispatch(fetchAllOrders());
+    dispatch(fetchCargo());
     if (user?.id || user?._id) {
       dispatch(fetchTransporterTrips(user.id || user._id));
     }
@@ -61,7 +64,14 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
         } catch (err) {
           console.error('❌ Orders fetch error:', err);
         }
-        
+
+        try {
+          await dispatch(fetchCargo());
+          console.log('✅ Cargo fetched');
+        } catch (err) {
+          console.error('❌ Cargo fetch error:', err);
+        }
+
         const userId = user?.id || user?._id;
         if (userId) {
           try {
@@ -71,7 +81,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
             console.error('❌ Trips fetch error:', err);
           }
         }
-        
+
         try {
           await getCurrentLocation();
           console.log('✅ Location updated');
@@ -110,18 +120,19 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
     }
   };
 
-  // Calculate best matches when location or orders change
+  // Calculate best matches when location, orders, or cargo change
   useEffect(() => {
     if (currentLocation && orders.length > 0) {
-      const availableLoads = orders.filter(
+      const availableOrders = orders.filter(
         order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
       );
 
-      if (availableLoads.length > 0) {
-        const matches = findBestMatches(currentLocation, availableLoads);
+      // Only use orders for matching for now (cargo doesn't have proper location structure)
+      if (availableOrders.length > 0) {
+        const matches = findBestMatches(currentLocation, availableOrders);
         setBestMatches(matches.slice(0, 3)); // Top 3 matches
 
-        const potential = calculateDailyEarningPotential(currentLocation, availableLoads);
+        const potential = calculateDailyEarningPotential(currentLocation, availableOrders);
         setDailyPotential(potential);
       }
     }
@@ -130,6 +141,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     await dispatch(fetchAllOrders());
+    await dispatch(fetchCargo());
     if (user?.id || user?._id) {
       await dispatch(fetchTransporterTrips(user.id || user._id));
     }
@@ -175,9 +187,21 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   }, 0);
   console.log('💰 Today earnings:', todayEarnings);
 
-  const availableLoads = orders.filter(
+  // Count both orders and cargo as available loads
+  // Only count cargo with status 'listed' - 'matched' means it's been accepted
+  const availableOrders = orders.filter(
     order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
   );
+
+  const availableCargo = cargo.filter(
+    c => c.status === 'listed'
+  );
+
+  const availableLoads = [...availableOrders, ...availableCargo];
+
+  console.log('📋 Available orders:', availableOrders.length);
+  console.log('📦 Available cargo (status="listed"):', availableCargo.length);
+  console.log('🎯 Total available loads:', availableLoads.length);
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);

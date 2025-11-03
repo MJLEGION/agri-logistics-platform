@@ -1,83 +1,106 @@
-// src/components/Button.tsx
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import React, { useState } from 'react';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+  Animated,
+  Easing,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Spacing, BorderRadius, Shadows } from '../config/ModernDesignSystem';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   disabled?: boolean;
   icon?: React.ReactNode;
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
-  accessibilityLabel?: string;
-  accessibilityHint?: string;
-  accessibilityRole?: 'button' | 'link' | 'menuitem';
 }
 
 const Button = React.memo<ButtonProps>(({
   title,
   onPress,
   variant = 'primary',
-  size = 'medium',
+  size = 'md',
   loading = false,
   disabled = false,
   icon,
   style,
   textStyle,
   fullWidth = false,
-  accessibilityLabel,
-  accessibilityHint,
-  accessibilityRole = 'button',
 }) => {
   const { theme } = useTheme();
+  const [isPressed, setIsPressed] = useState(false);
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    setIsPressed(true);
+    Animated.timing(scaleAnim, {
+      toValue: 0.95,
+      duration: 100,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    setIsPressed(false);
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 100,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  };
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
-      borderRadius: 8,  // Slightly less rounded for professional look
+      borderRadius: BorderRadius.md,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
+      gap: Spacing.sm,
     };
 
-    // Size variations
-    const sizeStyles = {
-      small: { paddingVertical: 10, paddingHorizontal: 20 },
-      medium: { paddingVertical: 14, paddingHorizontal: 28 },
-      large: { paddingVertical: 16, paddingHorizontal: 32 },
+    const sizeStyles: Record<string, ViewStyle> = {
+      sm: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+      },
+      md: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+      },
+      lg: {
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+      },
     };
 
-    // Variant styles - cleaner, more subtle
     const variantStyles: Record<string, ViewStyle> = {
       primary: {
-        backgroundColor: theme.primary,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        backgroundColor: disabled ? theme.gray300 : theme.primary,
+        ...Shadows.md,
       },
       secondary: {
-        backgroundColor: theme.secondary,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        backgroundColor: theme.gray100,
+        borderWidth: 1,
+        borderColor: theme.border,
       },
-      outline: {
+      tertiary: {
         backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: theme.primary,
       },
-      ghost: {
-        backgroundColor: 'transparent',
+      danger: {
+        backgroundColor: disabled ? theme.gray300 : theme.danger,
+        ...Shadows.md,
       },
     };
 
@@ -86,22 +109,22 @@ const Button = React.memo<ButtonProps>(({
       ...sizeStyles[size],
       ...variantStyles[variant],
       ...(fullWidth && { width: '100%' }),
-      ...(disabled && { opacity: 0.5 }),
+      opacity: disabled ? 0.5 : 1,
     };
   };
 
   const getTextStyle = (): TextStyle => {
-    const sizeStyles = {
-      small: { fontSize: 14 },
-      medium: { fontSize: 16 },
-      large: { fontSize: 18 },
+    const sizeStyles: Record<string, TextStyle> = {
+      sm: { fontSize: 14 },
+      md: { fontSize: 16 },
+      lg: { fontSize: 18 },
     };
 
     const variantStyles: Record<string, TextStyle> = {
-      primary: { color: '#FFFFFF', fontWeight: '700' },
-      secondary: { color: '#FFFFFF', fontWeight: '700' },
-      outline: { color: theme.primary, fontWeight: '600' },
-      ghost: { color: theme.primary, fontWeight: '600' },
+      primary: { color: '#FFFFFF', fontWeight: '600' },
+      secondary: { color: theme.text, fontWeight: '600' },
+      tertiary: { color: theme.primary, fontWeight: '600' },
+      danger: { color: '#FFFFFF', fontWeight: '600' },
     };
 
     return {
@@ -110,45 +133,40 @@ const Button = React.memo<ButtonProps>(({
     };
   };
 
-  /**
-   * Determine loader color based on button variant
-   */
   const getLoaderColor = (): string => {
-    if (variant === 'primary' || variant === 'secondary') {
-      return '#FFFFFF';
-    }
-    return theme.primary;
+    return variant === 'secondary' ? theme.primary : '#FFFFFF';
   };
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={[getButtonStyle(), style]}
-      activeOpacity={disabled ? 0.5 : 0.8}
-      accessible={true}
-      accessibilityLabel={accessibilityLabel || title}
-      accessibilityHint={accessibilityHint}
-      accessibilityRole={accessibilityRole}
-      accessibilityState={{
-        disabled: disabled || loading,
-        busy: loading,
-      }}
-    >
-      {loading ? (
-        <ActivityIndicator color={getLoaderColor()} />
-      ) : (
-        <>
-          {icon}
-          <Text style={[getTextStyle(), textStyle]}>{title}</Text>
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        style={[getButtonStyle(), style]}
+        activeOpacity={0.8}
+        accessible={true}
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        accessibilityState={{
+          disabled: disabled || loading,
+          busy: loading,
+        }}
+      >
+        {loading ? (
+          <ActivityIndicator color={getLoaderColor()} size="small" />
+        ) : (
+          <>
+            {icon}
+            <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 });
 
 Button.displayName = 'Button';
-
-const styles = StyleSheet.create({});
 
 export default Button;

@@ -21,6 +21,11 @@ import {
 } from '../../logistics/store/tripsSlice';
 import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
+import SearchBar from '../../components/SearchBar';
+import EmptyState from '../../components/EmptyState';
+import Badge from '../../components/Badge';
+import Button from '../../components/Button';
+import Toast, { useToast } from '../../components/Toast';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +36,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { toast, showError, showSuccess, hideToast } = useToast();
   
   // Convert cargo to trip-like format for display
   const convertCargoToTrip = (cargoItem: any) => ({
@@ -110,16 +117,32 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   );
 
   // Combine trips with cargo that hasn't been matched yet
+  // Only show cargo with status 'listed' - 'matched' means it's been accepted
   const allAvailableLoads = [
     ...getPendingTripsForTransporter(trips),
-    ...cargo.filter(c => c.status === 'listed' || c.status === 'matched').map(convertCargoToTrip),
+    ...cargo.filter(c => c.status === 'listed').map(convertCargoToTrip),
   ];
-  
+
+  // Filter by search query
+  const filteredLoads = searchQuery.trim()
+    ? allAvailableLoads.filter(load => {
+        const cargoName = load.shipment?.cargoName || load.shipment?.cropName || '';
+        const pickupAddress = load.pickup?.address || '';
+        const deliveryAddress = load.delivery?.address || '';
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          cargoName.toLowerCase().includes(searchLower) ||
+          pickupAddress.toLowerCase().includes(searchLower) ||
+          deliveryAddress.toLowerCase().includes(searchLower)
+        );
+      })
+    : allAvailableLoads;
+
   const isLoading = tripsLoading || cargoLoading;
-  const pendingTrips = allAvailableLoads;
+  const pendingTrips = filteredLoads;
 
   // Enhanced debug logging
-  const availableCargo = cargo.filter(c => c.status === 'listed' || c.status === 'matched');
+  const availableCargo = cargo.filter(c => c.status === 'listed');
   const pendingTripsFromTrips = getPendingTripsForTransporter(trips);
   
   console.log('📊 AvailableLoadsScreen Debug Info:', {
@@ -154,13 +177,13 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   if (cargo.length > 0) {
     console.log('%cCargo items:', 'color: #2196F3; font-weight: bold');
     cargo.forEach(c => {
-      const isVisible = c.status === 'listed' || c.status === 'matched';
-      console.log(`  • ${c.name} [ID: ${c._id || c.id}] - Status: "${c.status}" - ${isVisible ? '✅ VISIBLE' : '❌ HIDDEN'}`);
+      const isVisible = c.status === 'listed';
+      console.log(`  • ${c.name} [ID: ${c._id || c.id}] - Status: "${c.status}" - ${isVisible ? '✅ VISIBLE' : '❌ HIDDEN (accepted/matched)'}`);
     });
   } else {
     console.log('%c⚠️ NO CARGO IN REDUX!', 'color: #FF9800; font-weight: bold');
   }
-  console.log('%cAvailable cargo (filtered):', 'color: #4CAF50; font-weight: bold', availableCargo.length);
+  console.log('%cAvailable cargo (only "listed" status):', 'color: #4CAF50; font-weight: bold', availableCargo.length);
 
   if (pendingTrips.length === 0) {
     console.warn('⚠️ NO AVAILABLE LOADS!');
@@ -218,10 +241,17 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       if (confirmed) {
         try {
           await performAccept();
-          alert('Success! 🎉 Accepted. Head to pickup location!');
-          navigation.navigate('Home');
+
+          // Refresh data immediately after accepting
+          console.log('🔄 Refreshing data after accepting trip...');
+          await dispatch(fetchTrips() as any);
+          await dispatch(fetchCargo() as any);
+          console.log('✅ Data refreshed after trip acceptance');
+
+          showSuccess('Trip accepted! Head to pickup location!');
+          setTimeout(() => navigation.navigate('Home'), 1500);
         } catch (error: any) {
-          alert('Error: ' + error.message);
+          showError('Error: ' + error.message);
         }
       } else {
         console.log('❌ User cancelled the action');
@@ -235,11 +265,17 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           onPress: async () => {
             try {
               await performAccept();
-              Alert.alert('Success! 🎉', 'Accepted. Head to pickup location!', [
-                { text: 'OK', onPress: () => navigation.navigate('Home') },
-              ]);
+
+              // Refresh data immediately after accepting
+              console.log('🔄 Refreshing data after accepting trip...');
+              await dispatch(fetchTrips() as any);
+              await dispatch(fetchCargo() as any);
+              console.log('✅ Data refreshed after trip acceptance');
+
+              showSuccess('Trip accepted! Head to pickup location!');
+              setTimeout(() => navigation.navigate('Home'), 1500);
             } catch (error: any) {
-              Alert.alert('Error', error.message);
+              showError(error.message);
             }
           },
           style: 'default',
@@ -273,26 +309,27 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           <Ionicons name="chevron-back" size={24} color={theme.card} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>Available Trips</Text>
-        <View style={styles.loadsCountBadge}>
-          <Text style={styles.loadsCountText}>{pendingTrips.length}</Text>
-        </View>
+        <Badge label={String(allAvailableLoads.length)} variant="gray" size="sm" />
+      </View>
+
+      {/* Search Bar */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by cargo name or location..."
+          variant="filled"
+        />
       </View>
 
       {pendingTrips.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>No trips available</Text>
-          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            Check back later for transport opportunities
-          </Text>
-          <TouchableOpacity
-            style={[styles.refreshBtn, { backgroundColor: theme.tertiary }]}
-            onPress={() => dispatch(fetchTrips() as any)}
-          >
-            <Ionicons name="refresh" size={16} color="#fff" />
-            <Text style={styles.refreshBtnText}>Refresh</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          icon={searchQuery ? "search" : "cube-outline"}
+          title={searchQuery ? "No matching trips" : "No trips available"}
+          description={searchQuery ? "Try adjusting your search" : "Check back later for transport opportunities"}
+          actionText="Refresh"
+          onActionPress={() => dispatch(fetchTrips() as any)}
+        />
       ) : (
         <FlatList
           data={pendingTrips}
@@ -323,11 +360,11 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                       {cargoName}
                     </Text>
                     <View style={styles.quantityDistance}>
-                      <View style={styles.badge}>
-                        <Text style={[styles.badgeText, { color: theme.textSecondary }]}>
-                          {quantity} {unit}
-                        </Text>
-                      </View>
+                      <Badge
+                        label={`${quantity} ${unit}`}
+                        variant="gray"
+                        size="sm"
+                      />
                     </View>
                   </View>
 
@@ -372,8 +409,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                 </View>
 
                 {/* Accept Button */}
-                <TouchableOpacity
-                  style={[styles.acceptBtn, { backgroundColor: theme.tertiary }]}
+                <Button
+                  title="Accept Trip"
                   onPress={() =>
                     handleAcceptTrip(
                       trip._id,
@@ -381,16 +418,24 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                       cargoName
                     )
                   }
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.acceptBtnText}>Accept Trip</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
-                </TouchableOpacity>
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  icon={<Ionicons name="arrow-forward" size={18} color="#fff" />}
+                />
               </View>
             );
           }}
         />
       )}
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }

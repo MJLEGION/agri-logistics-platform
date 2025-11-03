@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
@@ -14,6 +13,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import ListItem from '../../components/ListItem';
+import Button from '../../components/Button';
+import Chip from '../../components/Chip';
+import Toast, { useToast } from '../../components/Toast';
 
 interface VehicleInfo {
   licensePlate: string;
@@ -33,6 +36,7 @@ export default function VehicleProfileScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo>({
     licensePlate: 'UH-123ABC',
@@ -58,24 +62,24 @@ export default function VehicleProfileScreen({ navigation }: any) {
   };
 
   const handleSavePress = async () => {
+    // Validate required fields
+    if (!editedInfo.licensePlate.trim()) {
+      showError('License plate is required');
+      return;
+    }
+    if (editedInfo.capacity <= 0) {
+      showError('Capacity must be greater than 0');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Validate required fields
-      if (!editedInfo.licensePlate.trim()) {
-        Alert.alert('Error', 'License plate is required');
-        return;
-      }
-      if (editedInfo.capacity <= 0) {
-        Alert.alert('Error', 'Capacity must be greater than 0');
-        return;
-      }
-
       // In a real app, this would save to backend
       setVehicleInfo(editedInfo);
       setIsEditing(false);
-      Alert.alert('Success', '✅ Vehicle information updated!');
+      showSuccess('Vehicle information updated successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to update vehicle information');
+      showError('Failed to update vehicle information');
     } finally {
       setIsSaving(false);
     }
@@ -239,26 +243,12 @@ export default function VehicleProfileScreen({ navigation }: any) {
                 </Text>
                 <View style={styles.typeSelector}>
                   {(['car', 'truck', 'van', 'motorcycle'] as const).map((type) => (
-                    <TouchableOpacity
+                    <Chip
                       key={type}
-                      style={[
-                        styles.typeOption,
-                        editedInfo.vehicleType === type && styles.typeOptionSelected,
-                        editedInfo.vehicleType === type && {
-                          backgroundColor: '#8B5CF6',
-                        },
-                      ]}
+                      label={type.charAt(0).toUpperCase() + type.slice(1)}
+                      selected={editedInfo.vehicleType === type}
                       onPress={() => handleInputChange('vehicleType', type)}
-                    >
-                      <Text
-                        style={[
-                          styles.typeOptionText,
-                          editedInfo.vehicleType === type && styles.typeOptionTextSelected,
-                        ]}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
+                    />
                   ))}
                 </View>
               </View>
@@ -336,101 +326,64 @@ export default function VehicleProfileScreen({ navigation }: any) {
               </View>
 
               <View style={styles.formActions}>
-                <TouchableOpacity
-                  style={[styles.cancelButton, { borderColor: theme.border }]}
+                <Button
+                  title="Cancel"
                   onPress={handleCancelEdit}
+                  variant="secondary"
+                  size="lg"
                   disabled={isSaving}
-                >
-                  <Text style={[styles.cancelButtonText, { color: theme.text }]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveButton}
+                  icon={<Ionicons name="close-outline" size={20} color="#fff" />}
+                />
+                <Button
+                  title="Save Changes"
                   onPress={handleSavePress}
+                  variant="primary"
+                  size="lg"
+                  loading={isSaving}
                   disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.saveButtonText}>✅ Save Changes</Text>
-                  )}
-                </TouchableOpacity>
+                  icon={<Ionicons name="checkmark-circle-outline" size={20} color="#fff" />}
+                />
               </View>
             </View>
           ) : (
             // View Mode
-            <View style={[styles.detailsBox, { backgroundColor: theme.card }]}>
-              <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Vehicle Type
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.vehicleType.charAt(0).toUpperCase() +
-                    vehicleInfo.vehicleType.slice(1)}
-                </Text>
-              </View>
-
-              <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Year
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.year}
-                </Text>
-              </View>
-
-              <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Color
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.color}
-                </Text>
-              </View>
-
-              <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Fuel Type
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.fuelType.charAt(0).toUpperCase() +
-                    vehicleInfo.fuelType.slice(1)}
-                </Text>
-              </View>
-
-              <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Mileage
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.mileage.toLocaleString()} km
-                </Text>
-              </View>
-
-              <View style={[styles.detailRow, { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                  Fuel Consumption
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {vehicleInfo.fuelConsumption} L/100km
-                </Text>
-              </View>
-
+            <View>
+              <ListItem
+                icon="car-sport"
+                title="Vehicle Type"
+                subtitle={vehicleInfo.vehicleType.charAt(0).toUpperCase() + vehicleInfo.vehicleType.slice(1)}
+              />
+              <ListItem
+                icon="calendar"
+                title="Year"
+                subtitle={vehicleInfo.year.toString()}
+              />
+              <ListItem
+                icon="color-palette"
+                title="Color"
+                subtitle={vehicleInfo.color}
+              />
+              <ListItem
+                icon="flash"
+                title="Fuel Type"
+                subtitle={vehicleInfo.fuelType.charAt(0).toUpperCase() + vehicleInfo.fuelType.slice(1)}
+              />
+              <ListItem
+                icon="speedometer"
+                title="Mileage"
+                subtitle={`${vehicleInfo.mileage.toLocaleString()} km`}
+              />
+              <ListItem
+                icon="analytics"
+                title="Fuel Consumption"
+                subtitle={`${vehicleInfo.fuelConsumption} L/100km`}
+              />
               {vehicleInfo.insuranceStatus !== 'none' && (
-                <View
-                  style={[
-                    styles.detailRow,
-                    { borderTopWidth: 1, borderTopColor: theme.border },
-                  ]}
-                >
-                  <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                    Insurance Expiry
-                  </Text>
-                  <Text style={[styles.detailValue, { color: getInsuranceStatusColor() }]}>
-                    {vehicleInfo.insuranceExpiry}
-                  </Text>
-                </View>
+                <ListItem
+                  icon="shield-checkmark"
+                  title="Insurance Expiry"
+                  subtitle={vehicleInfo.insuranceExpiry || 'N/A'}
+                />
               )}
             </View>
           )}
@@ -476,6 +429,14 @@ export default function VehicleProfileScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }
