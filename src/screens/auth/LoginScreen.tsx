@@ -185,11 +185,76 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     return valid;
   };
 
+  const handlePressIn = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // 3D Tilt handler
+  const createTiltHandler = (tiltX: Animated.Value, tiltY: Animated.Value, cardWidth: number, cardHeight: number) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt, gestureState) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        const centerX = cardWidth / 2;
+        const centerY = cardHeight / 2;
+
+        const tiltAngleX = ((locationY - centerY) / centerY) * -10;
+        const tiltAngleY = ((locationX - centerX) / centerX) * 10;
+
+        Animated.spring(tiltX, {
+          toValue: tiltAngleX,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(tiltY, {
+          toValue: tiltAngleY,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(tiltX, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(tiltY, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+      },
+    });
+  };
+
+  const handleLongPress = (role: UserRole) => {
+    setPreviewRole(role);
+  };
+
   const handleLogin = async () => {
     if (!validateForm()) return;
 
     try {
       await dispatch(login({ phone, password })).unwrap();
+
+      // Trigger confetti
+      setShowConfetti(true);
+      confettiRef.current?.start();
+
       showSuccess('Login successful!');
       // Navigation happens automatically based on user's role
     } catch (err: any) {
@@ -275,38 +340,75 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           <View style={[styles.roleSelectionContainer, { backgroundColor: theme.background }]}>
             <Text style={[styles.roleSelectionLabel, { color: theme.text }]}>Select Your Role</Text>
             <View style={styles.roleButtonsContainer}>
-              {(['shipper', 'transporter'] as UserRole[]).map((role) => {
+              {(['shipper', 'transporter'] as UserRole[]).map((role, index) => {
                 const isSelected = selectedRole === role;
                 const roleData = ROLE_INFO[role];
+                const tiltX = index === 0 ? tiltX1 : tiltX2;
+                const tiltY = index === 0 ? tiltY1 : tiltY2;
+                const floatAnim = index === 0 ? float1 : float2;
+                const scaleAnim = index === 0 ? scale1 : scale2;
+
+                const tiltHandler = createTiltHandler(tiltX, tiltY, 150, 100);
+
+                const animatedStyle = {
+                  transform: [
+                    { perspective: 1000 },
+                    { scale: scaleAnim },
+                    {
+                      translateY: floatAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -5],
+                      }),
+                    },
+                    {
+                      rotateX: tiltX.interpolate({
+                        inputRange: [-10, 10],
+                        outputRange: ['-10deg', '10deg'],
+                      }),
+                    },
+                    {
+                      rotateY: tiltY.interpolate({
+                        inputRange: [-10, 10],
+                        outputRange: ['-10deg', '10deg'],
+                      }),
+                    },
+                  ],
+                };
+
                 return (
-                  <TouchableOpacity
-                    key={role}
-                    style={[
-                      styles.roleButton,
-                      isSelected && styles.roleButtonSelected,
-                      isSelected && { borderColor: roleData.gradient[0] },
-                    ]}
-                    onPress={() => {
-                      setSelectedRole(role);
-                      setErrors({ phone: '', password: '' });
-                    }}
-                  >
-                    <LinearGradient
-                      colors={roleData.gradient}
-                      style={styles.roleButtonGradient}
-                    >
-                      <Ionicons name={roleData.icon as any} size={24} color="#FFFFFF" />
-                    </LinearGradient>
-                    <Text
+                  <Animated.View key={role} style={[{ flex: 1 }, animatedStyle]} {...tiltHandler.panHandlers}>
+                    <Pressable
                       style={[
-                        styles.roleButtonText,
-                        isSelected && { color: theme.primary, fontWeight: '700' },
-                        !isSelected && { color: theme.textSecondary },
+                        styles.roleButton,
+                        isSelected && styles.roleButtonSelected,
+                        isSelected && { borderColor: roleData.gradient[0] },
                       ]}
+                      onPress={() => {
+                        setSelectedRole(role);
+                        setErrors({ phone: '', password: '' });
+                      }}
+                      onLongPress={() => handleLongPress(role)}
+                      delayLongPress={500}
+                      onPressIn={() => handlePressIn(scaleAnim)}
+                      onPressOut={() => handlePressOut(scaleAnim)}
                     >
-                      {roleData.label}
-                    </Text>
-                  </TouchableOpacity>
+                      <LinearGradient
+                        colors={roleData.gradient}
+                        style={styles.roleButtonGradient}
+                      >
+                        <Ionicons name={roleData.icon as any} size={24} color="#FFFFFF" />
+                      </LinearGradient>
+                      <Text
+                        style={[
+                          styles.roleButtonText,
+                          isSelected && { color: theme.primary, fontWeight: '700' },
+                          !isSelected && { color: theme.textSecondary },
+                        ]}
+                      >
+                        {roleData.label}
+                      </Text>
+                    </Pressable>
+                  </Animated.View>
                 );
               })}
             </View>
@@ -398,6 +500,78 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         type={toast.type}
         onHide={hideToast}
       />
+
+      {/* Preview Modal */}
+      <Modal
+        visible={previewRole !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewRole(null)}
+      >
+        <TouchableOpacity
+          style={styles.previewOverlay}
+          activeOpacity={1}
+          onPress={() => setPreviewRole(null)}
+        >
+          <View style={styles.previewContent}>
+            <Card elevated style={styles.previewCard}>
+              {previewRole && (
+                <>
+                  <View style={styles.previewHeader}>
+                    <Text style={[styles.previewTitle, { color: theme.text }]}>
+                      {ROLE_INFO[previewRole].label} Preview
+                    </Text>
+                    <TouchableOpacity onPress={() => setPreviewRole(null)}>
+                      <Ionicons name="close-circle" size={28} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.previewBody}>
+                    <Text style={[styles.previewDescription, { color: theme.textSecondary }]}>
+                      {previewRole === 'shipper'
+                        ? 'As a shipper, you\'ll have access to a dashboard where you can list cargo, manage shipments, track deliveries in real-time, and communicate directly with transporters. You\'ll receive instant notifications when transporters accept your shipments.'
+                        : 'As a transporter, you\'ll see available loads in your area, accept trips, optimize your routes, track your earnings, and manage multiple deliveries. Our intelligent matching system connects you with the best cargo opportunities.'}
+                    </Text>
+
+                    <View style={styles.previewFeatures}>
+                      <Text style={[styles.previewFeaturesTitle, { color: theme.text }]}>
+                        Key Features:
+                      </Text>
+                      {(previewRole === 'shipper'
+                        ? ['Real-time tracking', 'Instant quotes', 'Secure payments', 'Rating system']
+                        : ['Smart load matching', 'Route optimization', 'Earnings dashboard', 'Verified cargo']
+                      ).map((feature, idx) => (
+                        <View key={idx} style={styles.previewFeatureItem}>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#27AE60"
+                          />
+                          <Text style={[styles.previewFeatureText, { color: theme.text }]}>
+                            {feature}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </>
+              )}
+            </Card>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Confetti */}
+      {showConfetti && (
+        <ConfettiCannon
+          ref={confettiRef}
+          count={200}
+          origin={{ x: width / 2, y: height / 2 }}
+          autoStart={false}
+          fadeOut
+          colors={['#27AE60', '#2ECC71', '#1B9954', '#34D679', '#FFD700', '#FFA500']}
+        />
+      )}
     </View>
   );
 }
@@ -585,5 +759,56 @@ const styles = StyleSheet.create({
     height: 150,
     top: height / 2 - 75,
     right: -75,
+  },
+  // Preview Modal Styles
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  previewContent: {
+    width: '100%',
+    maxWidth: 500,
+  },
+  previewCard: {
+    padding: 24,
+    maxHeight: height * 0.8,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  previewTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    flex: 1,
+  },
+  previewBody: {
+    gap: 24,
+  },
+  previewDescription: {
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  previewFeatures: {
+    gap: 12,
+  },
+  previewFeaturesTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  previewFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  previewFeatureText: {
+    fontSize: 15,
+    flex: 1,
   },
 });
