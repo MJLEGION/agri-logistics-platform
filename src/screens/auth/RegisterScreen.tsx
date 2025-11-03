@@ -386,6 +386,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     paddingTop: 32,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
   errorBanner: {
     flexDirection: 'row',

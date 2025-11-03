@@ -1,4 +1,4 @@
-// src/screens/auth/PremiumRoleSelectionScreen.tsx - Premium Role Selection
+// src/screens/auth/PremiumRoleSelectionScreen.tsx - Modern Role Selection matching Landing Page
 import React, { useRef } from 'react';
 import {
   View,
@@ -6,14 +6,14 @@ import {
   StyleSheet,
   ScrollView,
   Animated,
-  SafeAreaView,
-  Platform,
+  TouchableOpacity,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import PremiumButton from '../../components/PremiumButton';
-import PremiumCard from '../../components/PremiumCard';
-import { PREMIUM_THEME } from '../../config/premiumTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
+
+const { width, height } = Dimensions.get('window');
 
 interface RoleOption {
   id: string;
@@ -26,6 +26,7 @@ interface RoleOption {
 
 export default function PremiumRoleSelectionScreen({ navigation }: any) {
   const [selectedRole, setSelectedRole] = React.useState<string | null>(null);
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -49,7 +50,7 @@ export default function PremiumRoleSelectionScreen({ navigation }: any) {
       id: 'shipper',
       title: 'Shipper',
       description: 'I want to ship agricultural products',
-      icon: 'package-variant-closed',
+      icon: 'leaf',
       color: '#27AE60',
       features: ['List cargo', 'Request transport', 'Track shipments', 'Pay transporters'],
     },
@@ -57,8 +58,8 @@ export default function PremiumRoleSelectionScreen({ navigation }: any) {
       id: 'transporter',
       title: 'Transporter',
       description: 'I want to transport agricultural cargo',
-      icon: 'truck-fast',
-      color: '#FF6B35',
+      icon: 'car',
+      color: '#1E8449',
       features: ['View available loads', 'Accept trips', 'Real-time tracking', 'Earn money'],
     },
   ];
@@ -71,166 +72,239 @@ export default function PremiumRoleSelectionScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Modern Header with Green Gradient */}
       <LinearGradient
-        colors={['#0F1419', '#1A1F2E', '#0D0E13']}
+        colors={['#27AE60', '#2ECC71', '#27AE60']}
+        style={styles.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
       >
-        {/* Background */}
+        {/* Animated Background Pattern */}
         <View style={styles.backgroundPattern}>
-          <View style={[styles.orb, { width: 400, height: 400, top: -200, left: -100, backgroundColor: '#FF6B35' }]} />
-          <View style={[styles.orb, { width: 350, height: 350, bottom: -150, right: -100, backgroundColor: '#004E89' }]} />
+          <View style={[styles.circle, styles.circle1]} />
+          <View style={[styles.circle, styles.circle2]} />
+          <View style={[styles.circle, styles.circle3]} />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-          <Animated.View
-            style={[
-              styles.content,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Choose Your Role</Text>
-              <Text style={styles.subtitle}>
-                Select how you want to use Agri-Logistics
-              </Text>
-            </View>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
 
-            {/* Role Cards */}
-            <View style={styles.rolesContainer}>
-              {roles.map((role) => {
-                const isSelected = selectedRole === role.id;
-                return (
-                  <Animated.View key={role.id}>
-                    <PremiumCard
-                      highlighted={isSelected}
-                      style={[isSelected && styles.selectedCard]}
-                    >
-                      {/* Role Icon */}
-                      <LinearGradient
-                        colors={[role.color, role.color + '80']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.roleIcon}
-                      >
-                        <MaterialCommunityIcons name={role.icon} size={48} color="#FFF" />
-                      </LinearGradient>
+        <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="people-outline" size={48} color="#FFFFFF" />
+          </View>
+          <Text style={styles.headerTitle}>Choose Your Role</Text>
+          <Text style={styles.headerSubtitle}>
+            Select how you want to use AgriLogistics
+          </Text>
+        </Animated.View>
+      </LinearGradient>
 
-                      {/* Role Title */}
-                      <Text style={styles.roleTitle}>{role.title}</Text>
-                      <Text style={styles.roleDescription}>{role.description}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        <Animated.View
+          style={[
+            styles.content,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
+        >
+          {/* Role Cards */}
+          <View style={styles.rolesContainer}>
+            {roles.map((role) => {
+              const isSelected = selectedRole === role.id;
+              return (
+                <TouchableOpacity
+                  key={role.id}
+                  style={[
+                    styles.roleCard,
+                    { backgroundColor: theme.surface },
+                    isSelected && { borderColor: role.color, borderWidth: 2 },
+                  ]}
+                  onPress={() => handleRoleSelect(role.id)}
+                  activeOpacity={0.7}
+                >
+                  {/* Role Icon */}
+                  <LinearGradient
+                    colors={[role.color, role.color + '80']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.roleIcon}
+                  >
+                    <Ionicons name={role.icon as any} size={48} color="#FFF" />
+                  </LinearGradient>
 
-                      {/* Features */}
-                      <View style={styles.featuresContainer}>
-                        {role.features.map((feature, index) => (
-                          <View key={index} style={styles.featureItem}>
-                            <MaterialCommunityIcons
-                              name="check-circle"
-                              size={16}
-                              color={role.color}
-                            />
-                            <Text style={styles.featureText}>{feature}</Text>
-                          </View>
-                        ))}
+                  {/* Role Title */}
+                  <Text style={[styles.roleTitle, { color: theme.text }]}>{role.title}</Text>
+                  <Text style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                    {role.description}
+                  </Text>
+
+                  {/* Features */}
+                  <View style={styles.featuresContainer}>
+                    {role.features.map((feature, index) => (
+                      <View key={index} style={styles.featureItem}>
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={18}
+                          color={role.color}
+                        />
+                        <Text style={[styles.featureText, { color: theme.text }]}>
+                          {feature}
+                        </Text>
                       </View>
+                    ))}
+                  </View>
 
-                      {/* Select Button */}
-                      <PremiumButton
-                        label={isSelected ? 'Selected' : 'Choose Role'}
-                        variant={role.id === 'shipper' ? 'accent' : 'primary'}
-                        onPress={() => handleRoleSelect(role.id)}
-                        icon={isSelected ? 'check' : 'arrow-right'}
-                        iconPosition="right"
-                      />
-                    </PremiumCard>
-                  </Animated.View>
-                );
-              })}
-            </View>
+                  {/* Select Indicator */}
+                  {isSelected && (
+                    <View style={[styles.selectedBadge, { backgroundColor: role.color }]}>
+                      <Ionicons name="checkmark" size={20} color="#FFF" />
+                      <Text style={styles.selectedText}>Selected</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-            {/* Info Section */}
-            <View style={styles.infoSection}>
-              <Text style={styles.infoTitle}>Can't decide?</Text>
-              <Text style={styles.infoText}>
+          {/* Info Section */}
+          <View style={[styles.infoSection, { backgroundColor: `${theme.primary}10` }]}>
+            <Ionicons name="information-circle-outline" size={24} color={theme.primary} />
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>
+                Can't decide?
+              </Text>
+              <Text style={[styles.infoText, { color: theme.textSecondary }]}>
                 You can change your role anytime in your account settings. Many users participate as both shippers and transporters!
               </Text>
             </View>
+          </View>
 
-            {/* Back Button */}
-            <PremiumButton
-              label="Back to Login"
-              variant="ghost"
-              onPress={() => navigation.goBack()}
-              icon="arrow-left"
-            />
-          </Animated.View>
-        </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+          {/* Back Button */}
+          <TouchableOpacity
+            style={[styles.backToLoginButton, { borderColor: theme.border }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color={theme.primary} />
+            <Text style={[styles.backToLoginText, { color: theme.primary }]}>
+              Back to Login
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: PREMIUM_THEME.colors.background,
   },
-  gradient: {
-    flex: 1,
+  header: {
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   backgroundPattern: {
     position: 'absolute',
     width: '100%',
     height: '100%',
-    overflow: 'hidden',
   },
-  orb: {
+  circle: {
     position: 'absolute',
-    borderRadius: 9999,
-    opacity: 0.1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 999,
+  },
+  circle1: {
+    width: 300,
+    height: 300,
+    top: -100,
+    right: -100,
+  },
+  circle2: {
+    width: 200,
+    height: 200,
+    bottom: -50,
+    left: -50,
+  },
+  circle3: {
+    width: 150,
+    height: 150,
+    top: height / 2 - 75,
+    right: -75,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-    zIndex: 1,
+    padding: 24,
+    paddingTop: 32,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
-  
-  // Header
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: PREMIUM_THEME.colors.text,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: PREMIUM_THEME.colors.textSecondary,
-    textAlign: 'center',
-  },
-  
-  // Roles
+
+  // Role Cards
   rolesContainer: {
     gap: 20,
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  selectedCard: {
-    borderColor: PREMIUM_THEME.colors.primary,
-    borderWidth: 2,
-    backgroundColor: 'rgba(255, 107, 53, 0.12)',
+  roleCard: {
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    position: 'relative',
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
   },
   roleIcon: {
     width: 80,
@@ -240,26 +314,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
     alignSelf: 'center',
-    ...PREMIUM_THEME.shadows.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   roleTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: PREMIUM_THEME.colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   roleDescription: {
     fontSize: 14,
-    color: PREMIUM_THEME.colors.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
   },
-  
+
   // Features
   featuresContainer: {
-    marginBottom: 24,
     gap: 12,
+    marginBottom: 16,
   },
   featureItem: {
     flexDirection: 'row',
@@ -268,28 +344,66 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: PREMIUM_THEME.colors.textSecondary,
     fontWeight: '500',
   },
-  
-  // Info
-  infoSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: PREMIUM_THEME.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: PREMIUM_THEME.colors.border,
-    padding: 16,
-    marginBottom: 32,
+
+  // Selected Badge
+  selectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 8,
   },
-  infoTitle: {
+  selectedText: {
     fontSize: 14,
     fontWeight: '700',
-    color: PREMIUM_THEME.colors.text,
-    marginBottom: 8,
+    color: '#FFF',
+  },
+
+  // Info Section
+  infoSection: {
+    flexDirection: 'row',
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(39, 174, 96, 0.2)',
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   infoText: {
-    fontSize: 12,
-    color: PREMIUM_THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+
+  // Back to Login
+  backToLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    maxWidth: 300,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  backToLoginText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

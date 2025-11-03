@@ -10,9 +10,13 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  PanResponder,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { login } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -74,10 +78,29 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('shipper');
   const [errors, setErrors] = useState({ phone: '', password: '' });
+  const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Animation refs
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // 3D Tilt refs for role buttons
+  const tiltX1 = useRef(new Animated.Value(0)).current;
+  const tiltY1 = useRef(new Animated.Value(0)).current;
+  const tiltX2 = useRef(new Animated.Value(0)).current;
+  const tiltY2 = useRef(new Animated.Value(0)).current;
+
+  // Floating animation refs
+  const float1 = useRef(new Animated.Value(0)).current;
+  const float2 = useRef(new Animated.Value(0)).current;
+
+  // Scale animations for press effects
+  const scale1 = useRef(new Animated.Value(1)).current;
+  const scale2 = useRef(new Animated.Value(1)).current;
+
+  // Confetti ref
+  const confettiRef = useRef<any>(null);
 
   useEffect(() => {
     // Start animations
@@ -101,6 +124,35 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         duration: 1000,
         useNativeDriver: true,
       }),
+      // Floating animations
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(float1, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(float1, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(float2, {
+            toValue: 1,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(float2, {
+            toValue: 0,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
     ]).start();
   }, []);
 
@@ -403,6 +455,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     paddingTop: 32,
+    maxWidth: 500,
+    width: '100%',
+    alignSelf: 'center',
   },
   errorBanner: {
     flexDirection: 'row',
@@ -444,16 +499,21 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    alignItems: 'center',
   },
   roleSelectionLabel: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 12,
+    maxWidth: 500,
+    width: '100%',
   },
   roleButtonsContainer: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 8,
+    maxWidth: 500,
+    width: '100%',
   },
   roleButton: {
     flex: 1,
