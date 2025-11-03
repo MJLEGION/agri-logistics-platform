@@ -1,5 +1,5 @@
 // src/screens/shipper/ShipperHomeScreen.tsx
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   ScrollView,
   Dimensions,
   RefreshControl,
+  Animated,
+  PanResponder,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,8 +39,108 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
 
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // Animation refs
+  const statFloat1 = useRef(new Animated.Value(0)).current;
+  const statFloat2 = useRef(new Animated.Value(0)).current;
+  const statFloat3 = useRef(new Animated.Value(0)).current;
+
+  const actionTiltX1 = useRef(new Animated.Value(0)).current;
+  const actionTiltY1 = useRef(new Animated.Value(0)).current;
+  const actionTiltX2 = useRef(new Animated.Value(0)).current;
+  const actionTiltY2 = useRef(new Animated.Value(0)).current;
+  const actionTiltX3 = useRef(new Animated.Value(0)).current;
+  const actionTiltY3 = useRef(new Animated.Value(0)).current;
+
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const card1Anim = useRef(new Animated.Value(0)).current;
+  const card2Anim = useRef(new Animated.Value(0)).current;
+  const card3Anim = useRef(new Animated.Value(0)).current;
+  const action1Scale = useRef(new Animated.Value(1)).current;
+  const action2Scale = useRef(new Animated.Value(1)).current;
+  const action3Scale = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     loadData();
+
+    // Start animations
+    Animated.parallel([
+      // Floating stat cards
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(statFloat1, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(statFloat1, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(statFloat2, {
+            toValue: 1,
+            duration: 2200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(statFloat2, {
+            toValue: 0,
+            duration: 2200,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(statFloat3, {
+            toValue: 1,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(statFloat3, {
+            toValue: 0,
+            duration: 2400,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      // Pulse animation for primary CTA
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      // Staggered entrance
+      Animated.stagger(100, [
+        Animated.timing(card1Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(card2Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(card3Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
   }, [dispatch]);
 
   const loadData = () => {
@@ -50,6 +153,61 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
     await loadData();
     setRefreshing(false);
   }, [loadData]);
+
+  const handlePressIn = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = (scaleAnim: Animated.Value) => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const createTiltHandler = (tiltX: Animated.Value, tiltY: Animated.Value) => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        const centerX = 75;
+        const centerY = 75;
+
+        const tiltAngleX = ((locationY - centerY) / centerY) * -10;
+        const tiltAngleY = ((locationX - centerX) / centerX) * 10;
+
+        Animated.spring(tiltX, {
+          toValue: tiltAngleX,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(tiltY, {
+          toValue: tiltAngleY,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(tiltX, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(tiltY, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+      },
+    });
+  };
 
   // Calculate stats with useMemo for performance
   const userId = user?._id || user?.id;
@@ -149,7 +307,29 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
 
         {/* Statistics Cards */}
         <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+          <Animated.View
+            style={[
+              styles.statCard,
+              { backgroundColor: theme.card },
+              {
+                opacity: card1Anim,
+                transform: [
+                  {
+                    translateY: Animated.add(
+                      card1Anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                      statFloat1.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -8],
+                      })
+                    ),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={[styles.statIconBox, { backgroundColor: '#27AE60' + '20' }]}>
               <Ionicons name="leaf" size={24} color="#27AE60" />
             </View>
@@ -159,9 +339,31 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
               Active Cargo
             </Text>
-          </View>
+          </Animated.View>
 
-          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+          <Animated.View
+            style={[
+              styles.statCard,
+              { backgroundColor: theme.card },
+              {
+                opacity: card2Anim,
+                transform: [
+                  {
+                    translateY: Animated.add(
+                      card2Anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                      statFloat2.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -8],
+                      })
+                    ),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
               <Ionicons name="cart" size={24} color="#F59E0B" />
             </View>
@@ -171,9 +373,31 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
               Active Orders
             </Text>
-          </View>
+          </Animated.View>
 
-          <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+          <Animated.View
+            style={[
+              styles.statCard,
+              { backgroundColor: theme.card },
+              {
+                opacity: card3Anim,
+                transform: [
+                  {
+                    translateY: Animated.add(
+                      card3Anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 0],
+                      }),
+                      statFloat3.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, -8],
+                      })
+                    ),
+                  },
+                ],
+              },
+            ]}
+          >
             <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
               <Ionicons name="checkmark-circle" size={24} color="#10B981" />
             </View>
@@ -183,7 +407,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
               Completed
             </Text>
-          </View>
+          </Animated.View>
         </View>
 
         {/* Quick Actions */}
@@ -193,62 +417,134 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
           </Text>
 
           <View style={styles.actionsGrid}>
-            {/* List New Cargo */}
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('ListCargo')}
+            {/* List New Cargo - with Pulse + 3D Tilt */}
+            <Animated.View
+              style={{
+                transform: [
+                  { perspective: 1000 },
+                  { scale: Animated.multiply(action1Scale, pulseAnim) },
+                  {
+                    rotateX: actionTiltX1.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                  {
+                    rotateY: actionTiltY1.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                ],
+              }}
+              {...createTiltHandler(actionTiltX1, actionTiltY1).panHandlers}
             >
-              <LinearGradient
-                colors={['#27AE60', '#2ECC71']}
-                style={styles.actionGradient}
+              <Pressable
+                style={[styles.actionCard, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('ListCargo')}
+                onPressIn={() => handlePressIn(action1Scale)}
+                onPressOut={() => handlePressOut(action1Scale)}
               >
-                <Ionicons name="add-circle" size={32} color="#FFF" />
-              </LinearGradient>
-              <Text style={[styles.actionTitle, { color: theme.text }]}>
-                List New Cargo
-              </Text>
-              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                Add cargo for shipping
-              </Text>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#27AE60', '#2ECC71']}
+                  style={styles.actionGradient}
+                >
+                  <Ionicons name="add-circle" size={32} color="#FFF" />
+                </LinearGradient>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>
+                  List New Cargo
+                </Text>
+                <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                  Add cargo for shipping
+                </Text>
+              </Pressable>
+            </Animated.View>
 
-            {/* My Listings */}
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('MyCargo')}
+            {/* My Cargo - with 3D Tilt */}
+            <Animated.View
+              style={{
+                transform: [
+                  { perspective: 1000 },
+                  { scale: action2Scale },
+                  {
+                    rotateX: actionTiltX2.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                  {
+                    rotateY: actionTiltY2.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                ],
+              }}
+              {...createTiltHandler(actionTiltX2, actionTiltY2).panHandlers}
             >
-              <LinearGradient
-                colors={['#3B82F6', '#2563EB']}
-                style={styles.actionGradient}
+              <Pressable
+                style={[styles.actionCard, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('MyCargo')}
+                onPressIn={() => handlePressIn(action2Scale)}
+                onPressOut={() => handlePressOut(action2Scale)}
               >
-                <Ionicons name="list" size={32} color="#FFF" />
-              </LinearGradient>
-              <Text style={[styles.actionTitle, { color: theme.text }]}>
-                My Cargo
-              </Text>
-              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                {myCargo.length} active cargo
-              </Text>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#3B82F6', '#2563EB']}
+                  style={styles.actionGradient}
+                >
+                  <Ionicons name="list" size={32} color="#FFF" />
+                </LinearGradient>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>
+                  My Cargo
+                </Text>
+                <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                  {myCargo.length} active cargo
+                </Text>
+              </Pressable>
+            </Animated.View>
 
-            {/* Active Orders */}
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('ShipperActiveOrders')}
+            {/* Active Orders - with 3D Tilt */}
+            <Animated.View
+              style={{
+                transform: [
+                  { perspective: 1000 },
+                  { scale: action3Scale },
+                  {
+                    rotateX: actionTiltX3.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                  {
+                    rotateY: actionTiltY3.interpolate({
+                      inputRange: [-10, 10],
+                      outputRange: ['-10deg', '10deg'],
+                    }),
+                  },
+                ],
+              }}
+              {...createTiltHandler(actionTiltX3, actionTiltY3).panHandlers}
             >
-              <LinearGradient
-                colors={['#F59E0B', '#D97706']}
-                style={styles.actionGradient}
+              <Pressable
+                style={[styles.actionCard, { backgroundColor: theme.card }]}
+                onPress={() => navigation.navigate('ShipperActiveOrders')}
+                onPressIn={() => handlePressIn(action3Scale)}
+                onPressOut={() => handlePressOut(action3Scale)}
               >
-                <Ionicons name="cube" size={32} color="#FFF" />
-              </LinearGradient>
-              <Text style={[styles.actionTitle, { color: theme.text }]}>
-                Active Orders
-              </Text>
-              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
-                {activeOrders.length} ongoing
-              </Text>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={['#F59E0B', '#D97706']}
+                  style={styles.actionGradient}
+                >
+                  <Ionicons name="cube" size={32} color="#FFF" />
+                </LinearGradient>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>
+                  Active Orders
+                </Text>
+                <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                  {activeOrders.length} ongoing
+                </Text>
+              </Pressable>
+            </Animated.View>
           </View>
         </View>
 

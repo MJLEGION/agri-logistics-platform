@@ -10,9 +10,11 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { register } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -42,10 +44,27 @@ export default function RegisterScreen({ route, navigation }: any) {
     password: '',
     confirmPassword: '',
   });
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Animation refs
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // 3D Tilt for icon
+  const iconTiltX = useRef(new Animated.Value(0)).current;
+  const iconTiltY = useRef(new Animated.Value(0)).current;
+
+  // Floating animation for icon
+  const iconFloat = useRef(new Animated.Value(0)).current;
+
+  // Form field entrance animations
+  const field1Anim = useRef(new Animated.Value(0)).current;
+  const field2Anim = useRef(new Animated.Value(0)).current;
+  const field3Anim = useRef(new Animated.Value(0)).current;
+  const field4Anim = useRef(new Animated.Value(0)).current;
+
+  // Confetti ref
+  const confettiRef = useRef<any>(null);
 
   useEffect(() => {
     // Start animations
@@ -69,6 +88,45 @@ export default function RegisterScreen({ route, navigation }: any) {
         duration: 1000,
         useNativeDriver: true,
       }),
+      // Floating icon animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(iconFloat, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(iconFloat, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ),
+      // Staggered form field animations
+      Animated.stagger(100, [
+        Animated.timing(field1Anim, {
+          toValue: 1,
+          duration: 600,
+          delay: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(field2Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(field3Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(field4Anim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
   }, []);
 
@@ -143,6 +201,48 @@ export default function RegisterScreen({ route, navigation }: any) {
     return valid;
   };
 
+  // 3D Tilt handler for icon
+  const createIconTiltHandler = () => {
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (evt, gestureState) => {
+        const { locationX, locationY } = evt.nativeEvent;
+        const centerX = 48; // Icon size / 2
+        const centerY = 48;
+
+        const tiltAngleX = ((locationY - centerY) / centerY) * -15;
+        const tiltAngleY = ((locationX - centerX) / centerX) * 15;
+
+        Animated.spring(iconTiltX, {
+          toValue: tiltAngleX,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(iconTiltY, {
+          toValue: tiltAngleY,
+          friction: 7,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(iconTiltX, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+
+        Animated.spring(iconTiltY, {
+          toValue: 0,
+          friction: 5,
+          useNativeDriver: true,
+        }).start();
+      },
+    });
+  };
+
+  const iconTiltHandler = createIconTiltHandler();
+
   const handleRegister = async () => {
     if (!validateForm()) return;
 
@@ -150,6 +250,11 @@ export default function RegisterScreen({ route, navigation }: any) {
       console.log('🔐 Attempting registration:', { name, phone, role });
       await dispatch(register({ name, phone, password, role })).unwrap();
       console.log('✅ Registration successful!');
+
+      // Trigger confetti
+      setShowConfetti(true);
+      confettiRef.current?.start();
+
       showSuccess('Account created successfully!');
       // Navigation happens automatically via AppNavigator
     } catch (err: any) {
@@ -218,9 +323,37 @@ export default function RegisterScreen({ route, navigation }: any) {
             </TouchableOpacity>
 
             <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
-              <View style={styles.iconContainer}>
+              <Animated.View
+                style={[
+                  styles.iconContainer,
+                  {
+                    transform: [
+                      { perspective: 1000 },
+                      {
+                        translateY: iconFloat.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -10],
+                        }),
+                      },
+                      {
+                        rotateX: iconTiltX.interpolate({
+                          inputRange: [-15, 15],
+                          outputRange: ['-15deg', '15deg'],
+                        }),
+                      },
+                      {
+                        rotateY: iconTiltY.interpolate({
+                          inputRange: [-15, 15],
+                          outputRange: ['-15deg', '15deg'],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+                {...iconTiltHandler.panHandlers}
+              >
                 <Ionicons name={getRoleIcon() as any} size={48} color="#FFFFFF" />
-              </View>
+              </Animated.View>
               <Text style={styles.headerTitle}>Create Account</Text>
               <Text style={styles.headerSubtitle}>
                 Register as {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -237,59 +370,115 @@ export default function RegisterScreen({ route, navigation }: any) {
               </View>
             )}
 
-            <Input
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={name}
-              onChangeText={(text) => {
-                setName(text);
-                setErrors({ ...errors, name: '' });
+            <Animated.View
+              style={{
+                opacity: field1Anim,
+                transform: [
+                  {
+                    translateY: field1Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
               }}
-              icon="person-outline"
-              error={errors.name}
-              autoCapitalize="words"
-            />
+            >
+              <Input
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={name}
+                onChangeText={(text) => {
+                  setName(text);
+                  setErrors({ ...errors, name: '' });
+                }}
+                icon="person-outline"
+                error={errors.name}
+                autoCapitalize="words"
+              />
+            </Animated.View>
 
-            <Input
-              label="Phone Number"
-              placeholder="+250 XXX XXX XXX"
-              value={phone}
-              onChangeText={(text) => {
-                setPhone(text);
-                setErrors({ ...errors, phone: '' });
+            <Animated.View
+              style={{
+                opacity: field2Anim,
+                transform: [
+                  {
+                    translateY: field2Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
               }}
-              keyboardType="phone-pad"
-              icon="call-outline"
-              error={errors.phone}
-              autoCapitalize="none"
-            />
+            >
+              <Input
+                label="Phone Number"
+                placeholder="+250 XXX XXX XXX"
+                value={phone}
+                onChangeText={(text) => {
+                  setPhone(text);
+                  setErrors({ ...errors, phone: '' });
+                }}
+                keyboardType="phone-pad"
+                icon="call-outline"
+                error={errors.phone}
+                autoCapitalize="none"
+              />
+            </Animated.View>
 
-            <Input
-              label="Password"
-              placeholder="Create a password"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors({ ...errors, password: '' });
+            <Animated.View
+              style={{
+                opacity: field3Anim,
+                transform: [
+                  {
+                    translateY: field3Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
               }}
-              secureTextEntry
-              icon="lock-closed-outline"
-              error={errors.password}
-              helperText="Must be at least 6 characters"
-            />
+            >
+              <Input
+                label="Password"
+                placeholder="Create a password"
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors({ ...errors, password: '' });
+                }}
+                secureTextEntry
+                icon="lock-closed-outline"
+                error={errors.password}
+                helperText="Must be at least 6 characters"
+              />
+            </Animated.View>
 
-            <Input
-              label="Confirm Password"
-              placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChangeText={(text) => {
-                setConfirmPassword(text);
-                setErrors({ ...errors, confirmPassword: '' });
+            <Animated.View
+              style={{
+                opacity: field4Anim,
+                transform: [
+                  {
+                    translateY: field4Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  },
+                ],
               }}
-              secureTextEntry
-              icon="lock-closed-outline"
-              error={errors.confirmPassword}
-            />
+            >
+              <Input
+                label="Confirm Password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChangeText={(text) => {
+                  setConfirmPassword(text);
+                  setErrors({ ...errors, confirmPassword: '' });
+                }}
+                secureTextEntry
+                icon="lock-closed-outline"
+                error={errors.confirmPassword}
+              />
+            </Animated.View>
 
             <View style={[styles.infoBox, { backgroundColor: `${getRoleColor()}10` }]}>
               <Ionicons name="information-circle" size={20} color={getRoleColor()} />
@@ -329,6 +518,22 @@ export default function RegisterScreen({ route, navigation }: any) {
         type={toast.type}
         onHide={hideToast}
       />
+
+      {/* Confetti */}
+      {showConfetti && (
+        <ConfettiCannon
+          ref={confettiRef}
+          count={200}
+          origin={{ x: width / 2, y: height / 2 }}
+          autoStart={false}
+          fadeOut
+          colors={
+            role === 'shipper'
+              ? ['#27AE60', '#2ECC71', '#1B9954', '#34D679', '#FFD700']
+              : ['#1E8449', '#27AE60', '#16663A', '#2ECC71', '#FFD700']
+          }
+        />
+      )}
     </View>
   );
 }
