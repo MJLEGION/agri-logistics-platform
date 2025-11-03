@@ -1,4 +1,4 @@
-// src/screens/auth/RegisterScreen.tsx
+// src/screens/auth/RegisterScreen.tsx - Modern Design System Implementation
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -18,8 +18,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
+import ModernButton from '../../components/ModernButton';
 import Toast, { useToast } from '../../components/Toast';
 import ProgressBar from '../../components/ProgressBar';
+import { ModernColors, ModernGradients, Typography, Spacing, BorderRadius, Shadows } from '../../config/ModernDesignSystem';
 
 const { width, height } = Dimensions.get('window');
 
