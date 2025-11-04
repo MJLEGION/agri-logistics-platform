@@ -182,22 +182,22 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         <View
           style={[
             styles.mainCard,
-            { backgroundColor: theme.card, borderColor: '#F59E0B' },
+            { backgroundColor: theme.card },
           ]}
         >
           <View style={styles.mainCardContent}>
-            <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
+            <Text style={styles.earningsLabel}>
               Net Earnings
             </Text>
-            <Text style={[styles.earningsAmount, { color: '#F59E0B' }]}>
+            <Text style={styles.earningsAmount}>
               {stats.netEarnings.toLocaleString()} RWF
             </Text>
-            <Text style={[styles.earningsSubtext, { color: theme.textSecondary }]}>
+            <Text style={styles.earningsSubtext}>
               {stats.totalTrips} trips • {stats.totalDistance} km
             </Text>
           </View>
           <View style={styles.mainCardIcon}>
-            <Ionicons name="wallet" size={48} color="#F59E0B" />
+            <Ionicons name="wallet" size={48} color="#D1D5DB" />
           </View>
         </View>
 
@@ -206,7 +206,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           style={[
             styles.payoutButton,
             {
-              backgroundColor: stats.netEarnings >= minimumWithdrawal ? '#10B981' : '#ccc',
+              backgroundColor: stats.netEarnings >= minimumWithdrawal ? '#F59E0B' : '#ccc',
               opacity: stats.netEarnings >= minimumWithdrawal ? 1 : 0.6,
             },
           ]}
@@ -473,102 +473,130 @@ const styles = StyleSheet.create({
   },
   periodSelector: {
     flexDirection: 'row',
-    marginHorizontal: 15,
-    marginVertical: 15,
-    gap: 10,
+    marginHorizontal: 20,
+    marginVertical: 12,
+    gap: 8,
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    padding: 4,
+    borderRadius: 8,
   },
   periodButton: {
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderRadius: 6,
+    borderWidth: 0,
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   periodButtonActive: {
-    borderColor: '#F59E0B',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
   },
   periodButtonText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
+    color: '#9CA3AF',
   },
   periodButtonTextActive: {
-    color: '#fff',
+    color: '#374151',
+    fontWeight: '600',
   },
   mainCard: {
-    marginHorizontal: 15,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 12,
-    borderWidth: 2,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 18,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   mainCardContent: {
     flex: 1,
   },
   mainCardIcon: {
-    opacity: 0.2,
+    opacity: 0.1,
   },
   earningsLabel: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 12,
+    marginBottom: 6,
+    fontWeight: '500',
+    color: '#6B7280',
   },
   earningsAmount: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 3,
+    color: '#1F2937',
   },
   earningsSubtext: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#9CA3AF',
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: 15,
-    marginBottom: 20,
-    gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    gap: 8,
+    justifyContent: 'space-between',
   },
   statCard: {
-    width: '48%',
-    padding: 15,
-    borderRadius: 12,
+    width: '23.5%',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   statIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
+    fontWeight: '500',
   },
   section: {
-    marginHorizontal: 15,
-    marginBottom: 20,
+    marginHorizontal: 20,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
   },
   breakdownBox: {
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   breakdownRow: {
-    padding: 15,
+    padding: 12,
   },
   breakdownItem: {
     flexDirection: 'row',
@@ -576,36 +604,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   breakdownLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
   breakdownValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
   },
   metricsBox: {
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   metricRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
+    padding: 12,
   },
   metricLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
   metricValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   tripCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
+    padding: 11,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   tripLeft: {
     flexDirection: 'row',
@@ -613,27 +647,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tripIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   tripInfo: {
     flex: 1,
   },
   tripTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   tripDesc: {
-    fontSize: 12,
+    fontSize: 11,
   },
   tripEarnings: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '700',
   },
   emptyState: {
     alignItems: 'center',
@@ -653,29 +687,32 @@ const styles = StyleSheet.create({
   },
   tipCard: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 11,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 8,
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     borderWidth: 1,
   },
   tipText: {
-    fontSize: 13,
+    fontSize: 12,
     flex: 1,
+    fontWeight: '500',
   },
   payoutButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 15,
-    marginVertical: 15,
-    paddingVertical: 14,
+    marginHorizontal: 20,
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
     borderRadius: 8,
+    alignSelf: 'center',
   },
   payoutButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

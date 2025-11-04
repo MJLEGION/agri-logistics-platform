@@ -1,16 +1,18 @@
 // src/screens/shipper/EditCargoScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Animated, Pressable } from 'react-native';
 import { updateCargo } from '../../store/slices/cargoSlice';
 import { Cargo } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 export default function EditCargoScreen({ route, navigation }: any) {
   const { cargoId } = route.params;
   const dispatch = useAppDispatch();
   const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
+  const animations = useScreenAnimations(4); // ✨ Pizzazz animations
   
   const cargoItem = cargo.find(c => c._id === cargoId || c.id === cargoId);
 
@@ -65,21 +67,24 @@ export default function EditCargoScreen({ route, navigation }: any) {
         </View>
 
         <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              color: theme.text,
-            }]}
-            placeholder="e.g., Tomatoes, Maize, Potatoes"
-            placeholderTextColor={theme.textSecondary}
-            value={cargoName}
-            onChangeText={setCargoName}
-          />
+          <Animated.View style={animations.getFloatingCardStyle(0)}>
+            <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="e.g., Tomatoes, Maize, Potatoes"
+              placeholderTextColor={theme.textSecondary}
+              value={cargoName}
+              onChangeText={setCargoName}
+            />
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
-          <View style={styles.row}>
+          <Animated.View style={animations.getFloatingCardStyle(1)}>
+            <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
+            <View style={styles.row}>
             <TextInput
               style={[styles.input, styles.quantityInput, { 
                 backgroundColor: theme.card,
@@ -115,33 +120,38 @@ export default function EditCargoScreen({ route, navigation }: any) {
               ))}
             </View>
           </View>
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              color: theme.text,
-            }]}
-            placeholder="Optional"
-            placeholderTextColor={theme.textSecondary}
-            value={pricePerUnit}
-            onChangeText={setPricePerUnit}
-            keyboardType="numeric"
-          />
+          <Animated.View style={animations.getFloatingCardStyle(2)}>
+            <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="Optional"
+              placeholderTextColor={theme.textSecondary}
+              value={pricePerUnit}
+              onChangeText={setPricePerUnit}
+              keyboardType="numeric"
+            />
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              color: theme.text,
-            }]}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.textSecondary}
-            value={readyDate}
-            onChangeText={setReadyDate}
-          />
+          <Animated.View style={animations.getFloatingCardStyle(3)}>
+            <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={theme.textSecondary}
+              value={readyDate}
+              onChangeText={setReadyDate}
+            />
+          </Animated.View>
 
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 

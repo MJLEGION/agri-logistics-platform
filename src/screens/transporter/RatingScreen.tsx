@@ -10,9 +10,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { ratingService } from '../../services/ratingService';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface RatingScreenProps {
   transactionId: string;
@@ -31,6 +35,8 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
 }) => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { theme } = useTheme();
+  const animations = useScreenAnimations(3); // ✨ Pizzazz animations
   
   // Get params from route if not passed directly
   const params = route?.params as RatingScreenProps;

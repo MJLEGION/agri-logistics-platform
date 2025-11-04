@@ -1,10 +1,11 @@
 // src/screens/shipper/ShipperActiveOrdersScreen.tsx
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
 import { useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import SearchBar from '../../components/SearchBar';
 import ListItem from '../../components/ListItem';
 import Badge from '../../components/Badge';
@@ -21,6 +22,7 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
   // TEMPORARY: Show ALL orders for debugging
   console.log('🔍 ALL ORDERS:', orders);
@@ -161,36 +163,38 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
           data={filteredOrders}
           keyExtractor={(item) => item._id || item.id || ''}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <View>
-              <ListItem
-                icon="cube"
-                title={getCargoName(item.cargoId)}
-                subtitle={`${item.quantity} • ${item.deliveryLocation?.address || 'Location'} ${item.transporterId ? '• 🚚 Assigned' : ''}`}
-                rightElement={
-                  <Badge
-                    label={item.status.toUpperCase()}
-                    variant={getStatusVariant(item.status)}
-                    size="sm"
-                  />
-                }
-                chevron
-                onPress={() => {
-                  // Navigate to order details if available
-                  // navigation.navigate('OrderDetails', { orderId: item._id || item.id })
-                }}
-              />
-              {/* Show "Rate Transporter" button for completed/delivered orders */}
-              {(item.status === 'completed' || item.status === 'delivered') && item.transporterId && (
-                <TouchableOpacity
-                  style={[styles.rateButton, { backgroundColor: theme.primary }]}
-                  onPress={() => handleOpenRatingModal(item)}
-                >
-                  <Ionicons name="star" size={16} color="#fff" />
-                  <Text style={styles.rateButtonText}>Rate Transporter</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+          renderItem={({ item, index }) => (
+            <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+              <View>
+                <ListItem
+                  icon="cube"
+                  title={getCargoName(item.cargoId)}
+                  subtitle={`${item.quantity} • ${item.deliveryLocation?.address || 'Location'} ${item.transporterId ? '• 🚚 Assigned' : ''}`}
+                  rightElement={
+                    <Badge
+                      label={item.status.toUpperCase()}
+                      variant={getStatusVariant(item.status)}
+                      size="sm"
+                    />
+                  }
+                  chevron
+                  onPress={() => {
+                    // Navigate to order details if available
+                    // navigation.navigate('OrderDetails', { orderId: item._id || item.id })
+                  }}
+                />
+                {/* Show "Rate Transporter" button for completed/delivered orders */}
+                {(item.status === 'completed' || item.status === 'delivered') && item.transporterId && (
+                  <TouchableOpacity
+                    style={[styles.rateButton, { backgroundColor: theme.primary }]}
+                    onPress={() => handleOpenRatingModal(item)}
+                  >
+                    <Ionicons name="star" size={16} color="#fff" />
+                    <Text style={styles.rateButtonText}>Rate Transporter</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </Animated.View>
           )}
         />
       )}

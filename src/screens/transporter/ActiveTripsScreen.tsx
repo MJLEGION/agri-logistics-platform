@@ -1,6 +1,6 @@
 // src/screens/transporter/ActiveTripsScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Animated, Pressable, PanResponder } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,6 +16,7 @@ import Button from '../../components/Button';
 import IconButton from '../../components/IconButton';
 import EmptyState from '../../components/EmptyState';
 import Toast, { useToast } from '../../components/Toast';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -25,6 +26,9 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [completingTripId, setCompletingTripId] = useState<string | null>(null);
   const { toast, showSuccess, showError, hideToast } = useToast();
+  
+  // ✨ Pizzazz Animations
+  const animations = useScreenAnimations(6);
 
   const activeTrips = getActiveTripsForTransporter(
     trips,
@@ -152,8 +156,9 @@ export default function ActiveTripsScreen({ navigation }: any) {
           contentContainerStyle={styles.list}
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
-          renderItem={({ item: trip }) => (
-            <Card>
+          renderItem={({ item: trip, index }) => (
+            <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+              <Card>
               <View style={styles.tripHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
                   {trip.shipment?.cropName || 'Delivery'}
@@ -222,6 +227,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
                 </View>
               )}
             </Card>
+            </Animated.View>
           )}
         />
       )}

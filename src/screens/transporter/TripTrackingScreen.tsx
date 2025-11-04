@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Animated,
+  Pressable,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { FontAwesome } from '@expo/vector-icons';
@@ -18,12 +20,14 @@ import TripMapView from '../../components/TripMapView';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { completeTrip, fetchAllTrips } from '../../logistics/store/tripsSlice';
 import { useLocation } from '../../utils/useLocation';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import locationService from '../../services/locationService';
 
 export default function TripTrackingScreen({ route, navigation }: any) {
   const { trip } = route.params;
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
+  const animations = useScreenAnimations(3); // ✨ Pizzazz animations
   const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);

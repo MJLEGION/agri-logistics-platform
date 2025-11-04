@@ -8,12 +8,15 @@ import {
   ScrollView,
   Alert,
   TextInput,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Location from 'expo-location';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import {
   optimizeMultiStopRoute,
   calculateRouteSegments,
@@ -27,6 +30,7 @@ export default function RoutePlannerScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { orders } = useAppSelector(state => state.orders);
   const { user } = useAppSelector(state => state.auth);
+  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
   const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [selectedLoads, setSelectedLoads] = useState<any[]>([]);
@@ -182,46 +186,47 @@ export default function RoutePlannerScreen({ navigation }: any) {
               <Text style={[styles.helperText, { color: theme.textSecondary }]}>
                 Select loads to include in your route
               </Text>
-              {myLoads.map(load => {
+              {myLoads.map((load, index) => {
                 const isSelected = selectedLoads.find(l => l._id === load._id);
                 return (
-                  <TouchableOpacity
-                    key={load._id}
-                    style={[
-                      styles.loadItem,
-                      {
-                        backgroundColor: isSelected ? '#EC4899' + '15' : theme.background,
-                        borderColor: isSelected ? '#EC4899' : theme.border,
-                      },
-                    ]}
-                    onPress={() => toggleLoad(load)}
-                  >
-                    <View style={styles.loadLeft}>
-                      <View
-                        style={[
-                          styles.checkbox,
-                          {
-                            backgroundColor: isSelected ? '#EC4899' : 'transparent',
-                            borderColor: isSelected ? '#EC4899' : theme.border,
-                          },
-                        ]}
-                      >
-                        {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                  <Animated.View key={load._id} style={animations.getFloatingCardStyle(index % 6)}>
+                    <TouchableOpacity
+                      style={[
+                        styles.loadItem,
+                        {
+                          backgroundColor: isSelected ? '#EC4899' + '15' : theme.background,
+                          borderColor: isSelected ? '#EC4899' : theme.border,
+                        },
+                      ]}
+                      onPress={() => toggleLoad(load)}
+                    >
+                      <View style={styles.loadLeft}>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            {
+                              backgroundColor: isSelected ? '#EC4899' : 'transparent',
+                              borderColor: isSelected ? '#EC4899' : theme.border,
+                            },
+                          ]}
+                        >
+                          {isSelected && <Ionicons name="checkmark" size={16} color="#FFF" />}
+                        </View>
+                        <View style={styles.loadInfo}>
+                          <Text style={[styles.loadName, { color: theme.text }]}>
+                            {load.cropId?.name || 'Cargo'}
+                          </Text>
+                          <Text style={[styles.loadRoute, { color: theme.textSecondary }]}>
+                            {load.pickupLocation.address.split(',')[0]} →{' '}
+                            {load.deliveryLocation.address.split(',')[0]}
+                          </Text>
+                        </View>
                       </View>
-                      <View style={styles.loadInfo}>
-                        <Text style={[styles.loadName, { color: theme.text }]}>
-                          {load.cropId?.name || 'Cargo'}
-                        </Text>
-                        <Text style={[styles.loadRoute, { color: theme.textSecondary }]}>
-                          {load.pickupLocation.address.split(',')[0]} →{' '}
-                          {load.deliveryLocation.address.split(',')[0]}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.loadQuantity, { color: theme.textSecondary }]}>
-                      {load.quantity}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text style={[styles.loadQuantity, { color: theme.textSecondary }]}>
+                        {load.quantity}
+                      </Text>
+                    </TouchableOpacity>
+                  </Animated.View>
                 );
               })}
             </>

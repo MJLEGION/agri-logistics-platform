@@ -1,6 +1,6 @@
 // src/screens/shipper/MyCargoScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Animated, Pressable, PanResponder } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -14,6 +14,7 @@ import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import Toast, { useToast } from '../../components/Toast';
 import Divider from '../../components/Divider';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -21,6 +22,9 @@ export default function MyCargoScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const { toast, showSuccess, showError, hideToast } = useToast();
+  
+  // ✨ Pizzazz Animations
+  const animations = useScreenAnimations(6);
 
   // State for confirmation dialog
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -156,47 +160,49 @@ export default function MyCargoScreen({ navigation }: any) {
           data={filteredListings}
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <Card>
-              <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
-                <View style={styles.cropHeader}>
-                  <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
-                  <Badge
-                    label={item.status}
-                    variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
-                    size="sm"
-                  />
-                </View>
-                <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                  Quantity: {item.quantity} {item.unit}
-                </Text>
-                {item.pricePerUnit && (
+          renderItem={({ item, index }) => (
+            <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+              <Card>
+                <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
+                  <View style={styles.cropHeader}>
+                    <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
+                    <Badge
+                      label={item.status}
+                      variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
+                      size="sm"
+                    />
+                  </View>
                   <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                    Price: {item.pricePerUnit} RWF/{item.unit}
+                    Quantity: {item.quantity} {item.unit}
                   </Text>
-                )}
-                <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                  Ready: {new Date(item.readyDate).toLocaleDateString()}
-                </Text>
-                <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
-                  📍 {item.location.address}
-                </Text>
-              </TouchableOpacity>
+                  {item.pricePerUnit && (
+                    <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
+                      Price: {item.pricePerUnit} RWF/{item.unit}
+                    </Text>
+                  )}
+                  <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
+                    Ready: {new Date(item.readyDate).toLocaleDateString()}
+                  </Text>
+                  <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
+                    📍 {item.location.address}
+                  </Text>
+                </TouchableOpacity>
 
-              <Divider spacing="sm" />
+                <Divider spacing="sm" />
 
-              <Button
-                title="Delete Cargo"
-                onPress={() => {
-                  console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
-                  handleDelete(item._id || item.id, item.name);
-                }}
-                variant="danger"
-                size="sm"
-                fullWidth
-                icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
-              />
-            </Card>
+                <Button
+                  title="Delete Cargo"
+                  onPress={() => {
+                    console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
+                    handleDelete(item._id || item.id, item.name);
+                  }}
+                  variant="danger"
+                  size="sm"
+                  fullWidth
+                  icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
+                />
+              </Card>
+            </Animated.View>
           )}
         />
       )}

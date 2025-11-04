@@ -17,11 +17,14 @@ import {
   Dimensions,
   Modal,
   FlatList,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../store';
+import { useScreenAnimations } from '../hooks/useScreenAnimations';
 import {
   findMatchingTransporters,
   autoAssignTransporter,
@@ -45,6 +48,7 @@ export default function TransportRequestScreen({
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
+  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
   const { matchingResult, selectedMatch, autoAssignedTransporter, loading } =
     useAppSelector((state) => state.matching);
 
@@ -342,15 +346,15 @@ export default function TransportRequestScreen({
   /**
    * Render single match card
    */
-  const renderMatchCard = (match: any) => (
-    <TouchableOpacity
-      key={match.transporter._id}
-      style={[styles.matchCard, { backgroundColor: theme.card }]}
-      onPress={() => {
-        setSelectedMatchForDetail(match);
-        setShowMatchDetails(true);
-      }}
-    >
+  const renderMatchCard = (match: any, index: number = 0) => (
+    <Animated.View key={match.transporter._id} style={animations.getFloatingCardStyle(index % 6)}>
+      <TouchableOpacity
+        style={[styles.matchCard, { backgroundColor: theme.card }]}
+        onPress={() => {
+          setSelectedMatchForDetail(match);
+          setShowMatchDetails(true);
+        }}
+      >
       {/* Is Auto-Match Badge */}
       {match.isAutoMatch && (
         <View style={styles.autoMatchBadge}>
@@ -417,7 +421,8 @@ export default function TransportRequestScreen({
           ))}
         </View>
       )}
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   return (
@@ -531,7 +536,7 @@ export default function TransportRequestScreen({
             {matchingResult.matches
               .filter((m) => m.transporter._id !== autoAssignedTransporter?.transporter._id)
               .slice(0, 3)
-              .map((match) => renderMatchCard(match))}
+              .map((match, index) => renderMatchCard(match, index))}
 
             {/* Auto-Assign Button */}
             {!autoAssignedTransporter && (

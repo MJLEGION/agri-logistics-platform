@@ -11,7 +11,11 @@ import {
   RefreshControl,
   Share,
   Platform,
+  Animated,
+  Pressable,
+  PanResponder,
 } from 'react-native';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { ratingService } from '../../services/ratingService';
 import { reviewService } from '../../services/reviewService';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -60,6 +64,9 @@ const TransporterProfileScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedReviewId, setExpandedReviewId] = useState<string | null>(null);
   const [reviewPage, setReviewPage] = useState(0);
+  
+  // ✨ Pizzazz Animations
+  const animations = useScreenAnimations(6);
 
   const transporterId = params?.transporterId;
 
@@ -278,8 +285,9 @@ const TransporterProfileScreen: React.FC = () => {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* Header with Badge */}
-      <View style={styles.headerSection}>
+      {/* Header with Badge - 🎉 Animated */}
+      <Animated.View style={animations.getFloatingCardStyle(0)}>
+        <View style={styles.headerSection}>
         {stats.isVerified && stats.verifiedBadge && (
           <View
             style={[
@@ -331,7 +339,8 @@ const TransporterProfileScreen: React.FC = () => {
         <TouchableOpacity style={styles.shareButton} onPress={handleShareProfile}>
           <Text style={styles.shareButtonText}>📤 Share Profile</Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </Animated.View>
 
       {/* Rating Distribution */}
       <View style={styles.section}>
@@ -393,8 +402,10 @@ const TransporterProfileScreen: React.FC = () => {
           </View>
         ) : (
           <View>
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+            {reviews.map((review, index) => (
+              <Animated.View key={review.id} style={animations.getFloatingCardStyle(index % 6)}>
+                <ReviewCard review={review} />
+              </Animated.View>
             ))}
 
             {reviews.length > 0 && (

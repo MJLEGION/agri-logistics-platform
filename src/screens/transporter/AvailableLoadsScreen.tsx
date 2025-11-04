@@ -11,6 +11,9 @@ import {
   Dimensions,
   Alert,
   RefreshControl,
+  Animated,
+  Pressable,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -26,6 +29,7 @@ import EmptyState from '../../components/EmptyState';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Toast, { useToast } from '../../components/Toast';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +42,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast, showError, showSuccess, hideToast } = useToast();
+  
+  // ✨ Pizzazz Animations
+  const animations = useScreenAnimations(6);
   
   // Convert cargo to trip-like format for display
   const convertCargoToTrip = (cargoItem: any) => ({
@@ -342,7 +349,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
               tintColor={theme.tertiary}
             />
           }
-          renderItem={({ item: trip }) => {
+          renderItem={({ item: trip, index }) => {
             const earnings = trip.earnings?.totalRate || 0;
             // Support both new (cargoName) and old (cropName) field names
             const cargoName = trip.shipment?.cargoName || trip.shipment?.cropName || 'Agricultural Load';
@@ -352,7 +359,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             const deliveryAddress = trip.delivery?.address || 'Destination';
 
             return (
-              <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+                <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {/* Top Section: Cargo & Earnings */}
                 <View style={styles.loadCardTop}>
                   <View style={styles.cropSection}>
@@ -423,7 +431,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                   fullWidth
                   icon={<Ionicons name="arrow-forward" size={18} color="#fff" />}
                 />
-              </View>
+                </View>
+              </Animated.View>
             );
           }}
         />

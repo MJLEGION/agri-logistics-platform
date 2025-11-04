@@ -1,6 +1,6 @@
 // src/screens/shipper/CargoDetailsScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Pressable, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteCargo, updateCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -11,6 +11,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Divider from '../../components/Divider';
 import Toast, { useToast } from '../../components/Toast';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 export default function CargoDetailsScreen({ route, navigation }: any) {
   const { cargoId } = route.params;
@@ -21,6 +22,9 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
+  
+  // ✨ Pizzazz Animations
+  const animations = useScreenAnimations(5);
   
   const cargoItem = cargo.find(c => c._id === cargoId || c.id === cargoId);
 
@@ -119,16 +123,19 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
         </View>
 
         <View style={styles.content}>
-          <Card>
-            <Text style={[styles.cropName, { color: theme.text }]}>{cargoItem.name}</Text>
-            <View style={{ alignItems: 'center', marginTop: 8 }}>
-              <Badge
-                label={cargoItem.status.toUpperCase()}
-                variant={getStatusVariant(cargoItem.status)}
-                size="md"
-              />
-            </View>
-          </Card>
+          {/* 🎉 Animated Cargo Name Card */}
+          <Animated.View style={animations.getFloatingCardStyle(0)}>
+            <Card>
+              <Text style={[styles.cropName, { color: theme.text }]}>{cargoItem.name}</Text>
+              <View style={{ alignItems: 'center', marginTop: 8 }}>
+                <Badge
+                  label={cargoItem.status.toUpperCase()}
+                  variant={getStatusVariant(cargoItem.status)}
+                  size="md"
+                />
+              </View>
+            </Card>
+          </Animated.View>
 
           <Divider spacing="sm" />
 
@@ -217,31 +224,44 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
           <Divider spacing="md" />
 
           <View style={styles.actions}>
-            {/* Payment Fee Display */}
+            {/* Payment Fee Display - Animated */}
             {cargoItem.status === 'listed' && (
-              <View style={[styles.feeCard, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B' }]}>
-                <View>
-                  <Text style={[styles.feeLabel, { color: '#F59E0B' }]}>Shipping Fee</Text>
-                  <Text style={[styles.feeAmount, { color: '#F59E0B' }]}>
-                    {calculateShippingFee().toLocaleString()} RWF
-                  </Text>
+              <Animated.View style={animations.getFloatingCardStyle(1)}>
+                <View style={[styles.feeCard, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B' }]}>
+                  <View>
+                    <Text style={[styles.feeLabel, { color: '#F59E0B' }]}>Shipping Fee</Text>
+                    <Text style={[styles.feeAmount, { color: '#F59E0B' }]}>
+                      {calculateShippingFee().toLocaleString()} RWF
+                    </Text>
+                  </View>
+                  <Ionicons name="wallet" size={32} color="#F59E0B" />
                 </View>
-                <Ionicons name="wallet" size={32} color="#F59E0B" />
-              </View>
+              </Animated.View>
             )}
 
-            {/* Payment Button */}
+            {/* Payment Button - 3D Tilt with Pulse */}
             {cargoItem.status === 'listed' && (
-              <Button
-                title={isPaymentLoading ? 'Processing...' : 'Pay for Shipping'}
-                onPress={() => setShowPaymentModal(true)}
-                variant="warning"
-                size="lg"
-                fullWidth
-                loading={isPaymentLoading}
-                disabled={isPaymentLoading}
-                icon={<Ionicons name="card" size={20} color="#fff" />}
-              />
+              <Animated.View
+                style={animations.get3DTiltStyle(2, true)}
+                {...animations.createTiltHandler(2).panHandlers}
+              >
+                <Pressable
+                  onPressIn={() => animations.handlePressIn(2)}
+                  onPressOut={() => animations.handlePressOut(2)}
+                  onPress={() => setShowPaymentModal(true)}
+                >
+                  <Button
+                    title={isPaymentLoading ? 'Processing...' : 'Pay for Shipping'}
+                    onPress={() => setShowPaymentModal(true)}
+                    variant="warning"
+                    size="lg"
+                    fullWidth
+                    loading={isPaymentLoading}
+                    disabled={isPaymentLoading}
+                    icon={<Ionicons name="card" size={20} color="#fff" />}
+                  />
+                </Pressable>
+              </Animated.View>
             )}
 
             {/* Status Badge for Paid Cargo */}
@@ -254,27 +274,51 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
               </View>
             )}
 
-            {/* Request Transport Button - for cargo that's ready */}
+            {/* Request Transport Button - 3D Tilt with Pulse */}
             {cargoItem.status === 'payment_completed' && (
-              <Button
-                title="Request Transport"
-                onPress={() => navigation.navigate('TransportRequest', { cargo: cargoItem })}
-                variant="primary"
-                size="lg"
-                fullWidth
-                icon={<Ionicons name="send" size={18} color="#fff" />}
-              />
+              <Animated.View
+                style={animations.get3DTiltStyle(3, true)}
+                {...animations.createTiltHandler(3).panHandlers}
+              >
+                <Pressable
+                  onPressIn={() => animations.handlePressIn(3)}
+                  onPressOut={() => animations.handlePressOut(3)}
+                  onPress={() => navigation.navigate('TransportRequest', { cargo: cargoItem })}
+                >
+                  <Button
+                    title="Request Transport"
+                    onPress={() => navigation.navigate('TransportRequest', { cargo: cargoItem })}
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    icon={<Ionicons name="send" size={18} color="#fff" />}
+                  />
+                </Pressable>
+              </Animated.View>
             )}
 
-            <Button
-              title="Edit Cargo"
-              onPress={() => navigation.navigate('EditCargo', { cargoId: cargoItem._id || cargoItem.id || cargoId })}
-              variant="secondary"
-              size="lg"
-              fullWidth
-              icon={<Ionicons name="create-outline" size={20} color="#fff" />}
-            />
+            {/* Edit Button - 3D Tilt */}
+            <Animated.View
+              style={animations.get3DTiltStyle(4, false)}
+              {...animations.createTiltHandler(4).panHandlers}
+            >
+              <Pressable
+                onPressIn={() => animations.handlePressIn(4)}
+                onPressOut={() => animations.handlePressOut(4)}
+                onPress={() => navigation.navigate('EditCargo', { cargoId: cargoItem._id || cargoItem.id || cargoId })}
+              >
+                <Button
+                  title="Edit Cargo"
+                  onPress={() => navigation.navigate('EditCargo', { cargoId: cargoItem._id || cargoItem.id || cargoId })}
+                  variant="secondary"
+                  size="lg"
+                  fullWidth
+                  icon={<Ionicons name="create-outline" size={20} color="#fff" />}
+                />
+              </Pressable>
+            </Animated.View>
 
+            {/* Delete Button */}
             <Button
               title="Delete Cargo"
               onPress={handleDelete}

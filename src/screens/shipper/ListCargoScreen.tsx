@@ -1,9 +1,10 @@
 // src/screens/shipper/ListCargoScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Modal, Animated, Pressable } from 'react-native';
 import { createCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Simple Calendar Component for Web
@@ -107,6 +108,7 @@ export default function ListCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
+  const animations = useScreenAnimations(4); // ✨ Pizzazz animations
   
   const [cargoName, setCargoName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -224,21 +226,24 @@ export default function ListCargoScreen({ navigation }: any) {
         </View>
 
         <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              color: theme.text,
-            }]}
-            placeholder="e.g., Tomatoes, Maize, Potatoes"
-            placeholderTextColor={theme.textSecondary}
-            value={cargoName}
-            onChangeText={setCargoName}
-          />
+          <Animated.View style={animations.getFloatingCardStyle(0)}>
+            <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="e.g., Tomatoes, Maize, Potatoes"
+              placeholderTextColor={theme.textSecondary}
+              value={cargoName}
+              onChangeText={setCargoName}
+            />
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
-          <View style={styles.row}>
+          <Animated.View style={animations.getFloatingCardStyle(1)}>
+            <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
+            <View style={styles.row}>
             <TextInput
               style={[styles.input, styles.quantityInput, { 
                 backgroundColor: theme.card,
@@ -274,22 +279,26 @@ export default function ListCargoScreen({ navigation }: any) {
               ))}
             </View>
           </View>
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.card,
-              borderColor: theme.border,
-              color: theme.text,
-            }]}
-            placeholder="Optional"
-            placeholderTextColor={theme.textSecondary}
-            value={pricePerUnit}
-            onChangeText={setPricePerUnit}
-            keyboardType="numeric"
-          />
+          <Animated.View style={animations.getFloatingCardStyle(2)}>
+            <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
+            <TextInput
+              style={[styles.input, { 
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                color: theme.text,
+              }]}
+              placeholder="Optional"
+              placeholderTextColor={theme.textSecondary}
+              value={pricePerUnit}
+              onChangeText={setPricePerUnit}
+              keyboardType="numeric"
+            />
+          </Animated.View>
 
-          <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
+          <Animated.View style={animations.getFloatingCardStyle(3)}>
+            <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
           <TouchableOpacity 
             onPress={openDatepicker} 
             style={[styles.input, { 
@@ -301,53 +310,54 @@ export default function ListCargoScreen({ navigation }: any) {
             <Text style={{ color: theme.text }}>{readyDate.toLocaleDateString()}</Text>
           </TouchableOpacity>
 
-          {Platform.OS === 'web' ? (
-            <Modal
-              visible={showDatePicker}
-              transparent={true}
-              animationType="fade"
-            >
-              <View style={styles.modalOverlay}>
-                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-                  <Text style={[styles.modalTitle, { color: theme.text }]}>Select Date</Text>
-                  
-                  <View style={styles.datePickerContainer}>
-                    <Calendar
-                      date={tempDate}
-                      onChange={setTempDate}
-                      theme={theme}
-                    />
-                  </View>
+            {Platform.OS === 'web' ? (
+              <Modal
+                visible={showDatePicker}
+                transparent={true}
+                animationType="fade"
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.modalTitle, { color: theme.text }]}>Select Date</Text>
+                    
+                    <View style={styles.datePickerContainer}>
+                      <Calendar
+                        date={tempDate}
+                        onChange={setTempDate}
+                        theme={theme}
+                      />
+                    </View>
 
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, { borderColor: theme.primary }]}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                      onPress={confirmDate}
-                    >
-                      <Text style={[styles.modalButtonText, { color: theme.card }]}>Confirm</Text>
-                    </TouchableOpacity>
+                    <View style={styles.modalButtons}>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, { borderColor: theme.primary }]}
+                        onPress={() => setShowDatePicker(false)}
+                      >
+                        <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                        onPress={confirmDate}
+                      >
+                        <Text style={[styles.modalButtonText, { color: theme.card }]}>Confirm</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Modal>
-          ) : (
-            showDatePicker && (
-              <DateTimePicker
-                testID="nativeDateTimePicker"
-                value={readyDate}
-                mode="date"
-                is24Hour={true}
-                display="default"
-                onChange={handleDateChange}
-              />
-            )
-          )}
+              </Modal>
+            ) : (
+              showDatePicker && (
+                <DateTimePicker
+                  testID="nativeDateTimePicker"
+                  value={readyDate}
+                  mode="date"
+                  is24Hour={true}
+                  display="default"
+                  onChange={handleDateChange}
+                />
+              )
+            )}
+          </Animated.View>
 
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 

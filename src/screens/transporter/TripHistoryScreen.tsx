@@ -8,11 +8,14 @@ import {
   FlatList,
   ScrollView,
   ActivityIndicator,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import {
   fetchTrips,
 } from '../../logistics/store/tripsSlice';
@@ -38,6 +41,7 @@ export default function TripHistoryScreen({ navigation }: any) {
   const [sortBy, setSortBy] = useState<'recent' | 'earnings'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
   // Fetch trips when screen loads
   useEffect(() => {
@@ -207,26 +211,28 @@ export default function TripHistoryScreen({ navigation }: any) {
     }
   };
 
-  const renderTrip = ({ item: trip }: { item: any }) => {
+  const renderTrip = ({ item: trip, index }: { item: any; index?: number }) => {
     const earnings = trip.earnings?.totalRate || 0;
 
     return (
-      <ListItem
-        icon={getStatusIcon(trip.status) as any}
-        title={trip.shipment?.cropName || 'Delivery'}
-        subtitle={`${trip.pickup?.address?.split(',')[0] || 'Pickup'} → ${trip.delivery?.address?.split(',')[0] || 'Delivery'} • ${earnings.toLocaleString()} RWF • ${formatDate(trip.completedAt || trip.createdAt)}`}
-        rightElement={
-          <Badge
-            label={getStatusLabel(trip.status).toUpperCase()}
-            variant={getStatusVariant(trip.status)}
-            size="sm"
-          />
-        }
-        chevron
-        onPress={() => {
-          showSuccess(`Trip: ${trip.shipment?.cropName || 'Delivery'} - ${getStatusLabel(trip.status)}`);
-        }}
-      />
+      <Animated.View style={animations.getFloatingCardStyle((index || 0) % 6)}>
+        <ListItem
+          icon={getStatusIcon(trip.status) as any}
+          title={trip.shipment?.cropName || 'Delivery'}
+          subtitle={`${trip.pickup?.address?.split(',')[0] || 'Pickup'} → ${trip.delivery?.address?.split(',')[0] || 'Delivery'} • ${earnings.toLocaleString()} RWF • ${formatDate(trip.completedAt || trip.createdAt)}`}
+          rightElement={
+            <Badge
+              label={getStatusLabel(trip.status).toUpperCase()}
+              variant={getStatusVariant(trip.status)}
+              size="sm"
+            />
+          }
+          chevron
+          onPress={() => {
+            showSuccess(`Trip: ${trip.shipment?.cropName || 'Delivery'} - ${getStatusLabel(trip.status)}`);
+          }}
+        />
+      </Animated.View>
     );
   };
 
@@ -379,7 +385,7 @@ export default function TripHistoryScreen({ navigation }: any) {
         {/* Trips List */}
         <View style={{ paddingHorizontal: 16 }}>
           {sortedTrips.length > 0 ? (
-            sortedTrips.map((trip) => renderTrip({ item: trip }))
+            sortedTrips.map((trip, index) => renderTrip({ item: trip, index }))
           ) : (
             renderEmpty()
           )}

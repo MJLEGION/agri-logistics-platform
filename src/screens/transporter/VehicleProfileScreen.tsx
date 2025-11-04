@@ -8,11 +8,14 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import ListItem from '../../components/ListItem';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
@@ -37,6 +40,7 @@ export default function VehicleProfileScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const { toast, showSuccess, showError, hideToast } = useToast();
+  const animations = useScreenAnimations(4); // ✨ Pizzazz animations
 
   const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo>({
     licensePlate: 'UH-123ABC',
