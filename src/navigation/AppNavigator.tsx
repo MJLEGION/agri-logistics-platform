@@ -12,6 +12,7 @@ import MyCargoScreen from '../screens/shipper/MyCargoScreen';
 import CargoDetailsScreen from '../screens/shipper/CargoDetailsScreen';
 import EditCargoScreen from '../screens/shipper/EditCargoScreen';
 import ShipperActiveOrdersScreen from '../screens/shipper/ShipperActiveOrdersScreen';
+import RateTransporterScreen from '../screens/shipper/RateTransporterScreen';
 import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
 import EnhancedTransporterDashboard from '../screens/transporter/EnhancedTransporterDashboard';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
@@ -94,6 +95,7 @@ export default function AppNavigator() {
             <Stack.Screen name="CargoDetails" component={CargoDetailsScreen} />
             <Stack.Screen name="EditCargo" component={EditCargoScreen} />
             <Stack.Screen name="ShipperActiveOrders" component={ShipperActiveOrdersScreen} />
+            <Stack.Screen name="RateTransporter" component={RateTransporterScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
             <Stack.Screen name="TransportRequest" component={TransportRequestScreen} />
           </>

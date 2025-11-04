@@ -26,6 +26,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
 import Divider from '../../components/Divider';
+import Toast, { useToast } from '../../components/Toast';
 import { ShipperHomeScreenProps } from '../../types';
 
 const { width } = Dimensions.get('window');
@@ -38,12 +39,9 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   const { theme } = useTheme();
 
   const [refreshing, setRefreshing] = React.useState(false);
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   // Animation refs
-  const statFloat1 = useRef(new Animated.Value(0)).current;
-  const statFloat2 = useRef(new Animated.Value(0)).current;
-  const statFloat3 = useRef(new Animated.Value(0)).current;
-
   const actionTiltX1 = useRef(new Animated.Value(0)).current;
   const actionTiltY1 = useRef(new Animated.Value(0)).current;
   const actionTiltX2 = useRef(new Animated.Value(0)).current;
@@ -51,7 +49,6 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   const actionTiltX3 = useRef(new Animated.Value(0)).current;
   const actionTiltY3 = useRef(new Animated.Value(0)).current;
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const card1Anim = useRef(new Animated.Value(0)).current;
   const card2Anim = useRef(new Animated.Value(0)).current;
   const card3Anim = useRef(new Animated.Value(0)).current;
@@ -62,84 +59,23 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   useEffect(() => {
     loadData();
 
-    // Start animations
-    Animated.parallel([
-      // Floating stat cards
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(statFloat1, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(statFloat1, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(statFloat2, {
-            toValue: 1,
-            duration: 2200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(statFloat2, {
-            toValue: 0,
-            duration: 2200,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(statFloat3, {
-            toValue: 1,
-            duration: 2400,
-            useNativeDriver: true,
-          }),
-          Animated.timing(statFloat3, {
-            toValue: 0,
-            duration: 2400,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-      // Pulse animation for primary CTA
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-      // Staggered entrance
-      Animated.stagger(100, [
-        Animated.timing(card1Anim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(card2Anim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(card3Anim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
+    // Staggered entrance only (no floating or pulsing)
+    Animated.stagger(100, [
+      Animated.timing(card1Anim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(card2Anim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(card3Anim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, [dispatch]);
 
@@ -207,6 +143,18 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
         }).start();
       },
     });
+  };
+
+  // Get completed orders available to rate
+  const completedOrders = useMemo(() => {
+    if (!Array.isArray(orders)) return [];
+    return orders.filter(
+      (order) => (order.status === 'completed' || order.status === 'delivered') && order.transporterId
+    );
+  }, [orders]);
+
+  const handleOpenRatingScreen = () => {
+    navigation.navigate('RateTransporter');
   };
 
   // Calculate stats with useMemo for performance
@@ -315,16 +263,10 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
                 opacity: card1Anim,
                 transform: [
                   {
-                    translateY: Animated.add(
-                      card1Anim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20, 0],
-                      }),
-                      statFloat1.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -8],
-                      })
-                    ),
+                    translateY: card1Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
                   },
                 ],
               },
@@ -349,16 +291,10 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
                 opacity: card2Anim,
                 transform: [
                   {
-                    translateY: Animated.add(
-                      card2Anim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20, 0],
-                      }),
-                      statFloat2.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -8],
-                      })
-                    ),
+                    translateY: card2Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
                   },
                 ],
               },
@@ -383,16 +319,10 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
                 opacity: card3Anim,
                 transform: [
                   {
-                    translateY: Animated.add(
-                      card3Anim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20, 0],
-                      }),
-                      statFloat3.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, -8],
-                      })
-                    ),
+                    translateY: card3Anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
                   },
                 ],
               },
@@ -417,12 +347,13 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
           </Text>
 
           <View style={styles.actionsGrid}>
-            {/* List New Cargo - with Pulse + 3D Tilt */}
+            {/* List New Cargo - with 3D Tilt only */}
             <Animated.View
               style={{
+                flex: 1,
                 transform: [
                   { perspective: 1000 },
-                  { scale: Animated.multiply(action1Scale, pulseAnim) },
+                  { scale: action1Scale },
                   {
                     rotateX: actionTiltX1.interpolate({
                       inputRange: [-10, 10],
@@ -463,6 +394,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             {/* My Cargo - with 3D Tilt */}
             <Animated.View
               style={{
+                flex: 1,
                 transform: [
                   { perspective: 1000 },
                   { scale: action2Scale },
@@ -506,6 +438,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             {/* Active Orders - with 3D Tilt */}
             <Animated.View
               style={{
+                flex: 1,
                 transform: [
                   { perspective: 1000 },
                   { scale: action3Scale },
@@ -546,9 +479,34 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               </Pressable>
             </Animated.View>
           </View>
+
+          {/* Your Ratings - Next to Quick Actions */}
+          <TouchableOpacity 
+            style={[styles.ratingActionCard, { backgroundColor: theme.card }]}
+            onPress={handleOpenRatingScreen}
+            activeOpacity={0.7}
+          >
+            <View style={styles.ratingCardContent}>
+              <View style={[styles.ratingIconBox, { backgroundColor: '#FFD700' + '25' }]}>
+                <Ionicons name="star" size={32} color="#FFD700" />
+              </View>
+              <View style={styles.ratingInfo}>
+                <Text style={[styles.ratingNumber, { color: theme.text }]}>
+                  4.8
+                </Text>
+                <Text style={[styles.ratingLabel, { color: theme.textSecondary }]}>
+                  Your Rating
+                </Text>
+                <Text style={[styles.ratingSubtitle, { color: theme.textSecondary }]}>
+                  24 ratings
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color={theme.primary} style={{ marginLeft: 'auto' }} />
+            </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Recent Activity */}
+        {/* Active Orders Section */}
         {activeOrders.length > 0 && (
           <View style={styles.recentSection}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -587,6 +545,14 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
           />
         </View>
       </ScrollView>
+
+      {/* Toast Notifications */}
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={hideToast}
+      />
     </View>
   );
 }
@@ -692,15 +658,18 @@ const styles = StyleSheet.create({
   },
   actionsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 12,
     marginBottom: 24,
   },
   actionCard: {
-    width: '48%',
+    flex: 1,
+    aspectRatio: 1,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -708,9 +677,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   actionGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 50,
+    height: 50,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -789,5 +758,163 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  ratingsSection: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  ratingCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  ratingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  ratingStars: {
+    flex: 1,
+  },
+  averageRating: {
+    fontSize: 32,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  starsRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  ratingCount: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  viewAllButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  starDistribution: {
+    gap: 8,
+  },
+  distRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  distLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    width: 30,
+  },
+  distBar: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 8,
+    overflow: 'hidden',
+  },
+  distFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  distCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    width: 30,
+    textAlign: 'right',
+  },
+  recentReviews: {
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  reviewsTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  reviewItem: {
+    marginBottom: 12,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  reviewDate: {
+    fontSize: 12,
+  },
+  reviewStars: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewComment: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  ratingActionCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginHorizontal: 0,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  ratingCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ratingIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  ratingInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  ratingNumber: {
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  ratingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  ratingSubtitle: {
+    fontSize: 11,
   },
 });
