@@ -225,9 +225,122 @@ export const getCoordinates = (location: any): LocationCoords => {
   };
 };
 
+/**
+ * Reverse Geocode - Convert coordinates to address
+ * Uses OpenStreetMap Nominatim API for real addresses
+ * Falls back to closest known Rwanda location
+ *
+ * @param latitude - Latitude coordinate
+ * @param longitude - Longitude coordinate
+ * @returns Promise<string> - Address string
+ */
+export const reverseGeocode = async (
+  latitude: number,
+  longitude: number
+): Promise<string> => {
+  try {
+    // Use OpenStreetMap Nominatim API for reverse geocoding
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'AgriLogisticsApp/2.0',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch address');
+    }
+
+    const data = await response.json();
+
+    if (data.display_name) {
+      // Format the address nicely
+      const parts = [];
+      if (data.address.road) parts.push(data.address.road);
+      if (data.address.suburb) parts.push(data.address.suburb);
+      if (data.address.city) parts.push(data.address.city);
+      if (data.address.county && !parts.includes(data.address.county)) parts.push(data.address.county);
+      if (data.address.country) parts.push(data.address.country);
+
+      const formattedAddress = parts.join(', ') || data.display_name;
+      console.log(`📍 Reverse geocoded: ${latitude}, ${longitude} → ${formattedAddress}`);
+      return formattedAddress;
+    }
+  } catch (error) {
+    console.warn('Reverse geocoding failed, using fallback:', error);
+  }
+
+  // Fallback: Find closest known Rwanda location
+  const closestLocation = findClosestLocation(latitude, longitude);
+  return closestLocation;
+};
+
+/**
+ * Find the closest known Rwanda location to given coordinates
+ * Used as fallback when reverse geocoding fails
+ *
+ * @param latitude - Latitude coordinate
+ * @param longitude - Longitude coordinate
+ * @returns string - Name of closest location
+ */
+const findClosestLocation = (latitude: number, longitude: number): string => {
+  let minDistance = Infinity;
+  let closestName = 'Kigali, Rwanda';
+
+  // Calculate distance to each known location
+  for (const [name, coords] of Object.entries(RWANDA_LOCATIONS)) {
+    const distance = Math.sqrt(
+      Math.pow(coords.latitude - latitude, 2) +
+      Math.pow(coords.longitude - longitude, 2)
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      closestName = name.charAt(0).toUpperCase() + name.slice(1) + ', Rwanda';
+    }
+  }
+
+  return closestName;
+};
+
+/**
+ * Get formatted address from location object
+ * Tries to use existing address, or reverse geocodes coordinates
+ *
+ * @param location - Location object with coordinates and/or address
+ * @returns Promise<string> - Formatted address
+ */
+export const getFormattedAddress = async (location: any): Promise<string> => {
+  if (!location) return 'Unknown Location';
+
+  // If address already exists and is meaningful, use it
+  if (location.address &&
+      location.address !== 'Unknown Location' &&
+      location.address !== 'Current Location' &&
+      location.address !== 'Pickup Location' &&
+      location.address !== 'Delivery Location') {
+    return location.address;
+  }
+
+  // If we have valid coordinates, reverse geocode them
+  if (isValidLocation(location)) {
+    try {
+      return await reverseGeocode(location.latitude, location.longitude);
+    } catch (error) {
+      console.error('Failed to get formatted address:', error);
+    }
+  }
+
+  return location.address || 'Unknown Location';
+};
+
 export default {
   geocodeAddress,
   ensureCoordinates,
   isValidLocation,
   getCoordinates,
+  reverseGeocode,
+  getFormattedAddress,
 };

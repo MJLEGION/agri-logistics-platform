@@ -8,6 +8,8 @@ import { Card } from '../../components/common/Card';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { fetchCargo, deleteCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
+import { distanceService } from '../../services/distanceService';
+import { suggestVehicleType, getVehicleType, calculateShippingCost } from '../../services/vehicleService';
 import SearchBar from '../../components/SearchBar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
@@ -15,6 +17,7 @@ import EmptyState from '../../components/EmptyState';
 import Toast, { useToast } from '../../components/Toast';
 import Divider from '../../components/Divider';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -160,50 +163,157 @@ export default function MyCargoScreen({ navigation }: any) {
           data={filteredListings}
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
-          renderItem={({ item, index }) => (
-            <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
-              <Card>
-                <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
-                  <View style={styles.cropHeader}>
-                    <Text style={[styles.cropName, { color: theme.text }]}>{item.name}</Text>
-                    <Badge
-                      label={item.status}
-                      variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          renderItem={({ item, index }) => {
+            // Calculate distance and pricing
+            const pickupLat = item.location?.latitude || -1.9536;
+            const pickupLon = item.location?.longitude || 30.0605;
+
+            // Use actual destination if available, otherwise use a default
+            // If no destination, use Kigali city center as default
+            const deliveryLat = item.destination?.latitude || -1.9536;
+            const deliveryLon = item.destination?.longitude || 30.0605;
+            const hasDestination = !!(item.destination?.latitude && item.destination?.longitude);
+
+            const distance = distanceService.calculateDistance(
+              pickupLat,
+              pickupLon,
+              deliveryLat,
+              deliveryLon
+            );
+
+            // Suggest vehicle based on weight
+            const cargoWeight = item.quantity || 0;
+            const suggestedVehicleId = suggestVehicleType(cargoWeight);
+            const vehicleType = getVehicleType(suggestedVehicleId);
+            const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+
+            return (
+              <View style={styles.cardWrapper}>
+                <Card>
+                  <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
+                    {/* Header Section */}
+                    <View style={styles.cargoCardHeader}>
+                      <View style={styles.cargoInfo}>
+                        <Text style={[styles.cargoName, { color: theme.text }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <View style={styles.badgeRow}>
+                          <Badge
+                            label={`${item.quantity} ${item.unit}`}
+                            variant="gray"
+                            size="sm"
+                          />
+                          <Badge
+                            label={vehicleType?.name || '🚚 Truck'}
+                            variant="secondary"
+                            size="sm"
+                          />
+                          <Badge
+                            label={item.status}
+                            variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
+                            size="sm"
+                          />
+                        </View>
+                      </View>
+
+                      {/* Status Icon */}
+                      <View style={[styles.statusIcon, {
+                        backgroundColor: item.status === 'listed' ? theme.primary + '15' :
+                                       item.status === 'matched' ? theme.success + '15' :
+                                       theme.textSecondary + '15'
+                      }]}>
+                        <Ionicons
+                          name={item.status === 'listed' ? 'cube' :
+                                item.status === 'matched' ? 'checkmark-circle' :
+                                'archive'}
+                          size={28}
+                          color={item.status === 'listed' ? theme.primary :
+                                 item.status === 'matched' ? theme.success :
+                                 theme.textSecondary}
+                        />
+                      </View>
+                    </View>
+
+                    {/* Pricing Section */}
+                    <View style={[styles.pricingSection, { backgroundColor: theme.success + '08' }]}>
+                      {!hasDestination && (
+                        <View style={[styles.warningBanner, { backgroundColor: theme.warning + '15', borderColor: theme.warning }]}>
+                          <Text style={[styles.warningText, { color: theme.warning }]}>
+                            ⚠️ No destination set - using estimated distance
+                          </Text>
+                        </View>
+                      )}
+                      <View style={styles.pricingRow}>
+                        <View style={styles.pricingItem}>
+                          <Text style={[styles.pricingLabel, { color: theme.textSecondary }]}>
+                            💰 Cargo Value
+                          </Text>
+                          <Text style={[styles.pricingValue, { color: theme.text }]}>
+                            {((item.pricePerUnit || 0) * item.quantity).toLocaleString()} RWF
+                          </Text>
+                        </View>
+                        <View style={styles.pricingDivider} />
+                        <View style={styles.pricingItem}>
+                          <Text style={[styles.pricingLabel, { color: theme.textSecondary }]}>
+                            🚚 Transport Fee {!hasDestination && '(Est.)'}
+                          </Text>
+                          <Text style={[styles.pricingValue, { color: theme.success }]}>
+                            {transportFee.toLocaleString()} RWF
+                          </Text>
+                          <Text style={[styles.pricingSubtext, { color: theme.textSecondary }]}>
+                            {distance} km × {vehicleType?.baseRatePerKm} RWF/km
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Location & Date Section */}
+                    <View style={styles.detailsSection}>
+                      <View style={styles.detailRow}>
+                        <Ionicons name="location" size={16} color={theme.primary} />
+                        <Text style={[styles.detailText, { color: theme.textSecondary }]} numberOfLines={1}>
+                          {item.location.address}
+                        </Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Ionicons name="calendar" size={16} color={theme.primary} />
+                        <Text style={[styles.detailText, { color: theme.textSecondary }]}>
+                          Ready: {new Date(item.readyDate).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+
+                  <Divider spacing="sm" />
+
+                  {/* Action Buttons */}
+                  <View style={styles.actionsRow}>
+                    <Button
+                      title="View Details"
+                      onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}
+                      variant="outline"
                       size="sm"
+                      icon={<Ionicons name="eye-outline" size={16} color={theme.primary} />}
+                      style={{ flex: 1, marginRight: 8 }}
+                    />
+                    <Button
+                      title="Delete"
+                      onPress={() => {
+                        console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
+                        handleDelete(item._id || item.id, item.name);
+                      }}
+                      variant="danger"
+                      size="sm"
+                      icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
+                      style={{ flex: 1 }}
                     />
                   </View>
-                  <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                    Quantity: {item.quantity} {item.unit}
-                  </Text>
-                  {item.pricePerUnit && (
-                    <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                      Price: {item.pricePerUnit} RWF/{item.unit}
-                    </Text>
-                  )}
-                  <Text style={[styles.cropDetail, { color: theme.textSecondary }]}>
-                    Ready: {new Date(item.readyDate).toLocaleDateString()}
-                  </Text>
-                  <Text style={[styles.cropLocation, { color: theme.textSecondary }]}>
-                    📍 {item.location.address}
-                  </Text>
-                </TouchableOpacity>
-
-                <Divider spacing="sm" />
-
-                <Button
-                  title="Delete Cargo"
-                  onPress={() => {
-                    console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
-                    handleDelete(item._id || item.id, item.name);
-                  }}
-                  variant="danger"
-                  size="sm"
-                  fullWidth
-                  icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
-                />
-              </Card>
-            </Animated.View>
-          )}
+                </Card>
+              </View>
+            );
+          }}
         />
       )}
       
@@ -270,7 +380,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   list: {
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+  },
+  row: {
+    justifyContent: 'space-evenly',
+    marginBottom: 12,
+  },
+  cardWrapper: {
+    width: '45%',
   },
   cropHeader: {
     flexDirection: 'row',
@@ -310,5 +428,92 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  // New Card Layout Styles
+  cargoCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  cargoInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  cargoName: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  statusIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pricingSection: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  warningBanner: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  warningText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  pricingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pricingItem: {
+    flex: 1,
+  },
+  pricingDivider: {
+    width: 1,
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    marginHorizontal: 12,
+  },
+  pricingLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  pricingValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  pricingSubtext: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  detailsSection: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
 });

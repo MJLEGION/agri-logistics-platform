@@ -194,37 +194,37 @@ export default function TransporterHomeScreen({ navigation }: any) {
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#3B82F6' + '20' }]}>
-              <Ionicons name="car" size={24} color="#3B82F6" />
+              <Ionicons name="car" size={18} color="#3B82F6" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {activeTrips.length}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Active Trips
+              Active
             </Text>
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {completedToday.length}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Completed Today
+              Today
             </Text>
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
-              <Ionicons name="cash" size={24} color="#F59E0B" />
+              <Ionicons name="cash" size={18} color="#F59E0B" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
-              {todayEarnings.toLocaleString()}
+              {(todayEarnings / 1000).toFixed(1)}K
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Today's Earnings (RWF)
+              Earned
             </Text>
           </View>
         </View>
@@ -260,7 +260,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#3B82F6', '#2563EB']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="location" size={32} color="#FFF" />
+                <Ionicons name="location" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Available Loads
@@ -279,7 +279,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#10B981', '#059669']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="car-sport" size={32} color="#FFF" />
+                <Ionicons name="car-sport" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Active Trips
@@ -298,7 +298,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#F59E0B', '#D97706']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="wallet" size={32} color="#FFF" />
+                <Ionicons name="wallet" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Earnings
@@ -317,7 +317,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#8B5CF6', '#7C3AED']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="car" size={32} color="#FFF" />
+                <Ionicons name="car" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Vehicle Info
@@ -336,7 +336,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#EC4899', '#DB2777']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="map" size={32} color="#FFF" />
+                <Ionicons name="map" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Route Planner
@@ -355,7 +355,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 colors={['#06B6D4', '#0891B2']}
                 style={styles.actionGradient}
               >
-                <Ionicons name="time" size={32} color="#FFF" />
+                <Ionicons name="time" size={24} color="#FFF" />
               </LinearGradient>
               <Text style={[styles.actionTitle, { color: theme.text }]}>
                 Trip History
@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 8,
     marginTop: -20,
     justifyContent: 'center',
@@ -473,76 +473,76 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     maxWidth: 110,
-    padding: 12,
-    borderRadius: 12,
+    padding: 8,
+    borderRadius: 10,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
     fontWeight: '600',
   },
   // CTA Section
   ctaSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
   },
   ctaContent: {
     flex: 1,
   },
   ctaTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   ctaSubtitle: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#fff',
     opacity: 0.9,
   },
 
   content: {
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: 12,
+    marginTop: 6,
   },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 24,
+    gap: 8,
+    marginBottom: 16,
     justifyContent: 'center',
     alignSelf: 'center',
     maxWidth: 450,
@@ -550,37 +550,37 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: '30%',
-    minWidth: 100,
-    maxWidth: 120,
-    padding: 14,
-    borderRadius: 14,
+    minWidth: 90,
+    maxWidth: 110,
+    padding: 10,
+    borderRadius: 10,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   actionGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   actionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    marginBottom: 3,
+    marginBottom: 2,
     textAlign: 'center',
   },
   actionDesc: {
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
   },
   recentSection: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   activityCard: {
     flexDirection: 'row',

@@ -78,7 +78,15 @@ export const calculateShippingCost = (
 
   const baseCost = distance * vehicle.baseRatePerKm;
   const costWithTraffic = baseCost * trafficFactor;
-  const minCharge = 5000; // Minimum charge of 5,000 RWF
+
+  // Vehicle-specific minimum charges (more reasonable)
+  // Moto: 1,000 RWF, Van: 2,000 RWF, Truck: 3,000 RWF
+  const minCharges: Record<string, number> = {
+    'moto': 1000,
+    'van': 2000,
+    'truck': 3000,
+  };
+  const minCharge = minCharges[vehicleId] || 2000;
 
   return Math.max(Math.round(costWithTraffic), minCharge);
 };

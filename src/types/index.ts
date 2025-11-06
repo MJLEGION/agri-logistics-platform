@@ -26,6 +26,84 @@ export interface User {
     longitude: number;
     address: string;
   };
+  // Profile fields
+  profilePicture?: string;
+  age?: number;
+  gender?: 'male' | 'female' | 'other';
+  professionalTitle?: string;
+  bio?: string;
+  // Transporter specific fields
+  vehicleInfo?: {
+    type?: 'motorcycle' | 'van' | 'truck';
+    model?: string;
+    licensePlate?: string;
+  };
+  // Driver's license (for transporters)
+  driverLicense?: {
+    number?: string;
+    expiryDate?: string;
+    category?: string; // A, B, C, D, E
+    issuingCountry?: string;
+  };
+  // Certifications and licenses
+  certifications?: Array<{
+    id: string;
+    name: string;
+    issuedBy: string;
+    issueDate: string;
+    expiryDate?: string;
+    certificateNumber?: string;
+    verified?: boolean;
+  }>;
+  // Ratings and reviews
+  rating?: {
+    average: number; // Average rating (0-5)
+    count: number; // Total number of ratings
+    breakdown?: {
+      5: number;
+      4: number;
+      3: number;
+      2: number;
+      1: number;
+    };
+  };
+  // Shipper specific fields
+  businessInfo?: {
+    name?: string;
+    type?: 'farm' | 'distributor' | 'cooperative';
+    registrationNumber?: string;
+  };
+  // Emergency contact
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
+  // Preferences
+  preferences?: {
+    language?: 'english' | 'kinyarwanda' | 'french';
+  };
+  // Notification preferences
+  notificationPreferences?: {
+    pushNotifications: boolean;
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    orderUpdates: boolean;
+    promotions: boolean;
+    tripReminders: boolean;
+  };
+  // Privacy settings
+  privacySettings?: {
+    profileVisibility: 'public' | 'private';
+    showPhone: boolean;
+    showLocation: boolean;
+    allowMessages: boolean;
+  };
+  // Profile completion status
+  profileCompleted?: boolean;
+  profileCompletionPercentage?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 // Cargo represents goods to be transported (formerly Crop)

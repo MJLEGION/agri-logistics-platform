@@ -1,6 +1,10 @@
 // src/services/orderService.ts
 import api from './api';
 import { Order } from '../types';
+import { mockOrderService } from './mockOrderService';
+
+// Flag to use mock service when API fails
+const USE_MOCK_FALLBACK = true;
 
 /**
  * Fetch all orders
@@ -10,7 +14,21 @@ export const getAllOrders = async (): Promise<Order[]> => {
     const response = await api.get<Order[]>('/orders');
     return response.data;
   } catch (error) {
-    console.error('❌ Failed to fetch orders:', error);
+    console.error('❌ API failed to fetch orders:', error);
+
+    // Fallback to mock service if API fails
+    if (USE_MOCK_FALLBACK) {
+      console.log('🔄 Falling back to mock service for orders...');
+      try {
+        const mockOrders = await mockOrderService.getMyOrders();
+        console.log('✅ Orders fetched successfully via mock service:', mockOrders.length);
+        return mockOrders as Order[];
+      } catch (mockError: any) {
+        console.error('❌ Mock service also failed:', mockError);
+        throw new Error('Failed to fetch orders: ' + mockError.message);
+      }
+    }
+
     throw error;
   }
 };
@@ -46,15 +64,47 @@ export const getOrderById = async (id: string): Promise<Order> => {
  */
 export const createOrder = async (orderData: any): Promise<Order> => {
   try {
-    const response = await api.post<Order>('/orders', {
-      crop_id: orderData.cargoId || orderData.crop_id,
+    console.log('📤 Creating order with data:', orderData);
+
+    // Map the order data to the API format
+    const payload = {
+      cargoId: orderData.cargoId || orderData.crop_id,
+      shipperId: orderData.shipperId,
+      transporterId: orderData.transporterId,
       quantity: orderData.quantity,
-      destination: orderData.deliveryLocation || orderData.destination,
+      unit: orderData.unit || 'kg',
+      transportFee: orderData.transportFee,
+      status: orderData.status || 'pending',
+      pickupLocation: orderData.pickupLocation,
+      deliveryLocation: orderData.deliveryLocation,
+      requestedDate: orderData.requestedDate || new Date(),
+      // Legacy fields for backward compatibility
+      crop_id: orderData.cargoId || orderData.crop_id,
+      destination: orderData.deliveryLocation?.address || orderData.destination,
       delivery_date: orderData.deliveryDate || orderData.delivery_date,
-    });
+    };
+
+    console.log('📤 Sending payload to API:', payload);
+    const response = await api.post<Order>('/orders', payload);
+    console.log('✅ Order created successfully via API:', response.data);
     return response.data;
-  } catch (error) {
-    console.error('❌ Failed to create order:', error);
+  } catch (error: any) {
+    console.error('❌ API failed to create order:', error);
+    console.error('❌ Error response:', error?.response?.data);
+
+    // Fallback to mock service if API fails
+    if (USE_MOCK_FALLBACK) {
+      console.log('🔄 Falling back to mock service...');
+      try {
+        const mockOrder = await mockOrderService.createOrder(orderData);
+        console.log('✅ Order created successfully via mock service:', mockOrder);
+        return mockOrder as Order;
+      } catch (mockError: any) {
+        console.error('❌ Mock service also failed:', mockError);
+        throw new Error('Failed to create order: ' + mockError.message);
+      }
+    }
+
     throw error;
   }
 };
@@ -67,7 +117,21 @@ export const updateOrder = async (id: string, orderData: any): Promise<Order> =>
     const response = await api.put<Order>(`/orders/${id}`, orderData);
     return response.data;
   } catch (error) {
-    console.error('❌ Failed to update order:', error);
+    console.error('❌ API failed to update order:', error);
+
+    // Fallback to mock service if API fails
+    if (USE_MOCK_FALLBACK) {
+      console.log('🔄 Falling back to mock service for order update...');
+      try {
+        const updatedOrder = await mockOrderService.updateOrder(id, orderData);
+        console.log('✅ Order updated successfully via mock service:', updatedOrder);
+        return updatedOrder as Order;
+      } catch (mockError: any) {
+        console.error('❌ Mock service also failed:', mockError);
+        throw new Error('Failed to update order: ' + mockError.message);
+      }
+    }
+
     throw error;
   }
 };

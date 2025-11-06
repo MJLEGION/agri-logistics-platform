@@ -19,6 +19,11 @@ interface MockCargo {
     longitude?: number;
     address?: string;
   } | string;
+  destination?: {
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  } | null;
   readyDate?: string;
   createdAt: string;
   updatedAt: string;
@@ -38,9 +43,14 @@ let mockCargo: MockCargo[] = [
     description: 'Fresh, ripe tomatoes from local farm',
     category: 'Vegetables',
     location: {
-      latitude: -1.9403,
-      longitude: 29.8739,
+      latitude: -1.9536,
+      longitude: 30.0605,
       address: 'Kigali, Rwanda',
+    },
+    destination: {
+      latitude: -1.5,
+      longitude: 29.6,
+      address: 'Musanze, Rwanda',
     },
     readyDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -58,9 +68,14 @@ let mockCargo: MockCargo[] = [
     description: 'High-quality potatoes, suitable for wholesale',
     category: 'Root Vegetables',
     location: {
-      latitude: -1.9403,
-      longitude: 29.8739,
+      latitude: -1.9536,
+      longitude: 30.0605,
       address: 'Kigali, Rwanda',
+    },
+    destination: {
+      latitude: -2.5974,
+      longitude: 29.7399,
+      address: 'Huye (Butare), Rwanda',
     },
     readyDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -78,9 +93,14 @@ let mockCargo: MockCargo[] = [
     description: 'Organic cabbage, pesticide-free',
     category: 'Vegetables',
     location: {
-      latitude: -1.9403,
-      longitude: 29.8739,
+      latitude: -1.9536,
+      longitude: 30.0605,
       address: 'Kigali, Rwanda',
+    },
+    destination: {
+      latitude: -1.9486,
+      longitude: 30.0872,
+      address: 'Nyarutarama, Kigali',
     },
     readyDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -98,9 +118,14 @@ let mockCargo: MockCargo[] = [
     description: 'Sweet and crunchy carrots',
     category: 'Root Vegetables',
     location: {
-      latitude: -1.9403,
-      longitude: 29.8739,
+      latitude: -1.9536,
+      longitude: 30.0605,
       address: 'Kigali, Rwanda',
+    },
+    destination: {
+      latitude: -1.9571,
+      longitude: 30.0994,
+      address: 'Remera, Kigali',
     },
     readyDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
@@ -176,6 +201,7 @@ export const mockCargoService = {
         description: cargoData?.description || '',
         category: cargoData?.category || '',
         location: cargoData?.location || '',
+        destination: cargoData?.destination || null, // ✨ Save destination for transport fee calculation
         readyDate: cargoData?.readyDate || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

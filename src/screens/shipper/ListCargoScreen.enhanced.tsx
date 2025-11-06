@@ -7,6 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { distanceService } from '../../services/distanceService';
 import { suggestVehicleType, getVehicleType, calculateShippingCost, getTrafficFactor, getTrafficDescription, VEHICLE_TYPES } from '../../services/vehicleService';
+import { geocodeAddress } from '../../services/geocodingService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -142,16 +143,92 @@ export default function ListCargoScreen({ navigation }: any) {
 
   // Preset destinations for Rwanda
   const RWANDA_DESTINATIONS = [
-    { name: 'Kigali', lat: -1.9403, lon: 29.8739 },
-    { name: 'Huye', lat: -2.6003, lon: 29.7412 },
-    { name: 'Muhanga', lat: -1.9571, lon: 30.0138 },
-    { name: 'Ruhengeri', lat: -1.5019, lon: 29.6299 },
-    { name: 'Butare', lat: -2.5952, lon: 29.7379 },
-    { name: 'Gisenyi', lat: -1.6973, lon: 29.2624 },
-    { name: 'Kibuye', lat: -1.8147, lon: 29.2589 },
+    { name: 'Kigali City Center', lat: -1.9536, lon: 30.0605 },
+    { name: 'Kigali International Airport', lat: -1.9686, lon: 30.1395 },
+    { name: 'Nyarutarama', lat: -1.9486, lon: 30.0872 },
+    { name: 'Remera', lat: -1.9571, lon: 30.0994 },
+    { name: 'Kimihurura', lat: -1.9503, lon: 30.0857 },
+    { name: 'Huye (Butare)', lat: -2.5974, lon: 29.7399 },
+    { name: 'Musanze (Ruhengeri)', lat: -1.5, lon: 29.6 },
+    { name: 'Muhanga', lat: -1.9762, lon: 30.1844 },
+    { name: 'Gisenyi', lat: -1.7039, lon: 29.2562 },
+    { name: 'Kibuye', lat: -1.7039, lon: 29.2562 },
   ];
 
-  const ORIGIN_COORDS = { lat: -1.9403, lon: 29.8739 }; // Kigali
+  // Kigali city center - default coordinates
+  const DEFAULT_KIGALI_COORDS = { lat: -1.9536, lon: 30.0605 };
+
+  // Auto-calculate distance and ETA when destination/quantity/origin changes
+  useEffect(() => {
+    console.log('🔍 useEffect triggered - originAddress:', originAddress, 'destinationAddress:', destinationAddress, 'quantity:', quantity);
+
+    if (destinationAddress && quantity) {
+      console.log('🔄 Auto-calculating distance from', originAddress, 'to', destinationAddress);
+
+      // Geocode the origin address
+      const originCoords = geocodeAddress(originAddress);
+
+      // Find if destination is a preset destination
+      const presetDest = RWANDA_DESTINATIONS.find(d => d.name === destinationAddress);
+
+      if (presetDest) {
+        // Use preset coordinates for destination
+        console.log('📍 Using geocoded origin + preset destination:', {
+          from: { address: originAddress, coords: originCoords },
+          to: { address: destinationAddress, coords: { lat: presetDest.lat, lon: presetDest.lon } }
+        });
+
+        const calculatedDistance = distanceService.calculateDistance(
+          originCoords.latitude,
+          originCoords.longitude,
+          presetDest.lat,
+          presetDest.lon
+        );
+
+        setDistance(calculatedDistance);
+
+        const traffic = getTrafficFactor();
+        setTrafficFactor(traffic);
+
+        const cost = calculateShippingCost(calculatedDistance, selectedVehicle, traffic);
+        setShippingCost(cost);
+
+        const estimatedEta = distanceService.calculateETA(calculatedDistance, 45, traffic);
+        setEta(estimatedEta);
+
+        console.log('✅ Distance calculated:', calculatedDistance, 'km', 'ETA:', estimatedEta, 'min', 'Cost:', cost, 'RWF');
+      } else if (destinationAddress) {
+        // Geocode custom destination address
+        const destCoords = geocodeAddress(destinationAddress);
+        console.log('📍 Using geocoded origin + geocoded destination:', {
+          from: { address: originAddress, coords: originCoords },
+          to: { address: destinationAddress, coords: destCoords }
+        });
+
+        const calculatedDistance = distanceService.calculateDistance(
+          originCoords.latitude,
+          originCoords.longitude,
+          destCoords.latitude,
+          destCoords.longitude
+        );
+
+        setDistance(calculatedDistance);
+
+        const traffic = getTrafficFactor();
+        setTrafficFactor(traffic);
+
+        const cost = calculateShippingCost(calculatedDistance, selectedVehicle, traffic);
+        setShippingCost(cost);
+
+        const estimatedEta = distanceService.calculateETA(calculatedDistance, 45, traffic);
+        setEta(estimatedEta);
+
+        console.log('✅ Distance calculated from custom address:', calculatedDistance, 'km', 'ETA:', estimatedEta, 'min', 'Cost:', cost, 'RWF');
+      }
+    } else {
+      console.log('⚠️ Auto-calculation skipped - Missing:', !destinationAddress ? 'destination' : '', !quantity ? 'quantity' : '');
+    }
+  }, [originAddress, destinationAddress, quantity, selectedVehicle]);
 
   // Handle quantity change and suggest vehicle
   const handleQuantityChange = (value: string) => {
@@ -180,10 +257,11 @@ export default function ListCargoScreen({ navigation }: any) {
     setDestinationAddress(dest.name);
     setShowDestinationInput(false);
 
-    // Calculate distance using Haversine formula
+    // Calculate distance using Haversine formula (geocode origin first)
+    const originCoords = geocodeAddress(originAddress);
     const calculatedDistance = distanceService.calculateDistance(
-      ORIGIN_COORDS.lat,
-      ORIGIN_COORDS.lon,
+      originCoords.latitude,
+      originCoords.longitude,
       dest.lat,
       dest.lon
     );
@@ -267,18 +345,35 @@ export default function ListCargoScreen({ navigation }: any) {
       shippingCost: shippingCost,
       distance: distance,
       eta: eta,
-      // Origin location
-      location: {
-        latitude: ORIGIN_COORDS.lat,
-        longitude: ORIGIN_COORDS.lon,
-        address: originAddress,
-      },
+      // Origin location (geocode the address to get accurate coordinates)
+      location: (() => {
+        const originCoords = geocodeAddress(originAddress);
+        return {
+          latitude: originCoords.latitude,
+          longitude: originCoords.longitude,
+          address: originAddress,
+        };
+      })(),
       // Destination location
-      destination: {
-        latitude: RWANDA_DESTINATIONS.find(d => d.name === destinationAddress)?.lat || 0,
-        longitude: RWANDA_DESTINATIONS.find(d => d.name === destinationAddress)?.lon || 0,
-        address: destinationAddress,
-      },
+      destination: (() => {
+        // First try to find in preset destinations
+        const presetDest = RWANDA_DESTINATIONS.find(d => d.name === destinationAddress);
+        if (presetDest) {
+          return {
+            latitude: presetDest.lat,
+            longitude: presetDest.lon,
+            address: destinationAddress,
+          };
+        }
+
+        // If not found, geocode the custom address
+        const geocoded = geocodeAddress(destinationAddress);
+        return {
+          latitude: geocoded.latitude,
+          longitude: geocoded.longitude,
+          address: destinationAddress,
+        };
+      })(),
     };
 
     console.log('%c📦 Submitting cargo with destination', 'color: #4CAF50; font-weight: bold', cargoData);
@@ -320,9 +415,13 @@ export default function ListCargoScreen({ navigation }: any) {
 
   const vehicleType = getVehicleType(selectedVehicle);
 
+  // Debug: Log values before rendering
+  console.log('🎨 Render - distance:', distance, 'vehicleType:', vehicleType, 'selectedVehicle:', selectedVehicle);
+  console.log('🎨 ETA section will display:', distance > 0 && vehicleType ? 'YES' : 'NO');
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={[styles.header, { backgroundColor: theme.primary }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
@@ -330,7 +429,8 @@ export default function ListCargoScreen({ navigation }: any) {
           <Text style={[styles.title, { color: theme.card }]}>List New Cargo</Text>
         </View>
 
-        <View style={styles.form}>
+        <View style={styles.formWrapper}>
+          <View style={styles.form}>
           {/* Cargo Name */}
           <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
           <TextInput
@@ -544,14 +644,38 @@ export default function ListCargoScreen({ navigation }: any) {
                   >
                     <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: theme.primary }]}
                     disabled={!customDestinationAddress}
                     onPress={() => {
                       setDestinationAddress(customDestinationAddress);
                       setShowDestinationInput(false);
-                      // Set distance to 0 and recalculate with custom destination
-                      setDistance(0);
+
+                      // Geocode both origin and destination addresses
+                      const originCoords = geocodeAddress(originAddress);
+                      const destCoords = geocodeAddress(customDestinationAddress);
+
+                      // Calculate distance using geocoded coordinates
+                      const calculatedDistance = distanceService.calculateDistance(
+                        originCoords.latitude,
+                        originCoords.longitude,
+                        destCoords.latitude,
+                        destCoords.longitude
+                      );
+
+                      setDistance(calculatedDistance);
+
+                      // Get current traffic factor
+                      const traffic = getTrafficFactor();
+                      setTrafficFactor(traffic);
+
+                      // Calculate shipping cost
+                      const cost = calculateShippingCost(calculatedDistance, selectedVehicle, traffic);
+                      setShippingCost(cost);
+
+                      // Calculate ETA
+                      const estimatedEta = distanceService.calculateETA(calculatedDistance, 45, traffic);
+                      setEta(estimatedEta);
                     }}
                   >
                     <Text style={[styles.modalButtonText, { color: customDestinationAddress ? theme.card : theme.textSecondary }]}>
@@ -695,8 +819,8 @@ export default function ListCargoScreen({ navigation }: any) {
 
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 
-          <TouchableOpacity 
-            style={[styles.submitButton, { backgroundColor: theme.primary }]} 
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: theme.primary }]}
             onPress={handleSubmit}
             disabled={isLoading || !destinationAddress}
           >
@@ -706,6 +830,7 @@ export default function ListCargoScreen({ navigation }: any) {
               <Text style={styles.submitText}>List Cargo</Text>
             )}
           </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -729,6 +854,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   header: {
     padding: 20,
     paddingTop: 50,
@@ -741,22 +869,29 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  formWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
   form: {
-    padding: 20,
+    width: '100%',
+    maxWidth: 600,
+    paddingVertical: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   row: {
     flexDirection: 'row',
@@ -965,15 +1100,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   hint: {
-    fontSize: 12,
-    marginVertical: 12,
+    fontSize: 11,
+    marginTop: 16,
+    marginBottom: 8,
   },
   submitButton: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: 24,
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   submitText: {
     color: '#fff',

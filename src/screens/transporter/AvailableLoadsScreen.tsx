@@ -23,7 +23,12 @@ import {
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
 import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
+import { createOrder, fetchOrders } from '../../store/slices/ordersSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
+import { distanceService } from '../../services/distanceService';
+import { suggestVehicleType, getVehicleType, calculateShippingCost } from '../../services/vehicleService';
+import { calculateRemainingETA, formatDuration } from '../../services/etaService';
+import { useLocation } from '../../utils/useLocation';
 import SearchBar from '../../components/SearchBar';
 import EmptyState from '../../components/EmptyState';
 import Badge from '../../components/Badge';
@@ -42,40 +47,92 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast, showError, showSuccess, hideToast } = useToast();
-  
+
   // ✨ Pizzazz Animations
   const animations = useScreenAnimations(6);
+
+  // 📍 Real-time GPS Tracking
+  const {
+    location: currentLocation,
+    error: locationError,
+    isTracking,
+    startTracking,
+  } = useLocation({
+    enabled: true, // Always track on this screen
+    updateInterval: 10000, // Update every 10 seconds
+  });
+
+  useEffect(() => {
+    // Show GPS tracking indicator
+    if (currentLocation) {
+      console.log('📍 GPS Location updated:', {
+        lat: currentLocation.latitude,
+        lng: currentLocation.longitude,
+        speed: currentLocation.speed,
+      });
+    }
+  }, [currentLocation]);
   
   // Convert cargo to trip-like format for display
-  const convertCargoToTrip = (cargoItem: any) => ({
-    _id: cargoItem._id || cargoItem.id,
-    tripId: `CARGO-${cargoItem._id || cargoItem.id}`,
-    status: 'pending',
-    shipment: {
-      cargoId: cargoItem._id || cargoItem.id,
-      shipperId: cargoItem.shipperId,
-      quantity: cargoItem.quantity,
-      unit: cargoItem.unit,
-      cargoName: cargoItem.name,
-      cropName: cargoItem.name, // For backward compatibility
-    },
-    pickup: {
-      latitude: cargoItem.location?.latitude || -1.9403,
-      longitude: cargoItem.location?.longitude || 29.8739,
-      address: cargoItem.location?.address || 'Kigali, Rwanda',
-    },
-    delivery: {
-      latitude: -1.9706,
-      longitude: 29.9498,
-      address: 'Destination',
-    },
-    earnings: {
-      ratePerUnit: cargoItem.pricePerUnit || 500,
-      totalRate: (cargoItem.quantity || 0) * (cargoItem.pricePerUnit || 500),
+  const convertCargoToTrip = (cargoItem: any) => {
+    // Calculate distance between pickup and delivery
+    const pickupLat = cargoItem.location?.latitude || -1.9536;
+    const pickupLon = cargoItem.location?.longitude || 30.0605;
+
+    // Use actual destination if available, otherwise use Kigali city center
+    const deliveryLat = cargoItem.destination?.latitude || -1.9536;
+    const deliveryLon = cargoItem.destination?.longitude || 30.0605;
+    const deliveryAddress = cargoItem.destination?.address || 'Kigali City Center';
+
+    const distance = distanceService.calculateDistance(
+      pickupLat,
+      pickupLon,
+      deliveryLat,
+      deliveryLon
+    );
+
+    // Get cargo weight and suggest appropriate vehicle
+    const cargoWeight = cargoItem.quantity || 0;
+    const suggestedVehicleId = suggestVehicleType(cargoWeight);
+    const vehicleType = getVehicleType(suggestedVehicleId);
+
+    // Calculate transport fee using vehicle-specific rates
+    // Motorcycle: 300 RWF/km, Van: 500 RWF/km, Truck: 800 RWF/km
+    const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+
+    return {
+      _id: cargoItem._id || cargoItem.id,
+      tripId: `CARGO-${cargoItem._id || cargoItem.id}`,
       status: 'pending',
-    },
-    createdAt: new Date(cargoItem.createdAt || Date.now()),
-  });
+      shipment: {
+        cargoId: cargoItem._id || cargoItem.id,
+        shipperId: cargoItem.shipperId,
+        quantity: cargoItem.quantity,
+        unit: cargoItem.unit,
+        cargoName: cargoItem.name,
+        cropName: cargoItem.name, // For backward compatibility
+      },
+      pickup: {
+        latitude: pickupLat,
+        longitude: pickupLon,
+        address: cargoItem.location?.address || 'Kigali, Rwanda',
+      },
+      delivery: {
+        latitude: deliveryLat,
+        longitude: deliveryLon,
+        address: deliveryAddress,
+      },
+      distance: distance,
+      vehicleType: suggestedVehicleId,
+      vehicleName: vehicleType?.name || '🚚 Truck',
+      earnings: {
+        ratePerUnit: vehicleType?.baseRatePerKm || 800, // Vehicle-specific rate
+        totalRate: transportFee, // Calculated with vehicle rate
+        status: 'pending',
+      },
+      createdAt: new Date(cargoItem.createdAt || Date.now()),
+    };
+  };
 
   // Fetch trips and cargo when screen mounts
   useEffect(() => {
@@ -216,13 +273,85 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     const performAccept = async () => {
       try {
         console.log(`🚀 Accepting ${isCargo ? 'cargo' : 'trip'} for ID:`, actualId);
-        
+
         if (isCargo) {
-          // Handle cargo acceptance - update status to 'matched'
-          const result = await dispatch(
+          // Handle cargo acceptance
+          // 1. Find the cargo item
+          const cargoItem = cargo.find((c: any) => (c._id || c.id) === actualId);
+          if (!cargoItem) {
+            throw new Error('Cargo not found');
+          }
+
+          // 2. Get current user (transporter) ID
+          const transporterId = user?._id || user?.id;
+          if (!transporterId) {
+            throw new Error('User not logged in');
+          }
+
+          console.log('📦 Creating order for cargo:', cargoItem.name);
+          console.log('👤 Transporter ID:', transporterId);
+
+          // 3. Calculate transport fee based on DISTANCE and VEHICLE TYPE
+          const pickupLat = cargoItem.location?.latitude || -1.9536;
+          const pickupLon = cargoItem.location?.longitude || 30.0605;
+
+          // Use actual destination if available, otherwise use Kigali city center
+          const deliveryLat = cargoItem.destination?.latitude || -1.9536;
+          const deliveryLon = cargoItem.destination?.longitude || 30.0605;
+
+          const distance = distanceService.calculateDistance(
+            pickupLat,
+            pickupLon,
+            deliveryLat,
+            deliveryLon
+          );
+
+          // Get cargo weight and suggest appropriate vehicle
+          const cargoWeight = cargoItem.quantity || 0;
+          const suggestedVehicleId = suggestVehicleType(cargoWeight);
+          const vehicleType = getVehicleType(suggestedVehicleId);
+
+          // Calculate transport fee using vehicle-specific rates
+          // 🏍️ Motorcycle: 300 RWF/km (≤50kg)
+          // 🚐 Van: 500 RWF/km (50-500kg)
+          // 🚚 Truck: 800 RWF/km (>500kg)
+          const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+
+          console.log(`📏 Distance: ${distance} km`);
+          console.log(`🚗 Vehicle: ${vehicleType?.name} (${vehicleType?.baseRatePerKm} RWF/km)`);
+          console.log(`💰 Transport Fee: ${transportFee} RWF`);
+
+          // 4. Create an order/transport request
+          const orderData = {
+            cargoId: actualId,
+            shipperId: typeof cargoItem.shipperId === 'string' ? cargoItem.shipperId : cargoItem.shipperId?._id || cargoItem.shipperId?.id,
+            transporterId: transporterId,
+            quantity: cargoItem.quantity || 1,
+            unit: cargoItem.unit || 'kg',
+            transportFee: transportFee, // Now based on distance, not cargo price!
+            status: 'accepted',
+            pickupLocation: {
+              latitude: pickupLat,
+              longitude: pickupLon,
+              address: cargoItem.location?.address || 'Pickup Location',
+            },
+            deliveryLocation: {
+              latitude: deliveryLat,
+              longitude: deliveryLon,
+              address: 'Delivery Location',
+            },
+            requestedDate: new Date(),
+          };
+
+          // 4. Create the order
+          const orderResult = await dispatch(createOrder(orderData) as any).unwrap();
+          console.log('✅ Order created successfully:', orderResult);
+
+          // 5. Update cargo status to 'matched'
+          const cargoResult = await dispatch(
             updateCargo({ id: actualId, data: { status: 'matched' } }) as any
           ).unwrap();
-          console.log('✅ Cargo acceptance successful:', result);
+          console.log('✅ Cargo status updated to matched:', cargoResult);
         } else {
           // Handle regular trip acceptance
           const result = await dispatch(acceptTrip(actualId) as any).unwrap();
@@ -253,9 +382,10 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           console.log('🔄 Refreshing data after accepting trip...');
           await dispatch(fetchTrips() as any);
           await dispatch(fetchCargo() as any);
+          await dispatch(fetchOrders() as any);
           console.log('✅ Data refreshed after trip acceptance');
 
-          showSuccess('Trip accepted! Head to pickup location!');
+          showSuccess('Trip accepted! Check My Trips to mark complete!');
           setTimeout(() => navigation.navigate('Home'), 1500);
         } catch (error: any) {
           showError('Error: ' + error.message);
@@ -277,9 +407,10 @@ export default function AvailableLoadsScreen({ navigation }: any) {
               console.log('🔄 Refreshing data after accepting trip...');
               await dispatch(fetchTrips() as any);
               await dispatch(fetchCargo() as any);
+              await dispatch(fetchOrders() as any);
               console.log('✅ Data refreshed after trip acceptance');
 
-              showSuccess('Trip accepted! Head to pickup location!');
+              showSuccess('Trip accepted! Check My Trips to mark complete!');
               setTimeout(() => navigation.navigate('Home'), 1500);
             } catch (error: any) {
               showError(error.message);
@@ -315,7 +446,15 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={theme.card} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>Available Trips</Text>
+        <View style={styles.headerCenter}>
+          <Text style={[styles.title, { color: theme.card }]}>Available Trips</Text>
+          {isTracking && currentLocation && (
+            <View style={styles.gpsIndicator}>
+              <View style={[styles.gpsPulse, { backgroundColor: '#4CAF50' }]} />
+              <Text style={[styles.gpsText, { color: theme.card }]}>GPS Active</Text>
+            </View>
+          )}
+        </View>
         <Badge label={String(allAvailableLoads.length)} variant="gray" size="sm" />
       </View>
 
@@ -342,6 +481,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           data={pendingTrips}
           keyExtractor={(item) => item._id || item.tripId}
           contentContainerStyle={styles.loadsList}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -351,6 +492,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           }
           renderItem={({ item: trip, index }) => {
             const earnings = trip.earnings?.totalRate || 0;
+            const routeDistance = trip.distance || 0; // Pickup → Delivery distance
+            const ratePerKm = trip.earnings?.ratePerUnit || 800;
+            const vehicleName = trip.vehicleName || '🚚 Truck';
             // Support both new (cargoName) and old (cropName) field names
             const cargoName = trip.shipment?.cargoName || trip.shipment?.cropName || 'Agricultural Load';
             const quantity = trip.shipment?.quantity || 0;
@@ -358,8 +502,34 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             const pickupAddress = trip.pickup?.address || 'Not specified';
             const deliveryAddress = trip.delivery?.address || 'Destination';
 
+            // 📍 Calculate LIVE distance from current location to pickup
+            const pickupLat = trip.pickup?.latitude || -1.9536;
+            const pickupLon = trip.pickup?.longitude || 30.0605;
+
+            let liveDistanceToPickup = null;
+            let liveETA = null;
+
+            if (currentLocation) {
+              liveDistanceToPickup = distanceService.calculateDistance(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                pickupLat,
+                pickupLon
+              );
+
+              // Calculate real-time ETA to pickup
+              const etaData = calculateRemainingETA(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                pickupLat,
+                pickupLon,
+                currentLocation.speed || 50
+              );
+              liveETA = etaData;
+            }
+
             return (
-              <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+              <View style={styles.cardWrapper}>
                 <View style={[styles.loadCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                 {/* Top Section: Cargo & Earnings */}
                 <View style={styles.loadCardTop}>
@@ -373,6 +543,18 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                         variant="gray"
                         size="sm"
                       />
+                      {routeDistance > 0 && (
+                        <Badge
+                          label={`${routeDistance} km route`}
+                          variant="primary"
+                          size="sm"
+                        />
+                      )}
+                      <Badge
+                        label={vehicleName}
+                        variant="secondary"
+                        size="sm"
+                      />
                     </View>
                   </View>
 
@@ -384,8 +566,32 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                     <Text style={[styles.earningsAmount, { color: theme.success }]}>
                       {earnings.toLocaleString()} RWF
                     </Text>
+                    {routeDistance > 0 && (
+                      <Text style={[styles.earningsRate, { color: theme.textSecondary }]}>
+                        {ratePerKm.toLocaleString()} RWF/km
+                      </Text>
+                    )}
                   </View>
                 </View>
+
+                {/* 📍 Live GPS Status */}
+                {currentLocation && liveDistanceToPickup !== null && liveETA && (
+                  <View style={[styles.liveGPSBox, { backgroundColor: theme.info + '10', borderColor: theme.info }]}>
+                    <View style={styles.liveGPSRow}>
+                      <View style={styles.liveGPSIcon}>
+                        <Ionicons name="navigate" size={16} color={theme.info} />
+                      </View>
+                      <View style={styles.liveGPSContent}>
+                        <Text style={[styles.liveGPSLabel, { color: theme.textSecondary }]}>
+                          📍 You are {liveDistanceToPickup.toFixed(1)} km away
+                        </Text>
+                        <Text style={[styles.liveGPSETA, { color: liveETA.trafficInfo.color }]}>
+                          {liveETA.trafficInfo.icon} ETA: {formatDuration(liveETA.durationMinutes)} • {liveETA.trafficInfo.description}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
 
                 {/* Route Section */}
                 <View style={styles.routeSection}>
@@ -432,7 +638,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
                   icon={<Ionicons name="arrow-forward" size={18} color="#fff" />}
                 />
                 </View>
-              </Animated.View>
+              </View>
             );
           }}
         />
@@ -516,16 +722,22 @@ const styles = StyleSheet.create({
 
   // Loads List
   loadsList: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  row: {
+    justifyContent: 'space-evenly',
+    marginBottom: 6,
+  },
+  cardWrapper: {
+    width: '45%',
   },
 
   // Load Card - inDrive Style
   loadCard: {
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 14,
+    padding: 4,
     marginBottom: 4,
   },
 
@@ -534,98 +746,158 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 5,
   },
   cropSection: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 4,
   },
   cropName: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: 2,
   },
   quantityDistance: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 3,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 6,
-    gap: 4,
+    borderRadius: 4,
+    gap: 2,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: '500',
   },
 
   // Earnings Box
   earningsBox: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 5,
     alignItems: 'center',
   },
   earningsLabel: {
-    fontSize: 11,
+    fontSize: 8,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   earningsAmount: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: '700',
+  },
+  earningsRate: {
+    fontSize: 7,
+    fontWeight: '500',
+    marginTop: 1,
   },
 
   // Route Section - inDrive style with dots and line
   routeSection: {
-    marginBottom: 12,
-    paddingVertical: 8,
+    marginBottom: 5,
+    paddingVertical: 4,
   },
   routeItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 10,
+    gap: 6,
+    marginBottom: 5,
   },
   routeDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginTop: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 2,
   },
   routeLabel: {
-    fontSize: 11,
+    fontSize: 8,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   routeText: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '500',
   },
   routeLine: {
     width: 2,
-    height: 20,
-    marginLeft: 4,
-    marginVertical: 2,
+    height: 12,
+    marginLeft: 2,
+    marginVertical: 1,
   },
 
   // Accept Button
   acceptBtn: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   acceptBtnText: {
     color: '#fff',
-    fontSize: 15,
+    fontSize: 11,
     fontWeight: '700',
+  },
+
+  // GPS Tracking Header
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  gpsIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  gpsPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  gpsText: {
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+
+  // Live GPS Box
+  liveGPSBox: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 12,
+  },
+  liveGPSRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  liveGPSIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  liveGPSContent: {
+    flex: 1,
+  },
+  liveGPSLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  liveGPSETA: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

@@ -178,25 +178,42 @@ export const mockOrderService = {
    */
   createOrder: async (orderData: any) => {
     try {
-      const newOrder = Object.assign({}, {
-        _id: generateId(),
-        id: generateId(),
-        buyerId: orderData?.buyerId || '',
-        farmerId: orderData?.farmerId || '',
-        cropId: orderData?.cropId || '', // String ID
+      console.log('🔧 Mock createOrder called with data:', orderData);
+
+      const orderId = generateId();
+      const newOrder = {
+        _id: orderId,
+        id: orderId,
+        // Support both old and new field names
+        shipperId: orderData?.shipperId || orderData?.farmerId || '',
+        transporterId: orderData?.transporterId || '',
+        cargoId: orderData?.cargoId || orderData?.cropId || orderData?.crop_id || '',
         quantity: orderData?.quantity || 0,
         unit: orderData?.unit || 'kg',
-        totalPrice: orderData?.totalPrice || 0,
-        status: 'pending' as const,
-        pickupLocation: orderData?.pickupLocation || {},
-        deliveryLocation: orderData?.deliveryLocation || {},
-      }) as MockOrder;
+        transportFee: orderData?.transportFee || orderData?.totalPrice || 0,
+        status: (orderData?.status || 'pending') as 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled',
+        pickupLocation: orderData?.pickupLocation || {
+          latitude: 0,
+          longitude: 0,
+          address: '',
+        },
+        deliveryLocation: orderData?.deliveryLocation || {
+          latitude: 0,
+          longitude: 0,
+          address: '',
+        },
+        deliveryNotes: orderData?.deliveryNotes || '',
+        requestedDate: orderData?.requestedDate || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as MockOrder;
 
       mockOrders = [...mockOrders, newOrder];
       await AsyncStorage.setItem('mockOrders', JSON.stringify(mockOrders));
+      console.log('✅ Mock order created:', newOrder);
       return newOrder;
     } catch (error: any) {
-      console.error('Error in createOrder:', error.message);
+      console.error('❌ Error in createOrder:', error.message);
       throw error;
     }
   },

@@ -256,7 +256,11 @@ export default function RegisterScreen({ route, navigation }: any) {
       confettiRef.current?.start();
 
       showSuccess('Account created successfully!');
-      // Navigation happens automatically via AppNavigator
+
+      // Navigate to profile completion screen
+      setTimeout(() => {
+        navigation.replace('ProfileCompletion');
+      }, 1500);
     } catch (err: any) {
       console.error('❌ Registration failed:', err);
       const errorMessage = err || 'Could not register. Please check your connection and try again.';

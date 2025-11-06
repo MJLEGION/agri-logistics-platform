@@ -265,7 +265,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#3B82F6' + '20' }]}>
-              <Ionicons name="navigate" size={24} color="#3B82F6" />
+              <Ionicons name="navigate" size={18} color="#3B82F6" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>{activeTrips.length}</Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Active</Text>
@@ -273,7 +273,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="checkmark-done" size={24} color="#10B981" />
+              <Ionicons name="checkmark-done" size={18} color="#10B981" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {completedToday.length}
@@ -283,7 +283,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
             <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
-              <Ionicons name="cash" size={24} color="#F59E0B" />
+              <Ionicons name="cash" size={18} color="#F59E0B" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {(todayEarnings / 1000).toFixed(1)}K
@@ -353,14 +353,14 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
                 {/* Priority Badge */}
                 {match.priority === 'high' && (
                   <View style={styles.priorityBadge}>
-                    <Ionicons name="star" size={12} color="#FFF" />
+                    <Ionicons name="star" size={10} color="#FFF" />
                     <Text style={styles.priorityText}>TOP MATCH</Text>
                   </View>
                 )}
 
                 <View style={styles.matchHeader}>
                   <View style={styles.matchTitleRow}>
-                    <Ionicons name="cube" size={20} color={theme.tertiary} />
+                    <Ionicons name="cube" size={16} color={theme.tertiary} />
                     <Text style={[styles.matchTitle, { color: theme.text }]}>
                       {match.load.cropId?.name || 'Cargo Load'}
                     </Text>
@@ -374,13 +374,13 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
                 <View style={styles.matchDetails}>
                   <View style={styles.detailRow}>
-                    <Ionicons name="location" size={16} color={theme.textSecondary} />
+                    <Ionicons name="location" size={14} color={theme.textSecondary} />
                     <Text style={[styles.detailText, { color: theme.textSecondary }]}>
                       {match.distance.toFixed(1)}km away · {match.eta} min
                     </Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Ionicons name="navigate" size={16} color={theme.textSecondary} />
+                    <Ionicons name="navigate" size={14} color={theme.textSecondary} />
                     <Text style={[styles.detailText, { color: theme.textSecondary }]}>
                       {match.routeDistance.toFixed(1)}km route
                     </Text>
@@ -473,6 +473,32 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <Text style={[styles.actionTitle, { color: theme.text }]}>My Fleet</Text>
               <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
                 Manage vehicles
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: theme.card }]}
+              onPress={() => navigation.navigate('RoutePlanner')}
+            >
+              <LinearGradient colors={['#EC4899', '#DB2777']} style={styles.actionGradient}>
+                <Ionicons name="map-outline" size={32} color="#FFF" />
+              </LinearGradient>
+              <Text style={[styles.actionTitle, { color: theme.text }]}>Route Planner</Text>
+              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                Optimize routes
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: theme.card }]}
+              onPress={() => navigation.navigate('TripHistory')}
+            >
+              <LinearGradient colors={['#06B6D4', '#0891B2']} style={styles.actionGradient}>
+                <Ionicons name="time" size={32} color="#FFF" />
+              </LinearGradient>
+              <Text style={[styles.actionTitle, { color: theme.text }]}>Trip History</Text>
+              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                View completed
               </Text>
             </TouchableOpacity>
           </View>
@@ -571,43 +597,46 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 16,
+    padding: 8,
+    borderRadius: 10,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '800',
     marginBottom: 4,
   },
+  statNumber: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 1,
+  },
   statLabel: {
-    fontSize: 11,
+    fontSize: 9,
     textAlign: 'center',
     fontWeight: '600',
   },
   potentialCard: {
     marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 16,
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   potentialHeader: {
     flexDirection: 'row',
@@ -640,16 +669,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   content: {
-    padding: 16,
+    padding: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
   },
   seeAllText: {
@@ -657,97 +691,100 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   matchCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    maxWidth: 600,
+    width: '100%',
+    alignSelf: 'center',
   },
   priorityBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 8,
+    right: 8,
     flexDirection: 'row',
     backgroundColor: '#F59E0B',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   priorityText: {
     color: '#FFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
   },
   matchHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   matchTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     flex: 1,
   },
   matchTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  scoreBox: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  scoreText: {
     fontSize: 14,
     fontWeight: '700',
   },
+  scoreBox: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  scoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   matchDetails: {
-    gap: 8,
-    marginBottom: 12,
+    gap: 6,
+    marginBottom: 8,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '500',
   },
   earningsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
   earningsLabel: {
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 10,
+    marginBottom: 2,
   },
   earningsAmount: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
   },
   reasonsContainer: {
     alignItems: 'flex-end',
-    gap: 4,
+    gap: 3,
   },
   reasonChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   reasonText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
   actionsGrid: {
@@ -755,17 +792,23 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 24,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    maxWidth: 600,
+    width: '100%',
   },
   actionCard: {
-    width: '48%',
+    width: '30%',
+    minWidth: 115,
+    maxWidth: 150,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.12,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
   actionGradient: {
     width: 64,
@@ -780,25 +823,25 @@ const styles = StyleSheet.create({
     top: -4,
     right: -4,
     backgroundColor: '#EF4444',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionBadgeText: {
     color: '#FFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   actionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 4,
     textAlign: 'center',
   },
   actionDesc: {
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
   },
   logoutButton: {
@@ -809,6 +852,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
+    maxWidth: 300,
+    alignSelf: 'center',
   },
   logoutText: {
     color: '#fff',

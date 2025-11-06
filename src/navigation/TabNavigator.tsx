@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Shipper Screens
 import ShipperHomeScreen from '../screens/shipper/ShipperHomeScreen';
-import ListCargoScreen from '../screens/shipper/ListCargoScreen';
+import ListCargoScreen from '../screens/shipper/ListCargoScreen.enhanced';
 import MyCargoScreen from '../screens/shipper/MyCargoScreen';
 import ShipperActiveOrdersScreen from '../screens/shipper/ShipperActiveOrdersScreen';
 

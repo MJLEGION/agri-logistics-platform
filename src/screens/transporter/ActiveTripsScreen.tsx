@@ -10,7 +10,11 @@ import {
   fetchAllTrips,
   completeTrip,
 } from '../../logistics/store/tripsSlice';
+import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
 import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
+import { distanceService } from '../../services/distanceService';
+import { calculateRemainingETA, formatDuration, formatArrivalTime } from '../../services/etaService';
+import { useLocation } from '../../utils/useLocation';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import IconButton from '../../components/IconButton';
@@ -20,29 +24,60 @@ import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
-  const { trips, isLoading } = useAppSelector((state) => state.trips);
+  const { trips, isLoading: tripsLoading } = useAppSelector((state) => state.trips);
+  const { orders, isLoading: ordersLoading } = useAppSelector((state) => state.orders);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [completingTripId, setCompletingTripId] = useState<string | null>(null);
   const { toast, showSuccess, showError, hideToast } = useToast();
-  
+
   // ✨ Pizzazz Animations
   const animations = useScreenAnimations(6);
 
+  // Get active trips from trips system
   const activeTrips = getActiveTripsForTransporter(
     trips,
     user?.id || user?._id || ''
   );
 
+  // Get active orders (transporterId matches current user, status is accepted or in_progress)
+  const transporterId = user?.id || user?._id || '';
+  const activeOrders = Array.isArray(orders) ? orders.filter(
+    (order: any) =>
+      (order.transporterId === transporterId || order.transporterId?._id === transporterId || order.transporterId?.id === transporterId) &&
+      (order.status === 'accepted' || order.status === 'in_progress')
+  ) : [];
+
+  // Combine trips and orders
+  const allActiveItems = [...activeTrips, ...activeOrders];
+  const isLoading = tripsLoading || ordersLoading;
+
+  // 📍 Real-time GPS Tracking
+  const {
+    location: currentLocation,
+    error: locationError,
+    isTracking,
+  } = useLocation({
+    enabled: allActiveItems.length > 0, // Only track when there are active trips
+    updateInterval: 5000, // Update every 5 seconds
+  });
+
   useEffect(() => {
     console.log('✅ ActiveTripsScreen mounted/updated');
-    console.log('📊 State:', { activeTrips: activeTrips.length, isLoading, completingTripId });
-  }, [activeTrips, isLoading, completingTripId]);
+    console.log('📊 State:', {
+      activeTrips: activeTrips.length,
+      activeOrders: activeOrders.length,
+      totalActive: allActiveItems.length,
+      isLoading,
+      completingTripId
+    });
+  }, [activeTrips, activeOrders, allActiveItems, isLoading, completingTripId]);
 
   useFocusEffect(
     React.useCallback(() => {
       dispatch(fetchAllTrips() as any);
+      dispatch(fetchOrders() as any);
     }, [dispatch])
   );
 
@@ -50,6 +85,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
     setIsRefreshing(true);
     try {
       await dispatch(fetchAllTrips() as any);
+      await dispatch(fetchOrders() as any);
     } finally {
       setIsRefreshing(false);
     }
@@ -59,24 +95,35 @@ export default function ActiveTripsScreen({ navigation }: any) {
     navigation.navigate('TripTracking', { trip });
   };
 
-  const handleCompleteTrip = async (trip: any) => {
-    const tripId = trip._id || trip.tripId;
-    console.log('🔵 BUTTON CLICKED - handleCompleteTrip called with trip:', tripId);
-    
-    try {
-      setCompletingTripId(tripId);
-      console.log('🚀 Completing trip:', tripId);
-      
-      const result = await dispatch(
-        completeTrip(tripId) as any
-      ).unwrap();
+  const handleCompleteTrip = async (item: any) => {
+    const itemId = item._id || item.id || item.tripId;
+    console.log('🔵 BUTTON CLICKED - handleCompleteTrip called with item:', itemId, 'Type:', item.cargoId ? 'ORDER' : 'TRIP');
 
-      console.log('✅ Trip completion successful:', result);
+    try {
+      setCompletingTripId(itemId);
+
+      // Check if this is an order (has cargoId) or a trip (has tripId without cargoId)
+      const isOrder = !!item.cargoId;
+
+      if (isOrder) {
+        console.log('🚀 Completing ORDER:', itemId);
+        const result = await dispatch(
+          updateOrder({ id: itemId, data: { status: 'completed' } }) as any
+        ).unwrap();
+        console.log('✅ Order completion successful:', result);
+      } else {
+        console.log('🚀 Completing TRIP:', itemId);
+        const result = await dispatch(
+          completeTrip(itemId) as any
+        ).unwrap();
+        console.log('✅ Trip completion successful:', result);
+      }
 
       showSuccess('Delivery marked as completed!');
-      console.log('🔄 Refreshing trips list after completion');
+      console.log('🔄 Refreshing trips and orders list after completion');
       setCompletingTripId(null);
       dispatch(fetchAllTrips() as any);
+      dispatch(fetchOrders() as any);
     } catch (error: any) {
       setCompletingTripId(null);
       console.error('❌ Complete error:', error);
@@ -130,18 +177,28 @@ export default function ActiveTripsScreen({ navigation }: any) {
             disabled={isRefreshing}
             style={styles.refreshButton}
           >
-            <FontAwesome 
-              name="refresh" 
-              size={20} 
-              color={theme.card} 
+            <FontAwesome
+              name="refresh"
+              size={20}
+              color={theme.card}
               style={{ opacity: isRefreshing ? 0.5 : 1 }}
             />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
+        <View style={styles.headerBottom}>
+          <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
+          {isTracking && currentLocation && (
+            <View style={styles.trackingIndicator}>
+              <View style={[styles.trackingPulse, { backgroundColor: '#4CAF50' }]} />
+              <Text style={[styles.trackingText, { color: theme.card }]}>
+                Live Tracking • {currentLocation.speed?.toFixed(0) || 0} km/h
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      {activeTrips.length === 0 ? (
+      {allActiveItems.length === 0 ? (
         <EmptyState
           icon="car-sport-outline"
           title="No active trips"
@@ -151,13 +208,15 @@ export default function ActiveTripsScreen({ navigation }: any) {
         />
       ) : (
         <FlatList
-          data={activeTrips}
-          keyExtractor={(item) => item._id || item.tripId}
+          data={allActiveItems}
+          keyExtractor={(item) => item._id || item.id || item.tripId}
           contentContainerStyle={styles.list}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
           renderItem={({ item: trip, index }) => (
-            <Animated.View style={animations.getFloatingCardStyle(index % 6)}>
+            <View style={styles.cardWrapper}>
               <Card>
               <View style={styles.tripHeader}>
                 <Text style={[styles.cropName, { color: theme.text }]}>
@@ -183,6 +242,50 @@ export default function ActiveTripsScreen({ navigation }: any) {
                   {(trip.earnings?.totalRate || 0).toLocaleString()} RWF
                 </Text>
               </View>
+
+              {/* Live ETA Info */}
+              {currentLocation && trip.delivery && (
+                (() => {
+                  const deliveryLat = trip.delivery.latitude || -1.9706;
+                  const deliveryLon = trip.delivery.longitude || 29.9498;
+
+                  const remainingDistance = distanceService.calculateDistance(
+                    currentLocation.latitude,
+                    currentLocation.longitude,
+                    deliveryLat,
+                    deliveryLon
+                  );
+
+                  const etaData = calculateRemainingETA(
+                    currentLocation.latitude,
+                    currentLocation.longitude,
+                    deliveryLat,
+                    deliveryLon,
+                    currentLocation.speed || 50
+                  );
+
+                  return (
+                    <View style={[styles.liveETABox, { backgroundColor: etaData.trafficInfo.color + '15', borderColor: etaData.trafficInfo.color }]}>
+                      <View style={styles.etaRow}>
+                        <View style={[styles.etaIcon, { backgroundColor: etaData.trafficInfo.color + '25' }]}>
+                          <Text style={{ fontSize: 20 }}>{etaData.trafficInfo.icon}</Text>
+                        </View>
+                        <View style={styles.etaContent}>
+                          <Text style={[styles.etaLabel, { color: theme.textSecondary }]}>
+                            📍 {remainingDistance.toFixed(1)} km to destination
+                          </Text>
+                          <Text style={[styles.etaTime, { color: etaData.trafficInfo.color }]}>
+                            🕐 Arriving at {formatArrivalTime(etaData.arrivalTime)} • {formatDuration(etaData.durationMinutes)}
+                          </Text>
+                          <Text style={[styles.etaTraffic, { color: theme.textSecondary }]}>
+                            {etaData.trafficInfo.description}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })()
+              )}
 
               <View style={styles.locationSection}>
                 <View style={styles.locationItem}>
@@ -227,7 +330,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
                 </View>
               )}
             </Card>
-            </Animated.View>
+            </View>
           )}
         />
       )}
@@ -282,84 +385,151 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   list: {
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  row: {
+    justifyContent: 'space-evenly',
+    marginBottom: 8,
+  },
+  cardWrapper: {
+    width: '45%',
   },
   tripHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 5,
   },
   cropName: {
-    fontSize: 20,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
   statusText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   label: {
-    fontSize: 14,
+    fontSize: 10,
   },
   value: {
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: '500',
   },
   locationSection: {
-    marginTop: 10,
-    marginBottom: 15,
+    marginTop: 5,
+    marginBottom: 6,
   },
   locationItem: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   locationLabel: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 9,
+    marginBottom: 1,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: 10,
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 15,
+    gap: 5,
+    marginTop: 6,
   },
   actionButton: {
     flex: 1,
-    padding: 14,
-    borderRadius: 8,
+    padding: 8,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 32,
   },
   actionButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   mapButton: {
     flex: 1,
-    padding: 14,
-    borderRadius: 8,
+    padding: 8,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 32,
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+
+  // GPS Tracking Header
+  headerBottom: {
+    alignItems: 'center',
+  },
+  trackingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  trackingPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  trackingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    opacity: 0.9,
+  },
+
+  // Live ETA Box
+  liveETABox: {
+    borderRadius: 10,
+    borderWidth: 1.5,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  etaIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  etaContent: {
+    flex: 1,
+  },
+  etaLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+  etaTime: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  etaTraffic: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
