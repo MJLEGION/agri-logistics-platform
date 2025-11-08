@@ -63,7 +63,6 @@ const OrderTrackingScreen = ({ route, navigation }: OrderTrackingScreenProps) =>
           }
 
           if (location) {
-            console.log('📍 Real-time transporter location:', location);
             setTransporterLocation({
               latitude: location.latitude,
               longitude: location.longitude,

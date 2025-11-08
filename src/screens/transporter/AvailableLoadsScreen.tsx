@@ -63,14 +63,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   });
 
   useEffect(() => {
-    // Show GPS tracking indicator
-    if (currentLocation) {
-      console.log('📍 GPS Location updated:', {
-        lat: currentLocation.latitude,
-        lng: currentLocation.longitude,
-        speed: currentLocation.speed,
-      });
-    }
+    // GPS tracking is active
+    // Location updates are handled automatically
   }, [currentLocation]);
   
   // Convert cargo to trip-like format for display
@@ -138,11 +132,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('🔄 AvailableLoadsScreen: Mounting - loading trips & cargo...');
         await dispatch(fetchTrips() as any);
         await dispatch(fetchCargo() as any);
-        console.log('✅ AvailableLoadsScreen: Initial data loaded');
-      } catch (error) {
+              } catch (error) {
         console.error('❌ AvailableLoadsScreen: Error loading data:', error);
       }
     };
@@ -153,11 +145,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      console.log('🔄 AvailableLoadsScreen: Manual refresh triggered');
       await dispatch(fetchTrips() as any);
       await dispatch(fetchCargo() as any);
-      console.log('✅ AvailableLoadsScreen: Manual refresh complete');
-    } catch (error) {
+          } catch (error) {
       console.error('❌ AvailableLoadsScreen: Error during refresh:', error);
     }
     setRefreshing(false);
@@ -168,11 +158,9 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     React.useCallback(() => {
       const refreshData = async () => {
         try {
-          console.log('🎯 AvailableLoadsScreen: Screen focused - auto-refreshing trips & cargo...');
           await dispatch(fetchTrips() as any);
           await dispatch(fetchCargo() as any);
-          console.log('✅ AvailableLoadsScreen: Auto-refresh complete on focus');
-        } catch (error) {
+                  } catch (error) {
           console.error('❌ AvailableLoadsScreen: Error during auto-refresh:', error);
         }
       };
@@ -205,74 +193,20 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const isLoading = tripsLoading || cargoLoading;
   const pendingTrips = filteredLoads;
 
-  // Enhanced debug logging
   const availableCargo = cargo.filter(c => c.status === 'listed');
   const pendingTripsFromTrips = getPendingTripsForTransporter(trips);
-  
-  console.log('📊 AvailableLoadsScreen Debug Info:', {
-    totalTrips: trips.length,
-    totalCargo: cargo.length,
-    availableCargo: availableCargo.length,
-    pendingTripsFromTrips: pendingTripsFromTrips.length,
-    pendingTrips: pendingTrips.length,
-    tripsDetails: trips.map(t => ({
-      id: t._id || t.tripId,
-      status: t.status,
-      hasTransporter: !!t.transporterId,
-      isPending: t.status === 'pending' && !t.transporterId,
-    })),
-    cargoDetails: cargo.map(c => ({
-      id: c._id || c.id,
-      name: c.name,
-      status: c.status,
-      shipperId: c.shipperId,
-      createdAt: c.createdAt,
-    })),
-    availableCargoDetails: availableCargo.map(c => ({
-      id: c._id || c.id,
-      name: c.name,
-      status: c.status,
-    })),
-  });
-
-  // NEW: More detailed debugging for cargo visibility
-  console.log('%c🔍 CARGO VISIBILITY DEBUG:', 'color: #FF6B00; font-weight: bold; font-size: 14px;');
-  console.log('%cTotal cargo in Redux:', 'color: #2196F3; font-weight: bold', cargo.length);
-  if (cargo.length > 0) {
-    console.log('%cCargo items:', 'color: #2196F3; font-weight: bold');
-    cargo.forEach(c => {
-      const isVisible = c.status === 'listed';
-      console.log(`  • ${c.name} [ID: ${c._id || c.id}] - Status: "${c.status}" - ${isVisible ? '✅ VISIBLE' : '❌ HIDDEN (accepted/matched)'}`);
-    });
-  } else {
-    console.log('%c⚠️ NO CARGO IN REDUX!', 'color: #FF9800; font-weight: bold');
-  }
-  console.log('%cAvailable cargo (only "listed" status):', 'color: #4CAF50; font-weight: bold', availableCargo.length);
-
-  if (pendingTrips.length === 0) {
-    console.warn('⚠️ NO AVAILABLE LOADS!');
-    console.warn('  - Trips available:', trips.length);
-    console.warn('  - Cargo available:', availableCargo.length);
-    console.warn('  - Check if cargo was created with status "listed"');
-  } else {
-    console.log(`✅ ${pendingTrips.length} load(s) available for transporter to accept`);
-  }
 
   const handleAcceptTrip = async (tripId: string, tripIdFormatted: string, cropName: string) => {
-    console.log('🔘 ACCEPT TRIP BUTTON CLICKED! Trip ID:', tripId, 'Formatted ID:', tripIdFormatted, 'Crop:', cropName);
 
     // Check if this is cargo (tripIdFormatted starts with "CARGO-") or a regular trip
     const isCargo = tripIdFormatted.startsWith('CARGO-');
     const actualId = isCargo ? tripId.replace('CARGO-', '') : tripId;
-    console.log(`📦 Is Cargo: ${isCargo}, Actual ID: ${actualId}`);
 
     // Try using browser confirm as fallback for web
     const isWeb = typeof window !== 'undefined' && !window.cordova;
-    console.log('🌐 Is Web Platform:', isWeb);
 
     const performAccept = async () => {
       try {
-        console.log(`🚀 Accepting ${isCargo ? 'cargo' : 'trip'} for ID:`, actualId);
 
         if (isCargo) {
           // Handle cargo acceptance
@@ -288,8 +222,6 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             throw new Error('User not logged in');
           }
 
-          console.log('📦 Creating order for cargo:', cargoItem.name);
-          console.log('👤 Transporter ID:', transporterId);
 
           // 3. Calculate transport fee based on DISTANCE and VEHICLE TYPE
           const pickupLat = cargoItem.location?.latitude || -1.9536;
@@ -317,9 +249,6 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           // 🚚 Truck: 800 RWF/km (>500kg)
           const transportFee = calculateShippingCost(distance, suggestedVehicleId);
 
-          console.log(`📏 Distance: ${distance} km`);
-          console.log(`🚗 Vehicle: ${vehicleType?.name} (${vehicleType?.baseRatePerKm} RWF/km)`);
-          console.log(`💰 Transport Fee: ${transportFee} RWF`);
 
           // 4. Create an order/transport request
           const orderData = {
@@ -345,18 +274,14 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
           // 4. Create the order
           const orderResult = await dispatch(createOrder(orderData) as any).unwrap();
-          console.log('✅ Order created successfully:', orderResult);
-
-          // 5. Update cargo status to 'matched'
+                    // 5. Update cargo status to 'matched'
           const cargoResult = await dispatch(
             updateCargo({ id: actualId, data: { status: 'matched' } }) as any
           ).unwrap();
-          console.log('✅ Cargo status updated to matched:', cargoResult);
-        } else {
+                  } else {
           // Handle regular trip acceptance
           const result = await dispatch(acceptTrip(actualId) as any).unwrap();
-          console.log('✅ Trip acceptance successful:', result);
-        }
+                  }
 
         return true;
       } catch (error: any) {
@@ -372,26 +297,21 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
     if (isWeb) {
       const confirmed = window.confirm(`Accept this ${isCargo ? 'cargo' : 'trip'}? Transport ${cropName}`);
-      console.log('✔️ Browser confirm result:', confirmed);
 
       if (confirmed) {
         try {
           await performAccept();
 
           // Refresh data immediately after accepting
-          console.log('🔄 Refreshing data after accepting trip...');
           await dispatch(fetchTrips() as any);
           await dispatch(fetchCargo() as any);
           await dispatch(fetchOrders() as any);
-          console.log('✅ Data refreshed after trip acceptance');
-
-          showSuccess('Trip accepted! Check My Trips to mark complete!');
+                    showSuccess('Trip accepted! Check My Trips to mark complete!');
           setTimeout(() => navigation.navigate('Home'), 1500);
         } catch (error: any) {
           showError('Error: ' + error.message);
         }
       } else {
-        console.log('❌ User cancelled the action');
       }
     } else {
       // Native/mobile platform - use Alert.alert
@@ -404,13 +324,10 @@ export default function AvailableLoadsScreen({ navigation }: any) {
               await performAccept();
 
               // Refresh data immediately after accepting
-              console.log('🔄 Refreshing data after accepting trip...');
               await dispatch(fetchTrips() as any);
               await dispatch(fetchCargo() as any);
               await dispatch(fetchOrders() as any);
-              console.log('✅ Data refreshed after trip acceptance');
-
-              showSuccess('Trip accepted! Check My Trips to mark complete!');
+                            showSuccess('Trip accepted! Check My Trips to mark complete!');
               setTimeout(() => navigation.navigate('Home'), 1500);
             } catch (error: any) {
               showError(error.message);

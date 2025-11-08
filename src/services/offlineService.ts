@@ -45,7 +45,6 @@ export const saveToOfflineQueue = async (
     queue.push(request);
     await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
     
-    console.log(`✅ Saved ${type} to offline queue:`, request.id);
     return request.id;
   } catch (error) {
     console.error('Error saving to offline queue:', error);
@@ -75,19 +74,16 @@ export const syncOfflineQueue = async (
   const isOnline = await checkConnectivity();
   
   if (!isOnline) {
-    console.log('⚠️ Device is offline, skipping sync');
-    return { success: 0, failed: 0 };
+        return { success: 0, failed: 0 };
   }
   
   const queue = await getOfflineQueue();
   const pendingRequests = queue.filter(req => req.status === 'pending');
   
   if (pendingRequests.length === 0) {
-    console.log('✅ No pending requests to sync');
-    return { success: 0, failed: 0 };
+        return { success: 0, failed: 0 };
   }
   
-  console.log(`🔄 Syncing ${pendingRequests.length} offline requests...`);
   
   let successCount = 0;
   let failedCount = 0;
@@ -110,7 +106,6 @@ export const syncOfflineQueue = async (
       await removeFromQueue(request.id);
       successCount++;
       
-      console.log(`✅ Synced request ${request.id}`);
     } catch (error) {
       console.error(`❌ Failed to sync request ${request.id}:`, error);
       
@@ -128,7 +123,6 @@ export const syncOfflineQueue = async (
     }
   }
   
-  console.log(`✅ Sync complete: ${successCount} success, ${failedCount} failed`);
   return { success: successCount, failed: failedCount };
 };
 
@@ -210,8 +204,7 @@ export const getLocalOrders = async (): Promise<any[]> => {
 export const clearSyncedData = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(OFFLINE_ORDERS_KEY);
-    console.log('✅ Cleared synced local data');
-  } catch (error) {
+      } catch (error) {
     console.error('Error clearing synced data:', error);
   }
 };
@@ -233,10 +226,8 @@ export const setupNetworkListener = (
 ): (() => void) => {
   const unsubscribe = NetInfo.addEventListener(state => {
     if (state.isConnected) {
-      console.log('📶 Network connected');
       onOnline();
     } else {
-      console.log('📵 Network disconnected');
       onOffline();
     }
   });

@@ -44,7 +44,6 @@ export default function TestScreen({ navigation }: any) {
       capturedLogs.push(`ERROR: ${error}`);
       setLogs(capturedLogs);
     } finally {
-      console.log = originalLog;
       setIsRunning(false);
     }
   };

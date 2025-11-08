@@ -49,19 +49,13 @@ export default function TripHistoryScreen({ navigation }: any) {
   }, [dispatch]);
 
   // TEMPORARY: Log all trips for debugging
-  console.log('🔍 TripHistoryScreen - All trips:', trips);
-  console.log('🔍 User ID:', user?.id || user?._id);
-
-  // Get trip history for user
+      // Get trip history for user
   const myTrips = useMemo(() => {
     const userId = user?.id || user?._id || '';
     const filtered = getTripHistoryForTransporter(trips, userId);
-    console.log('🚗 My trips after filtering:', filtered.length, 'out of', trips.length);
-    console.log('🚗 My trips:', filtered);
 
     // TEMPORARY: Show ALL trips for debugging
-    console.log('⚠️ TEMPORARILY SHOWING ALL TRIPS');
-    return trips; // Show all trips temporarily
+        return trips; // Show all trips temporarily
   }, [trips, user?.id, user?._id]);
 
   // Apply status filter and search

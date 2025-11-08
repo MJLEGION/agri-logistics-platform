@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { validateTextField, validatePositiveNumber, validatePrice, validateFutureDate } from '../../utils/formValidation';
 
 // Simple Calendar Component for Web
 const Calendar = ({ date, onChange, theme }: any) => {
@@ -140,26 +141,39 @@ export default function ListCargoScreen({ navigation }: any) {
   };
 
   const handleSubmit = async () => {
-    console.log('%c🎯 ListCargoScreen: handleSubmit called', 'color: #2196F3; font-size: 14px; font-weight: bold');
-    
-    // Validation
-    console.log('%c📋 Form validation:', 'color: #2196F3; font-weight: bold', {
-      cargoName: !!cargoName,
-      quantity: !!quantity,
-      readyDate: !!readyDate,
-      user: !!user,
-      shipperId: user?._id || user?.id
-    });
-    
-    if (!cargoName || !quantity || !readyDate) {
-      console.error('%c❌ Form validation failed:', 'color: #F44336; font-weight: bold');
-      Alert.alert('Error', 'Please fill all required fields');
-      return;
+    // Comprehensive validation
+    const errors: string[] = [];
+
+    // Validate cargo name
+    const nameResult = validateTextField(cargoName, 'Cargo name', 2, 100);
+    if (!nameResult.isValid) errors.push(nameResult.error!);
+
+    // Validate quantity
+    const quantityResult = validatePositiveNumber(quantity, 'Quantity');
+    if (!quantityResult.isValid) errors.push(quantityResult.error!);
+
+    // Validate price per unit (if provided)
+    if (pricePerUnit) {
+      const priceResult = validatePrice(pricePerUnit);
+      if (!priceResult.isValid) errors.push(priceResult.error!);
     }
 
+    // Validate ready date
+    if (!readyDate) {
+      errors.push('Ready date is required');
+    } else {
+      const dateResult = validateFutureDate(readyDate);
+      if (!dateResult.isValid) errors.push(dateResult.error!);
+    }
+
+    // Validate user
     if (!user?._id && !user?.id) {
-      console.error('%c❌ User not logged in or user ID missing:', 'color: #F44336; font-weight: bold', user);
-      Alert.alert('Error', 'User ID is missing. Please try logging in again.');
+      errors.push('User not logged in. Please try logging in again.');
+    }
+
+    // If there are validation errors, show them
+    if (errors.length > 0) {
+      Alert.alert('Validation Error', errors.join('\n'));
       return;
     }
 
@@ -178,17 +192,13 @@ export default function ListCargoScreen({ navigation }: any) {
       },
     };
 
-    console.log('%c📦 ListCargoScreen: Submitting cargo', 'color: #4CAF50; font-weight: bold');
-    console.log('%cCargo details:', 'color: #2196F3; font-weight: bold', cargoData);
 
     try {
       const result = await dispatch(createCargo(cargoData));
       
       // Check if the action was fulfilled
       if (result.type.includes('fulfilled')) {
-        console.log('✅ ListCargoScreen: Cargo created successfully:', result.payload);
-        
-        // Use setTimeout to ensure alert is shown
+                // Use setTimeout to ensure alert is shown
         setTimeout(() => {
           Alert.alert(
             'Success! ✅',

@@ -74,12 +74,6 @@ export default function PaymentModal({
       const formattedPhone = formatPhoneNumber(phoneNumber);
       const paymentMethod = detectPaymentProvider(formattedPhone);
 
-      console.log('💳 Initiating payment...', {
-        amount,
-        phone: formattedPhone,
-        method: paymentMethod,
-      });
-
       const response = await initiateFlutterwavePayment({
         amount,
         phoneNumber: formattedPhone,
@@ -91,7 +85,6 @@ export default function PaymentModal({
         paymentMethod,
       });
 
-      console.log('💳 Payment response:', response);
 
       if (response.success && response.referenceId) {
         setReferenceId(response.referenceId);
@@ -105,8 +98,7 @@ export default function PaymentModal({
             {
               text: 'I See The Prompt',
               onPress: () => {
-                console.log('✅ User confirmed receiving the prompt');
-              },
+                              },
             },
             {
               text: 'Cancel',
@@ -139,13 +131,11 @@ export default function PaymentModal({
       setPollCount(count);
 
       try {
-        console.log(`🔍 Checking payment status... (attempt ${count}/${maxAttempts})`);
 
         const status = await checkFlutterwavePaymentStatus(refId);
 
         if (status.success || status.status === 'completed') {
-          console.log('✅ Payment successful!', status);
-          setPaymentStatus('success');
+                    setPaymentStatus('success');
           clearInterval(interval);
           setPollingInterval(null);
           setIsProcessing(false);
@@ -170,7 +160,6 @@ export default function PaymentModal({
             );
           }, 500);
         } else if (status.status === 'failed') {
-          console.log('❌ Payment failed');
           setPaymentStatus('failed');
           clearInterval(interval);
           setPollingInterval(null);
@@ -181,7 +170,6 @@ export default function PaymentModal({
             status.message || 'Your payment could not be processed. Please try again.'
           );
         } else if (count >= maxAttempts) {
-          console.log('⏱️ Payment polling timeout');
           setPaymentStatus('failed');
           clearInterval(interval);
           setPollingInterval(null);

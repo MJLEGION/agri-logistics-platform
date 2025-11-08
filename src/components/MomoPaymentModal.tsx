@@ -167,12 +167,6 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
     setStep('processing');
 
     try {
-      console.log('💳 Processing demo payment...', {
-        amount,
-        provider: detectedProvider,
-        phone: phoneNumber,
-      });
-
       // Initiate mock payment (demo mode - no real API needed)
       const result = await initiateMockPayment({
         amount,
@@ -186,9 +180,7 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
       });
 
       if (result.success && result.referenceId) {
-        console.log('✅ Payment initiated successfully:', result.referenceId);
-
-        // User will receive payment prompt on their phone
+                // User will receive payment prompt on their phone
         Alert.alert(
           'Payment Initiated 📱',
           `You will receive a payment prompt on ${formatPhoneNumber(phoneNumber)}. Please confirm to complete payment.`,

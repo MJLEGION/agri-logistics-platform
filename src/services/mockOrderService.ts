@@ -152,7 +152,6 @@ export const mockOrderService = {
       }
       return mockOrders;
     } catch (error) {
-      console.log('Using default mock orders');
       return mockOrders;
     }
   },
@@ -168,7 +167,6 @@ export const mockOrderService = {
       }
       return mockOrders;
     } catch (error) {
-      console.log('Using default mock orders');
       return mockOrders;
     }
   },
@@ -178,7 +176,6 @@ export const mockOrderService = {
    */
   createOrder: async (orderData: any) => {
     try {
-      console.log('🔧 Mock createOrder called with data:', orderData);
 
       const orderId = generateId();
       const newOrder = {
@@ -210,8 +207,7 @@ export const mockOrderService = {
 
       mockOrders = [...mockOrders, newOrder];
       await AsyncStorage.setItem('mockOrders', JSON.stringify(mockOrders));
-      console.log('✅ Mock order created:', newOrder);
-      return newOrder;
+            return newOrder;
     } catch (error: any) {
       console.error('❌ Error in createOrder:', error.message);
       throw error;
@@ -247,11 +243,8 @@ export const mockOrderService = {
    */
   acceptOrder: async (id: string, transporterId?: string) => {
     try {
-      console.log('🔍 Mock acceptOrder: Looking for order with ID:', id);
-      console.log('📋 Mock acceptOrder: Available orders:', mockOrders.map(o => ({ _id: o._id, id: o.id, status: o.status })));
       
       const orderIndex = mockOrders.findIndex((o) => o._id === id || o.id === id);
-      console.log('🎯 Mock acceptOrder: Found order at index:', orderIndex);
 
       if (orderIndex === -1) {
         const errorMsg = `Order not found with ID: ${id}`;
@@ -273,8 +266,7 @@ export const mockOrderService = {
       mockOrders = [...mockOrders.slice(0, orderIndex), updatedOrder, ...mockOrders.slice(orderIndex + 1)];
       await AsyncStorage.setItem('mockOrders', JSON.stringify(mockOrders));
       
-      console.log('✅ Mock acceptOrder: Order updated successfully:', updatedOrder);
-      return updatedOrder;
+            return updatedOrder;
     } catch (error: any) {
       console.error('❌ Error in acceptOrder:', error.message);
       throw error;
@@ -286,10 +278,7 @@ export const mockOrderService = {
    */
   completeDelivery: async (id: string) => {
     try {
-      console.log('🔍 Mock completeDelivery: Looking for order with ID:', id);
-      
-      const orderIndex = mockOrders.findIndex((o) => o._id === id || o.id === id);
-      console.log('🎯 Mock completeDelivery: Found order at index:', orderIndex);
+            const orderIndex = mockOrders.findIndex((o) => o._id === id || o.id === id);
 
       if (orderIndex === -1) {
         const errorMsg = `Order not found with ID: ${id}`;
@@ -311,8 +300,7 @@ export const mockOrderService = {
       mockOrders = [...mockOrders.slice(0, orderIndex), updatedOrder, ...mockOrders.slice(orderIndex + 1)];
       await AsyncStorage.setItem('mockOrders', JSON.stringify(mockOrders));
       
-      console.log('✅ Mock completeDelivery: Order updated successfully:', updatedOrder);
-      return updatedOrder;
+            return updatedOrder;
     } catch (error: any) {
       console.error('❌ Error in completeDelivery:', error.message);
       throw error;
@@ -329,7 +317,6 @@ export const mockOrderService = {
         mockOrders = JSON.parse(stored);
       }
     } catch (error) {
-      console.log('Using default mock orders');
     }
   },
 };

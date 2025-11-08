@@ -12,6 +12,8 @@ import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import RateTransporterModal from '../../components/RateTransporterModal';
 import Toast, { useToast } from '../../components/Toast';
+import * as backendRatingService from '../../services/backendRatingService';
+import { logger } from '../../utils/logger';
 
 export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -24,14 +26,17 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { toast, showSuccess, showError, hideToast } = useToast();
   const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
-  // TEMPORARY: Show ALL orders for debugging
-  console.log('🔍 ALL ORDERS:', orders);
-  console.log('🔍 ALL CARGO:', cargo);
+  // Filter orders to show only those belonging to current shipper
+  const shipperOrders = useMemo(() => {
+    if (!user?._id && !user?.id) return [];
 
-  // Simplified: Just show all orders (we'll fix filtering later)
-  const shipperOrders = orders;
-
-  console.log('📦 Showing all orders temporarily:', shipperOrders.length);
+    const userId = user._id || user.id;
+    // Show orders where the shipper/farmer is the current user
+    return orders.filter(order => {
+      const orderShipperId = order.shipperId || order.farmerId;
+      return orderShipperId === userId;
+    });
+  }, [orders, user]);
 
   // Filter orders based on search query
   const filteredOrders = useMemo(() => {
@@ -96,27 +101,30 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
 
   const handleSubmitRating = async (rating: number, comment: string) => {
     try {
-      // TODO: Send rating to backend API
-      console.log('📝 Submitting rating:', {
-        orderId: selectedOrder?._id || selectedOrder?.id,
-        transporterId: selectedOrder?.transporterId,
+      if (!selectedOrder?.transporterId) {
+        showError('No transporter assigned to this order');
+        return;
+      }
+
+      // Submit rating to backend API
+      await backendRatingService.createRating({
+        ratedUserId: selectedOrder.transporterId,
+        tripId: selectedOrder._id || selectedOrder.id,
         rating,
         comment,
       });
 
-      // TODO: Call API to submit rating
-      // await api.post('/ratings', {
-      //   orderId: selectedOrder?._id || selectedOrder?.id,
-      //   transporterId: selectedOrder?.transporterId,
-      //   rating,
-      //   comment,
-      // });
+      logger.info('Rating submitted successfully', {
+        orderId: selectedOrder._id || selectedOrder.id,
+        rating,
+      });
 
       showSuccess('Rating submitted successfully! Thank you for your feedback.');
       setRatingModalVisible(false);
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-      showError('Failed to submit rating. Please try again.');
+    } catch (error: any) {
+      logger.error('Failed to submit rating', error);
+      const errorMessage = error?.message || 'Failed to submit rating. Please try again.';
+      showError(errorMessage);
     }
   };
 

@@ -7,22 +7,18 @@ import mockAuthService from './mockAuthService';
  */
 export const register = async (userData) => {
   try {
-    console.log('📝 Attempting registration with real API...');
     const response = await api.post('/auth/register', userData);
     if (response.data.token) {
       await AsyncStorage.setItem('token', response.data.token);
     }
-    console.log('✅ Registration successful (Real API)');
-    return response.data;
+        return response.data;
   } catch (error) {
-    console.log('⚠️ Real API failed, using mock auth service...');
-    console.error('API Error:', error.message);
+        console.error('API Error:', error.message);
     
     // Fallback to mock auth service
     try {
       const result = await mockAuthService.register(userData);
-      console.log('✅ Registration successful (Mock Service)');
-      return result;
+            return result;
     } catch (mockError) {
       console.error('❌ Mock registration failed:', mockError.message);
       throw new Error(mockError.message);
@@ -35,7 +31,6 @@ export const register = async (userData) => {
  */
 export const login = async (credentials) => {
   try {
-    console.log('🔐 Attempting login with real API...');
     // Only send phone and password - NOT role
     const response = await api.post('/auth/login', {
       phone: credentials.phone,
@@ -44,17 +39,14 @@ export const login = async (credentials) => {
     if (response.data.token) {
       await AsyncStorage.setItem('token', response.data.token);
     }
-    console.log('✅ Login successful (Real API)');
-    return response.data;
+        return response.data;
   } catch (error) {
-    console.log('⚠️ Real API failed, using mock auth service...');
-    console.error('API Error:', error.message);
+        console.error('API Error:', error.message);
     
     // Fallback to mock auth service
     try {
       const result = await mockAuthService.login(credentials);
-      console.log('✅ Login successful (Mock Service)');
-      return result;
+            return result;
     } catch (mockError) {
       console.error('❌ Mock login failed:', mockError.message);
       throw new Error(mockError.message);
@@ -78,8 +70,7 @@ export const getCurrentUser = async () => {
     const response = await api.get('/auth/me');
     return response.data;
   } catch (error) {
-    console.log('⚠️ Real API failed, using mock service...');
-    // Fallback to mock auth service
+        // Fallback to mock auth service
     return await mockAuthService.getCurrentUser();
   }
 };
@@ -90,8 +81,7 @@ export const getCurrentUser = async () => {
 export const initializeAuth = async () => {
   try {
     await mockAuthService.initializeMockUsers();
-    console.log('✅ Mock auth initialized');
-  } catch (error) {
+      } catch (error) {
     console.error('❌ Error initializing mock auth:', error);
   }
 };
@@ -101,12 +91,10 @@ export const initializeAuth = async () => {
  */
 export const initializeAllServices = async () => {
   try {
-    console.log('🚀 Initializing all mock services...');
     await mockAuthService.initializeMockUsers();
     // Note: mockOrderService and mockCropService don't need explicit initialization
     // as they use default data, but you can add them if needed
-    console.log('✅ All mock services initialized');
-  } catch (error) {
+      } catch (error) {
     console.error('❌ Error initializing mock services:', error);
   }
 };

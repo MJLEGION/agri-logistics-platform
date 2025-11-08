@@ -247,11 +247,8 @@ export default function RegisterScreen({ route, navigation }: any) {
     if (!validateForm()) return;
 
     try {
-      console.log('🔐 Attempting registration:', { name, phone, role });
       await dispatch(register({ name, phone, password, role })).unwrap();
-      console.log('✅ Registration successful!');
-
-      // Trigger confetti
+            // Trigger confetti
       setShowConfetti(true);
       confettiRef.current?.start();
 

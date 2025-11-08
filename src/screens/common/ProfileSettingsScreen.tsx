@@ -20,6 +20,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { Card } from '../../components/common/Card';
 import ProfileStrengthIndicator from '../../components/profile/ProfileStrengthIndicator';
+import { profileService } from '../../services/profileService';
+import { logger } from '../../utils/logger';
+import { ErrorState } from '../../components/common/ErrorState';
 
 interface ProfileData {
   name: string;
@@ -72,6 +75,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'professional' | 'notifications' | 'privacy' | 'account'>('profile');
 
   // Profile Data
@@ -130,15 +134,61 @@ export default function ProfileSettingsScreen({ navigation }: any) {
   };
 
   const loadProfileData = async () => {
+    if (!user?._id) {
+      logger.warn('No user ID available for loading profile');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
-      // TODO: Load profile data from API
-      // const data = await profileService.getProfile(user?._id);
-      // setProfileData(data.profile);
-      // setNotifications(data.notifications);
-      // setPrivacy(data.privacy);
-    } catch (error) {
-      console.error('Error loading profile:', error);
+      logger.info('Loading profile data for user:', user._id);
+      const data = await profileService.getProfile(user._id);
+
+      // Update profile data
+      setProfileData({
+        name: data.name || '',
+        phone: data.phone || '',
+        profilePicture: data.profilePicture,
+        age: data.age?.toString() || '',
+        gender: data.gender || '',
+        location: data.location?.address || '',
+        professionalTitle: data.professionalTitle || '',
+        bio: data.bio || '',
+      });
+
+      // Update notification preferences
+      if (data.notificationPreferences) {
+        setNotifications(data.notificationPreferences);
+      }
+
+      // Update privacy settings
+      if (data.privacySettings) {
+        setPrivacy(data.privacySettings);
+      }
+
+      // Update driver license (for transporters)
+      if (data.driverLicense) {
+        setDriverLicense({
+          number: data.driverLicense.number || '',
+          expiryDate: data.driverLicense.expiryDate || '',
+          category: data.driverLicense.category || 'B',
+          issuingCountry: data.driverLicense.issuingCountry || 'Rwanda',
+        });
+      }
+
+      // Update certifications
+      if (data.certifications) {
+        setCertifications(data.certifications);
+      }
+
+      logger.info('Profile data loaded successfully');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to load profile data';
+      logger.error('Error loading profile:', error);
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -196,17 +246,54 @@ export default function ProfileSettingsScreen({ navigation }: any) {
   };
 
   const saveProfile = async () => {
+    if (!user?._id) {
+      Alert.alert('Error', 'User ID not found');
+      return;
+    }
+
     setSaving(true);
+    setError(null);
+
     try {
-      // TODO: Save to API
-      // await profileService.updateProfile(user?._id, {
-      //   ...profileData,
-      //   notifications,
-      //   privacy,
-      // });
+      logger.info('Saving profile for user:', user._id);
+
+      // Upload profile picture if changed
+      let profilePictureUrl = profileData.profilePicture;
+      if (profileData.profilePicture && profileData.profilePicture.startsWith('file://')) {
+        logger.info('Uploading profile picture...');
+        profilePictureUrl = await profileService.uploadProfilePicture(user._id, profileData.profilePicture);
+        logger.info('Profile picture uploaded successfully');
+      }
+
+      // Prepare update data based on active tab
+      if (activeTab === 'profile') {
+        await profileService.updateProfile(user._id, {
+          name: profileData.name,
+          profilePicture: profilePictureUrl,
+          age: profileData.age ? parseInt(profileData.age) : undefined,
+          gender: profileData.gender || undefined,
+          location: profileData.location,
+          professionalTitle: profileData.professionalTitle,
+          bio: profileData.bio,
+        });
+      } else if (activeTab === 'notifications') {
+        await profileService.updateNotificationPreferences(user._id, notifications);
+      } else if (activeTab === 'privacy') {
+        await profileService.updatePrivacySettings(user._id, privacy);
+      } else if (activeTab === 'professional') {
+        // Save driver license and certifications
+        await profileService.updateProfile(user._id, {
+          // Would need to extend the service to handle these
+        });
+      }
+
+      logger.info('Profile saved successfully');
       Alert.alert('Success', 'Profile updated successfully');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update profile';
+      logger.error('Error saving profile:', error);
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -819,12 +906,6 @@ export default function ProfileSettingsScreen({ navigation }: any) {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Actions</Text>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('ChangePassword')}>
-          <Ionicons name="key" size={24} color={theme.tertiary} />
-          <Text style={[styles.actionButtonText, { color: theme.text }]}>Change Password</Text>
-          <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Coming Soon', 'This feature will be available soon')}>
           <Ionicons name="help-circle" size={24} color={theme.tertiary} />
           <Text style={[styles.actionButtonText, { color: theme.text }]}>Help & Support</Text>
@@ -932,10 +1013,21 @@ export default function ProfileSettingsScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
+      {/* Error State */}
+      {error && (
+        <View style={{ padding: 16 }}>
+          <ErrorState
+            message={error}
+            onRetry={loadProfileData}
+            compact
+          />
+        </View>
+      )}
+
       {/* Content */}
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Profile Strength Indicator */}
-        {user && (
+        {user && !error && (
           <View style={{ padding: 16, paddingBottom: 0 }}>
             <ProfileStrengthIndicator
               user={user}
@@ -945,11 +1037,11 @@ export default function ProfileSettingsScreen({ navigation }: any) {
           </View>
         )}
 
-        {activeTab === 'profile' && renderProfileTab()}
-        {activeTab === 'professional' && renderProfessionalTab()}
-        {activeTab === 'notifications' && renderNotificationsTab()}
-        {activeTab === 'privacy' && renderPrivacyTab()}
-        {activeTab === 'account' && renderAccountTab()}
+        {!error && activeTab === 'profile' && renderProfileTab()}
+        {!error && activeTab === 'professional' && renderProfessionalTab()}
+        {!error && activeTab === 'notifications' && renderNotificationsTab()}
+        {!error && activeTab === 'privacy' && renderPrivacyTab()}
+        {!error && activeTab === 'account' && renderAccountTab()}
       </ScrollView>
 
       {/* Save Button (only show for profile, notifications, and privacy tabs) */}

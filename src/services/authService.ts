@@ -1,155 +1,135 @@
 // src/services/authService.ts
 import api, { setAuthToken, clearAuth } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import mockAuthService from './mockAuthService';
-import mockCargoService from './mockCargoService';
 import { LoginCredentials, RegisterData, User } from '../types';
 import { STORAGE_TOKEN_KEY, ERROR_REGISTRATION_FAILED, ERROR_LOGIN_FAILED } from '../constants';
+import { logger } from '../utils/logger';
 
 /**
- * Auth Response Type
+ * Backend Auth Response Type
+ * Matches: Node.js + Express backend response format
+ */
+interface BackendAuthResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: User;
+}
+
+/**
+ * Internal Auth Response Type (for compatibility)
  */
 interface AuthResponse {
   token: string;
   refreshToken?: string;
-  user?: User;
+  user: User;
 }
 
 /**
- * Check if mock auth is forced (useful for testing without backend)
+ * Map frontend role to backend role
+ * Frontend uses: 'shipper' | 'transporter'
+ * Backend expects: 'farmer' | 'buyer' | 'transporter'
  */
-const isMockAuthForced = (): boolean => {
-  const forceMock = process.env.FORCE_MOCK_AUTH || process.env.EXPO_PUBLIC_FORCE_MOCK_AUTH;
-  return forceMock === 'true';
+const mapFrontendRoleToBackend = (role: string): string => {
+  if (role === 'shipper') {
+    return 'farmer'; // Map shipper to farmer in backend
+  }
+  return role; // transporter stays the same
 };
 
 /**
- * Register user - tries real API first, falls back to mock
+ * Map backend role to frontend role
+ * Backend returns: 'farmer' | 'buyer' | 'transporter'
+ * Frontend uses: 'shipper' | 'transporter'
+ */
+const mapBackendRoleToFrontend = (role: string): string => {
+  if (role === 'farmer' || role === 'buyer') {
+    return 'shipper'; // Map farmer/buyer to shipper in frontend
+  }
+  return role; // transporter stays the same
+};
+
+/**
+ * Register user - connects to real backend API
  */
 export const register = async (userData: RegisterData): Promise<AuthResponse> => {
-  // Check if mock auth is forced
-  if (isMockAuthForced()) {
-    console.log('🔧 FORCE_MOCK_AUTH is enabled - using mock service only');
-    try {
-      await mockAuthService.initializeMockUsers();
-      const result = await mockAuthService.register(userData);
-      
-      if (result.token) {
-        await setAuthToken(result.token);
-        console.log('🔑 Auth token stored from mock service');
-      }
-      
-      console.log('✅ Registration successful (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : ERROR_REGISTRATION_FAILED;
-      console.error('❌ Mock registration failed:', errorMessage);
-      throw new Error(errorMessage);
-    }
-  }
-
   try {
-    console.log('📝 Attempting registration with real API...');
-    const response = await api.post<AuthResponse>('/auth/register', userData);
+    logger.info('Registering user', { phone: userData.phone, role: userData.role });
+
+    // Map frontend role to backend role
+    const backendRole = mapFrontendRoleToBackend(userData.role);
+
+    const payload = {
+      ...userData,
+      role: backendRole,
+    };
+
+    const response = await api.post<BackendAuthResponse>('/auth/register', payload);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || ERROR_REGISTRATION_FAILED);
+    }
 
     if (response.data.token) {
       await setAuthToken(response.data.token);
+      logger.info('Registration successful', { userId: response.data.user._id });
     }
 
-    console.log('✅ Registration successful (Real API)');
-    return response.data;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock auth service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    // Map backend role to frontend role
+    const user = {
+      ...response.data.user,
+      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+    };
 
-    // Fallback to mock auth service
-    try {
-      // ⚠️ CRITICAL: Ensure mock users are initialized before registration
-      console.log('🔄 Ensuring mock users are initialized...');
-      await mockAuthService.initializeMockUsers();
-      
-      const result = await mockAuthService.register(userData);
-      
-      // ⚠️ CRITICAL: Store token from mock service as well
-      if (result.token) {
-        await setAuthToken(result.token);
-        console.log('🔑 Auth token stored from mock service');
-      }
-      
-      console.log('✅ Registration successful (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : ERROR_REGISTRATION_FAILED;
-      console.error('❌ Mock registration failed:', errorMessage);
-      throw new Error(errorMessage);
-    }
+    // Return in compatible format
+    return {
+      token: response.data.token,
+      user,
+    };
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || ERROR_REGISTRATION_FAILED;
+    logger.error('Registration failed', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Login user - tries real API first, falls back to mock
+ * Login user - connects to real backend API
  */
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // Check if mock auth is forced
-  if (isMockAuthForced()) {
-    console.log('🔧 FORCE_MOCK_AUTH is enabled - using mock service only');
-    try {
-      await mockAuthService.initializeMockUsers();
-      const result = await mockAuthService.login(credentials);
-      
-      if (result.token) {
-        await setAuthToken(result.token);
-        console.log('🔑 Auth token stored from mock service');
-      }
-      
-      console.log('✅ Login successful (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : ERROR_LOGIN_FAILED;
-      console.error('❌ Mock login failed:', errorMessage);
-      throw new Error(errorMessage);
-    }
-  }
-
   try {
-    console.log('🔐 Attempting login with real API...');
-    // Only send phone and password - NOT role
-    const response = await api.post<AuthResponse>('/auth/login', {
+    logger.info('Logging in user', { phone: credentials.phone });
+
+    // Only send phone and password - NOT role (backend determines role from user record)
+    const response = await api.post<BackendAuthResponse>('/auth/login', {
       phone: credentials.phone,
       password: credentials.password,
     });
 
+    if (!response.data.success) {
+      throw new Error(response.data.message || ERROR_LOGIN_FAILED);
+    }
+
     if (response.data.token) {
       await setAuthToken(response.data.token);
+      logger.info('Login successful', { userId: response.data.user._id, role: response.data.user.role });
     }
 
-    console.log('✅ Login successful (Real API)');
-    return response.data;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock auth service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    // Map backend role to frontend role
+    const user = {
+      ...response.data.user,
+      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+    };
 
-    // Fallback to mock auth service
-    try {
-      // ⚠️ CRITICAL: Ensure mock users are initialized before login
-      console.log('🔄 Ensuring mock users are initialized...');
-      await mockAuthService.initializeMockUsers();
-      
-      const result = await mockAuthService.login(credentials);
-      
-      // ⚠️ CRITICAL: Store token from mock service as well
-      if (result.token) {
-        await setAuthToken(result.token);
-        console.log('🔑 Auth token stored from mock service');
-      }
-      
-      console.log('✅ Login successful (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : ERROR_LOGIN_FAILED;
-      console.error('❌ Mock login failed:', errorMessage);
-      throw new Error(errorMessage);
-    }
+    // Return in compatible format
+    return {
+      token: response.data.token,
+      user,
+    };
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || ERROR_LOGIN_FAILED;
+    logger.error('Login failed', error);
+    throw new Error(errorMessage);
   }
 };
 
@@ -157,61 +137,59 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
  * Logout user
  */
 export const logout = async (): Promise<void> => {
+  logger.info('Logging out user');
   await clearAuth();
-  await mockAuthService.logout();
 };
 
 /**
- * Get current user - tries real API first, falls back to mock
+ * Get current user - fetches from real backend API
  */
 export const getCurrentUser = async (): Promise<User> => {
   try {
+    logger.debug('Fetching current user from API');
     const response = await api.get<User>('/auth/me');
-    return response.data;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock service...');
-    // Fallback to mock auth service
-    return await mockAuthService.getCurrentUser();
+    logger.debug('Current user fetched successfully');
+
+    // Map backend role to frontend role
+    const user = {
+      ...response.data,
+      role: mapBackendRoleToFrontend(response.data.role) as any,
+    };
+
+    return user;
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to get current user';
+    logger.error('Failed to fetch current user', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Initialize mock users on app start
+ * Refresh authentication token
  */
-export const initializeAuth = async (): Promise<void> => {
+export const refreshToken = async (refreshToken: string): Promise<AuthResponse> => {
   try {
-    console.log('🔄 Initializing mock auth service...');
-    await mockAuthService.initializeMockUsers();
-    console.log('✅ Mock auth initialized successfully');
-  } catch (error) {
-    console.error('❌ Error initializing mock auth:', error instanceof Error ? error.message : 'Unknown error');
-  }
-};
+    logger.debug('Refreshing authentication token');
+    const response = await api.post<BackendAuthResponse>('/auth/refresh', { refreshToken });
 
-/**
- * Initialize all mock services (auth, orders, crops)
- */
-export const initializeAllServices = async (): Promise<void> => {
-  try {
-    console.log('🚀 Initializing all mock services...');
-    
-    // Initialize auth first - this loads/resets mock users
-    console.log('  → Initializing mock auth...');
-    await mockAuthService.initializeMockUsers();
-    console.log('  ✅ Mock auth initialized');
-    
-    // Initialize cargo service to load persisted data from AsyncStorage
-    console.log('  → Initializing mock cargo service...');
-    if (mockCargoService?.initializeMockCargo) {
-      await mockCargoService.initializeMockCargo();
-      console.log('  ✅ Mock cargo service initialized');
+    if (response.data.token) {
+      await setAuthToken(response.data.token);
+      logger.info('Token refreshed successfully');
     }
-    
-    console.log('✅ All mock services initialized successfully');
-  } catch (error) {
-    console.error(
-      '❌ Error initializing mock services:',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+
+    // Map backend role to frontend role
+    const user = {
+      ...response.data.user,
+      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+    };
+
+    return {
+      token: response.data.token,
+      user,
+    };
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to refresh token';
+    logger.error('Token refresh failed', error);
+    throw new Error(errorMessage);
   }
 };

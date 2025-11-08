@@ -40,21 +40,17 @@ export default function TransporterHomeScreen({ navigation }: any) {
   // Auto-refresh when screen comes into focus (e.g., returning after creating order or completing trip)
   useFocusEffect(
     React.useCallback(() => {
-      console.log('📲 TransporterHomeScreen focused - refreshing data...');
-      console.log('User ID:', user?.id || user?._id);
       
       const refreshData = async () => {
         try {
           await dispatch(fetchAllOrders());
-          console.log('✅ Orders fetched');
-        } catch (err) {
+                  } catch (err) {
           console.error('❌ Orders fetch error:', err);
         }
         
         try {
           await dispatch(fetchCargo());
-          console.log('✅ Cargo fetched');
-        } catch (err) {
+                  } catch (err) {
           console.error('❌ Cargo fetch error:', err);
         }
         
@@ -62,8 +58,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
         if (userId) {
           try {
             await dispatch(fetchTransporterTrips(userId));
-            console.log('✅ Transporter trips fetched');
-          } catch (err) {
+                      } catch (err) {
             console.error('❌ Trips fetch error:', err);
           }
         } else {
@@ -85,16 +80,9 @@ export default function TransporterHomeScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  // Calculate statistics using trips data (which updates in real-time)
-  console.log('📊 Dashboard Data:', {
-    totalTrips: trips.length,
-    trips: trips.map(t => ({ id: t._id, status: t.status, createdAt: t.createdAt }))
-  });
-
   const activeTrips = trips.filter(trip => 
     trip.status === 'in_transit' || trip.status === 'accepted'
   );
-  console.log('🚗 Active trips:', activeTrips.length);
   
   const completedToday = trips.filter(trip => {
     if (trip.status !== 'completed') return false;
@@ -102,9 +90,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
     const tripDate = new Date(trip.updatedAt || trip.createdAt).toDateString();
     return today === tripDate;
   });
-  console.log('✅ Completed today:', completedToday.length);
-
-  const todayEarnings = completedToday.reduce((sum, trip) => {
+    const todayEarnings = completedToday.reduce((sum, trip) => {
     // Use earnings from trip if available, otherwise calculate from distance
     if (trip.earnings?.totalRate) {
       return sum + trip.earnings.totalRate;
@@ -112,38 +98,20 @@ export default function TransporterHomeScreen({ navigation }: any) {
     const distance = calculateDistance(trip);
     return sum + (distance * 1000);
   }, 0);
-  console.log('💰 Today earnings:', todayEarnings);
 
   // Total completed trips (all time)
   const totalCompletedTrips = trips.filter(trip => trip.status === 'completed').length;
-  console.log('📜 Total completed trips:', totalCompletedTrips);
 
   // Count available loads from both orders and cargo (that are listed and ready)
   // Only count cargo with status 'listed' - 'matched' means it's been accepted
   const availableLoads = orders.filter(
     order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
   );
-  console.log('📋 Available orders (pending/accepted without transporter):', availableLoads.length);
 
   const availableCargo = cargo.filter(
     c => c.status === 'listed'
   );
-  console.log('📦 Available cargo (status="listed" only):', availableCargo.length);
-  console.log('📦 Cargo details:', availableCargo.map(c => ({ name: c.name, status: c.status })));
-
-  const totalAvailableLoads = availableLoads.length + availableCargo.length;
-  console.log('🎯 TOTAL AVAILABLE LOADS:', totalAvailableLoads);
-
-  // DEBUG: Log cargo status
-  console.log('%c🏠 TransporterHomeScreen - Cargo Summary:', 'color: #2196F3; font-weight: bold; font-size: 13px;');
-  console.log(`  Total cargo in Redux: ${cargo.length}`);
-  console.log(`  Available cargo (status='listed' only): ${availableCargo.length}`);
-  if (cargo.length > 0) {
-    console.log('  Cargo details:');
-    cargo.slice(0, 5).forEach(c => {
-      console.log(`    - ${c.name}: status="${c.status}" shipperId="${c.shipperId}"`);
-    });
-  }
+      const totalAvailableLoads = availableLoads.length + availableCargo.length;
 
   function calculateDistance(order: any) {
     if (!order.pickupLocation || !order.deliveryLocation) return 0;

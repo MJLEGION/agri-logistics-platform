@@ -19,7 +19,6 @@ const CROP_EMOJI_MAP: { [key: string]: string } = {
   pepper: '🫑',
   peppers: '🫑',
   cucumber: '🥒',
-  cucumber: '🥒',
   squash: '🥒',
   eggplant: '🍆',
   pumpkin: '🎃',
@@ -82,7 +81,6 @@ const CROP_EMOJI_MAP: { [key: string]: string } = {
   lentils: '🫘',
   pea: '🫛',
   peas: '🫛',
-  corn: '🌽',
 
   // Dairy
   milk: '🥛',

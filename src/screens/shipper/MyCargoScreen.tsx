@@ -18,6 +18,7 @@ import Toast, { useToast } from '../../components/Toast';
 import Divider from '../../components/Divider';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { LinearGradient } from 'expo-linear-gradient';
+import { logger } from '../../utils/logger';
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -62,18 +63,16 @@ export default function MyCargoScreen({ navigation }: any) {
     : myListings;
 
   React.useEffect(() => {
-    console.log('%c📦 MyCargoScreen: myListings updated', 'color: #4CAF50; font-size: 14px; font-weight: bold');
-    console.log('%cTotal cargo:', 'color: #2196F3; font-weight: bold', Array.isArray(cargo) ? cargo.length : 0);
-    console.log('%cMy listings:', 'color: #2196F3; font-weight: bold', myListings.length);
-    console.log('%cCargo details:', 'color: #2196F3; font-weight: bold', myListings.map(c => ({ id: c._id || c.id, name: c.name })));
-    console.log('%cUser:', 'color: #2196F3; font-weight: bold', { userId: user?._id || user?.id, userName: user?.name });
+    logger.debug('MyCargoScreen: Listings updated', {
+      totalCargo: Array.isArray(cargo) ? cargo.length : 0,
+      myListings: myListings.length,
+      userId: user?._id || user?.id,
+    });
   }, [myListings, cargo, user]);
 
   const handleDelete = (cargoId: string, cargoName: string) => {
-    console.log('%c🗑️ DELETE BUTTON PRESSED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
-    console.log('%cCargo ID:', 'color: #2196F3; font-weight: bold', cargoId);
-    console.log('%cCargo Name:', 'color: #2196F3; font-weight: bold', cargoName);
-    
+    logger.info('Delete cargo requested', { cargoId, cargoName });
+
     setPendingDeleteId(cargoId);
     setPendingDeleteName(cargoName);
     setDialogVisible(true);
@@ -81,25 +80,22 @@ export default function MyCargoScreen({ navigation }: any) {
 
   const handleConfirmDelete = async () => {
     if (!pendingDeleteId) return;
-    
-    console.log('%c✅ Confirmed delete for:', 'color: #4CAF50; font-weight: bold', pendingDeleteId);
+
+    logger.info('Deleting cargo', { cargoId: pendingDeleteId });
     setDialogVisible(false);
-    
+
     try {
-      console.log('%c🚀 Dispatching deleteCargo action...', 'color: #2196F3; font-weight: bold');
       const result = await dispatch(deleteCargo(pendingDeleteId));
-      console.log('%c📦 Delete result:', 'color: #2196F3; font-weight: bold', result);
-      console.log('%c📦 Result type:', 'color: #2196F3; font-weight: bold', result.type);
-      
+
       if (result.type.includes('fulfilled')) {
-        console.log('%c✅ Cargo deleted successfully!', 'color: #4CAF50; font-weight: bold');
+        logger.info('Cargo deleted successfully', { cargoId: pendingDeleteId });
         showSuccess('Cargo deleted successfully!');
       } else {
-        console.log('%c❌ Delete failed:', 'color: #F44336; font-weight: bold', result.payload);
+        logger.error('Failed to delete cargo', result.payload);
         showError('Failed to delete cargo. Please try again.');
       }
     } catch (error: any) {
-      console.error('%c❌ Error in handleDelete:', 'color: #F44336; font-weight: bold', error);
+      logger.error('Error deleting cargo', error);
       showError('An error occurred while deleting cargo.');
     }
     
@@ -108,7 +104,7 @@ export default function MyCargoScreen({ navigation }: any) {
   };
 
   const handleCancelDelete = () => {
-    console.log('%c❌ Delete cancelled', 'color: #FF9800; font-weight: bold');
+    logger.debug('Delete cancelled');
     setDialogVisible(false);
     setPendingDeleteId(null);
     setPendingDeleteName('');
@@ -300,10 +296,7 @@ export default function MyCargoScreen({ navigation }: any) {
                     />
                     <Button
                       title="Delete"
-                      onPress={() => {
-                        console.log('%c🎯 DELETE BUTTON ONPRESS FIRED!', 'color: #FF6B6B; font-size: 16px; font-weight: bold');
-                        handleDelete(item._id || item.id, item.name);
-                      }}
+                      onPress={() => handleDelete(item._id || item.id, item.name)}
                       variant="danger"
                       size="sm"
                       icon={<Ionicons name="trash-outline" size={16} color="#fff" />}

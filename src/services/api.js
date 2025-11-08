@@ -20,7 +20,6 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 
 // Log the API URL for debugging
-console.log(`🌐 API URL (${Platform.OS}):`, API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -37,7 +36,6 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`📤 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
@@ -49,7 +47,6 @@ api.interceptors.request.use(
 // Add response interceptor for better error logging
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
     return response;
   },
   (error) => {

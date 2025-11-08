@@ -55,7 +55,6 @@ export const OfflineBanner: React.FC = () => {
     setSyncing(true);
     try {
       const result = await syncOfflineQueue();
-      console.log('Sync result:', result);
       await updateQueueCount();
     } catch (error) {
       console.error('Sync error:', error);

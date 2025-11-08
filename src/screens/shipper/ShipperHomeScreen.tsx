@@ -161,8 +161,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   const userId = user?._id || user?.id;
   
   const myCargo = useMemo(() => {
-    console.log('🔍 ShipperHomeScreen: cargo type check:', typeof cargo, 'is array?', Array.isArray(cargo), 'value:', cargo);
-    if (!Array.isArray(cargo)) {
+        if (!Array.isArray(cargo)) {
       console.error('❌ cargo is not an array:', cargo);
       return [];
     }
@@ -173,8 +172,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   }, [cargo, userId]);
 
   const myOrders = useMemo(() => {
-    console.log('🔍 ShipperHomeScreen: orders type check:', typeof orders, 'is array?', Array.isArray(orders), 'value:', orders);
-    if (!Array.isArray(orders)) {
+        if (!Array.isArray(orders)) {
       console.error('❌ orders is not an array:', orders);
       return [];
     }
@@ -480,8 +478,8 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
             </Animated.View>
           </View>
 
-          {/* Your Ratings - Next to Quick Actions */}
-          <TouchableOpacity 
+          {/* Rate Transporters - Next to Quick Actions */}
+          <TouchableOpacity
             style={[styles.ratingActionCard, { backgroundColor: theme.card }]}
             onPress={handleOpenRatingScreen}
             activeOpacity={0.7}
@@ -492,13 +490,13 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               </View>
               <View style={styles.ratingInfo}>
                 <Text style={[styles.ratingNumber, { color: theme.text }]}>
-                  4.8
+                  Rate
                 </Text>
                 <Text style={[styles.ratingLabel, { color: theme.textSecondary }]}>
-                  Your Rating
+                  Transporters
                 </Text>
                 <Text style={[styles.ratingSubtitle, { color: theme.textSecondary }]}>
-                  24 ratings
+                  Share your feedback
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={24} color={theme.primary} style={{ marginLeft: 'auto' }} />

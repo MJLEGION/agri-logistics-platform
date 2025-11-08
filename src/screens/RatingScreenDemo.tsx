@@ -76,7 +76,6 @@ export default function RatingScreenDemo() {
   });
 
   const handleLaunchRating = (params: TestScenario['params']) => {
-    console.log('📊 Launching Rating Screen with params:', params);
     navigation.navigate('Rating' as never, params as never);
   };
 

@@ -148,13 +148,8 @@ export const mockAuthService = {
 
     // Normalize phone number and find user
     const normalizedPhone = normalizePhone(credentials.phone);
-    console.log('🔐 Login attempt:');
-    console.log('  Raw input phone:', credentials.phone);
-    console.log('  Normalized to:', normalizedPhone);
-    console.log('  Total users in system:', mockUsers.length);
     mockUsers.forEach((u, i) => {
       const normalized = normalizePhone(u.phone);
-      console.log(`    User ${i + 1}: phone="${u.phone}" → normalized="${normalized}" (name: "${u.name}")`);
     });
     
     const user = mockUsers.find((u) => normalizePhone(u.phone) === normalizedPhone);
@@ -174,9 +169,7 @@ export const mockAuthService = {
     // Save token
     await AsyncStorage.setItem('token', user.token);
     
-    console.log('✅ Login successful for:', user.name);
-
-    // Return user without password
+        // Return user without password
     return {
       _id: user._id,
       name: user.name,
@@ -256,9 +249,7 @@ export const mockAuthService = {
       // Clear old stored users and save defaults
       await AsyncStorage.removeItem('mockUsers');
       await AsyncStorage.setItem('mockUsers', JSON.stringify(mockUsers));
-      console.log('✅ Mock users initialized with defaults:', mockUsers.map(u => u.phone));
-    } catch (error) {
-      console.log('Error initializing mock users:', error);
+          } catch (error) {
       mockUsers = defaultUsers;
     }
   },

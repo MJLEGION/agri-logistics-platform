@@ -160,10 +160,7 @@ export default function ListCargoScreen({ navigation }: any) {
 
   // Auto-calculate distance and ETA when destination/quantity/origin changes
   useEffect(() => {
-    console.log('🔍 useEffect triggered - originAddress:', originAddress, 'destinationAddress:', destinationAddress, 'quantity:', quantity);
-
-    if (destinationAddress && quantity) {
-      console.log('🔄 Auto-calculating distance from', originAddress, 'to', destinationAddress);
+        if (destinationAddress && quantity) {
 
       // Geocode the origin address
       const originCoords = geocodeAddress(originAddress);
@@ -173,11 +170,6 @@ export default function ListCargoScreen({ navigation }: any) {
 
       if (presetDest) {
         // Use preset coordinates for destination
-        console.log('📍 Using geocoded origin + preset destination:', {
-          from: { address: originAddress, coords: originCoords },
-          to: { address: destinationAddress, coords: { lat: presetDest.lat, lon: presetDest.lon } }
-        });
-
         const calculatedDistance = distanceService.calculateDistance(
           originCoords.latitude,
           originCoords.longitude,
@@ -196,14 +188,9 @@ export default function ListCargoScreen({ navigation }: any) {
         const estimatedEta = distanceService.calculateETA(calculatedDistance, 45, traffic);
         setEta(estimatedEta);
 
-        console.log('✅ Distance calculated:', calculatedDistance, 'km', 'ETA:', estimatedEta, 'min', 'Cost:', cost, 'RWF');
-      } else if (destinationAddress) {
+              } else if (destinationAddress) {
         // Geocode custom destination address
         const destCoords = geocodeAddress(destinationAddress);
-        console.log('📍 Using geocoded origin + geocoded destination:', {
-          from: { address: originAddress, coords: originCoords },
-          to: { address: destinationAddress, coords: destCoords }
-        });
 
         const calculatedDistance = distanceService.calculateDistance(
           originCoords.latitude,
@@ -222,11 +209,7 @@ export default function ListCargoScreen({ navigation }: any) {
 
         const estimatedEta = distanceService.calculateETA(calculatedDistance, 45, traffic);
         setEta(estimatedEta);
-
-        console.log('✅ Distance calculated from custom address:', calculatedDistance, 'km', 'ETA:', estimatedEta, 'min', 'Cost:', cost, 'RWF');
       }
-    } else {
-      console.log('⚠️ Auto-calculation skipped - Missing:', !destinationAddress ? 'destination' : '', !quantity ? 'quantity' : '');
     }
   }, [originAddress, destinationAddress, quantity, selectedVehicle]);
 
@@ -320,7 +303,6 @@ export default function ListCargoScreen({ navigation }: any) {
   }, []);
 
   const handleSubmit = async () => {
-    console.log('%c🎯 ListCargoScreen: handleSubmit called', 'color: #2196F3; font-size: 14px; font-weight: bold');
     
     // Validation
     if (!cargoName || !quantity || !readyDate || !destinationAddress) {
@@ -376,7 +358,6 @@ export default function ListCargoScreen({ navigation }: any) {
       })(),
     };
 
-    console.log('%c📦 Submitting cargo with destination', 'color: #4CAF50; font-weight: bold', cargoData);
 
     try {
       const result = await dispatch(createCargo(cargoData as any));
@@ -416,8 +397,6 @@ export default function ListCargoScreen({ navigation }: any) {
   const vehicleType = getVehicleType(selectedVehicle);
 
   // Debug: Log values before rendering
-  console.log('🎨 Render - distance:', distance, 'vehicleType:', vehicleType, 'selectedVehicle:', selectedVehicle);
-  console.log('🎨 ETA section will display:', distance > 0 && vehicleType ? 'YES' : 'NO');
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

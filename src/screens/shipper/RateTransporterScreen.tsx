@@ -17,6 +17,8 @@ import Button from '../../components/Button';
 import Avatar from '../../components/Avatar';
 import Badge from '../../components/Badge';
 import Toast from '../../components/Toast';
+import * as backendRatingService from '../../services/backendRatingService';
+import { logger } from '../../utils/logger';
 
 interface OrderToRate {
   id: string;
@@ -89,25 +91,31 @@ const RateTransporterScreen = ({ navigation }: any) => {
 
     setIsSubmitting(true);
     try {
-      // TODO: Call API to submit rating
-      // await ratingService.submitRating({
-      //   orderId: selectedOrder.id,
-      //   transporterId: selectedOrder.transporterId,
-      //   rating,
-      //   comment,
-      // });
+      // Submit rating to backend API
+      await backendRatingService.createRating({
+        ratedUserId: selectedOrder.transporterId,
+        tripId: selectedOrder.id,
+        rating,
+        comment,
+      });
+
+      logger.info('Rating submitted successfully', {
+        orderId: selectedOrder.id,
+        rating,
+      });
 
       showToast('Rating submitted successfully! 🎉');
-      
+
       // Reset form and deselect order
       setTimeout(() => {
         setSelectedOrderId(null);
         setRating(0);
         setComment('');
       }, 1500);
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-      showToast('Failed to submit rating. Please try again.');
+    } catch (error: any) {
+      logger.error('Failed to submit rating', error);
+      const errorMessage = error?.message || 'Failed to submit rating. Please try again.';
+      showToast(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

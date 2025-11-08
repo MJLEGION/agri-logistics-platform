@@ -21,6 +21,7 @@ import IconButton from '../../components/IconButton';
 import EmptyState from '../../components/EmptyState';
 import Toast, { useToast } from '../../components/Toast';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
+import { logger } from '../../utils/logger';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -64,8 +65,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
   });
 
   useEffect(() => {
-    console.log('✅ ActiveTripsScreen mounted/updated');
-    console.log('📊 State:', {
+    logger.debug('ActiveTripsScreen state updated', {
       activeTrips: activeTrips.length,
       activeOrders: activeOrders.length,
       totalActive: allActiveItems.length,
@@ -97,42 +97,34 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
   const handleCompleteTrip = async (item: any) => {
     const itemId = item._id || item.id || item.tripId;
-    console.log('🔵 BUTTON CLICKED - handleCompleteTrip called with item:', itemId, 'Type:', item.cargoId ? 'ORDER' : 'TRIP');
+    const isOrder = !!item.cargoId;
+
+    logger.info('Completing trip/order', { itemId, type: isOrder ? 'ORDER' : 'TRIP' });
 
     try {
       setCompletingTripId(itemId);
 
-      // Check if this is an order (has cargoId) or a trip (has tripId without cargoId)
-      const isOrder = !!item.cargoId;
-
       if (isOrder) {
-        console.log('🚀 Completing ORDER:', itemId);
-        const result = await dispatch(
+        logger.debug('Completing order', { orderId: itemId });
+        await dispatch(
           updateOrder({ id: itemId, data: { status: 'completed' } }) as any
         ).unwrap();
-        console.log('✅ Order completion successful:', result);
+        logger.info('Order completed successfully', { orderId: itemId });
       } else {
-        console.log('🚀 Completing TRIP:', itemId);
-        const result = await dispatch(
+        logger.debug('Completing trip', { tripId: itemId });
+        await dispatch(
           completeTrip(itemId) as any
         ).unwrap();
-        console.log('✅ Trip completion successful:', result);
+        logger.info('Trip completed successfully', { tripId: itemId });
       }
 
       showSuccess('Delivery marked as completed!');
-      console.log('🔄 Refreshing trips and orders list after completion');
       setCompletingTripId(null);
       dispatch(fetchAllTrips() as any);
       dispatch(fetchOrders() as any);
     } catch (error: any) {
       setCompletingTripId(null);
-      console.error('❌ Complete error:', error);
-      console.error('Error details:', {
-        message: error?.message,
-        name: error?.name,
-        code: error?.code,
-        fullError: String(error)
-      });
+      logger.error('Failed to complete delivery', error);
 
       const errorMessage = error?.message || String(error) || 'Failed to complete delivery';
       showError(errorMessage);

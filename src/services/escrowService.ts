@@ -105,9 +105,7 @@ class EscrowServiceClass {
       // Add to index
       await this.addToIndex(escrowId, farmerId, transporterId, orderId);
 
-      console.log('✅ Escrow created:', { escrowId, amount, status: 'held' });
-
-      return escrow;
+            return escrow;
     } catch (error) {
       console.error('❌ Failed to create escrow:', error);
       throw error;
@@ -165,9 +163,7 @@ class EscrowServiceClass {
       // Log release
       await this.logTransaction(release, 'release');
 
-      console.log('✅ Escrow released:', { escrowId, amount: escrow.amount, releasedTo: escrow.transporterId });
-
-      return release;
+            return release;
     } catch (error) {
       console.error('❌ Failed to release escrow:', error);
       throw error;
@@ -215,9 +211,7 @@ class EscrowServiceClass {
       // Log refund
       await this.logTransaction(refund, 'refund');
 
-      console.log('✅ Escrow refunded:', { escrowId, amount: escrow.amount, reason });
-
-      return refund;
+            return refund;
     } catch (error) {
       console.error('❌ Failed to refund escrow:', error);
       throw error;
@@ -254,9 +248,7 @@ class EscrowServiceClass {
         JSON.stringify(escrow)
       );
 
-      console.log('⚠️ Escrow disputed:', { escrowId, reason, initiatedBy });
-
-      return escrow;
+            return escrow;
     } catch (error) {
       console.error('❌ Failed to dispute escrow:', error);
       throw error;

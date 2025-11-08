@@ -91,7 +91,6 @@ export const geocodeAddress = (address: string): LocationCoords => {
     if (zoneMatch) {
       const zoneCode = 'kk' + zoneMatch[1];
       if (KIGALI_ZONES[zoneCode]) {
-        console.log(`📍 Geocoded Kigali zone "${address}" to coordinates`);
         return KIGALI_ZONES[zoneCode];
       }
       
@@ -103,7 +102,6 @@ export const geocodeAddress = (address: string): LocationCoords => {
         const latOffset = ((zoneNum % 20) - 10) * 0.003; // ~300m grid
         const lngOffset = ((Math.floor(zoneNum / 20) % 20) - 10) * 0.003; // ~300m grid
         
-        console.log(`📍 Geocoded Kigali zone "${address}" to calculated coordinates`);
         return {
           latitude: -1.9536 + latOffset,
           longitude: 30.0605 + lngOffset,
@@ -265,7 +263,6 @@ export const reverseGeocode = async (
       if (data.address.country) parts.push(data.address.country);
 
       const formattedAddress = parts.join(', ') || data.display_name;
-      console.log(`📍 Reverse geocoded: ${latitude}, ${longitude} → ${formattedAddress}`);
       return formattedAddress;
     }
   } catch (error) {

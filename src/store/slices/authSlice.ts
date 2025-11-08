@@ -79,13 +79,8 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = {
-          _id: action.payload._id,
-          id: action.payload._id, // For backward compatibility
-          name: action.payload.name,
-          phone: action.payload.phone,
-          role: action.payload.role,
-        };
+        // action.payload is { token: string, user: User }
+        state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
@@ -102,13 +97,8 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = {
-          _id: action.payload._id,
-          id: action.payload._id, // For backward compatibility
-          name: action.payload.name,
-          phone: action.payload.phone,
-          role: action.payload.role,
-        };
+        // action.payload is { token: string, user: User }
+        state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;

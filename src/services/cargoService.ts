@@ -1,157 +1,254 @@
 // src/services/cargoService.ts
 import api from './api';
-import mockCargoService from './mockCargoService';
 import { Cargo } from '../types';
+import { logger } from '../utils/logger';
 
 /**
- * Get all cargo - tries real API first, falls back to mock
+ * Backend Crop Response Type
+ * Matches: Node.js + Express backend response format
+ */
+interface BackendCropResponse {
+  success: boolean;
+  message: string;
+  data: any; // Single crop or array of crops
+}
+
+/**
+ * Backend Crop Model (from MongoDB)
+ * Note: Backend uses "farmerId" and "harvestDate" while frontend uses "shipperId" and "readyDate"
+ */
+interface BackendCrop {
+  _id: string;
+  farmerId: string;
+  name: string;
+  quantity: number;
+  unit: 'kg' | 'tons' | 'bags';
+  pricePerUnit?: number;
+  harvestDate: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  status: 'listed' | 'matched' | 'picked_up' | 'in_transit' | 'delivered';
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Map backend crop to frontend cargo format
+ */
+const mapBackendCropToCargo = (crop: BackendCrop): Cargo => ({
+  _id: crop._id,
+  id: crop._id,
+  shipperId: crop.farmerId, // Backend uses "farmerId", frontend uses "shipperId"
+  name: crop.name,
+  quantity: crop.quantity,
+  unit: crop.unit,
+  readyDate: crop.harvestDate, // Backend uses "harvestDate", frontend uses "readyDate"
+  location: crop.location,
+  status: crop.status,
+  pricePerUnit: crop.pricePerUnit,
+  createdAt: crop.createdAt,
+  updatedAt: crop.updatedAt,
+});
+
+/**
+ * Map frontend cargo to backend crop format
+ */
+const mapCargoToBackendCrop = (cargo: Partial<Cargo>): Partial<BackendCrop> => {
+  const backendCrop: any = {};
+
+  if (cargo.shipperId) backendCrop.farmerId = cargo.shipperId;
+  if (cargo.name) backendCrop.name = cargo.name;
+  if (cargo.quantity !== undefined) backendCrop.quantity = cargo.quantity;
+  if (cargo.unit) backendCrop.unit = cargo.unit;
+  if (cargo.pricePerUnit !== undefined) backendCrop.pricePerUnit = cargo.pricePerUnit;
+  if (cargo.readyDate) backendCrop.harvestDate = cargo.readyDate;
+  if (cargo.location) backendCrop.location = cargo.location;
+  if (cargo.status) backendCrop.status = cargo.status;
+
+  return backendCrop;
+};
+
+/**
+ * Get all cargo - connects to real backend API
  */
 export const getAllCargo = async (): Promise<Cargo[]> => {
   try {
-    console.log('📦 Attempting to fetch cargo from real API...');
-    const response = await api.get<any>('/cargo');
-    console.log('✅ Fetched cargo (Real API) raw response:', response.data);
-    
-    // Handle wrapped API response: { success: true, data: [...] }
-    const cargoData = response.data?.data || response.data;
-    
-    // Ensure it's always an array
-    const cargoArray = Array.isArray(cargoData) ? cargoData : [];
-    console.log('✅ Fetched cargo (Real API):', cargoArray.length, 'items');
-    return cargoArray;
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.log('⚠️ Real API failed, using mock cargo service...');
-    console.log('   API Error Detail:', errorMsg);
+    logger.info('Fetching all cargo from backend API');
+    const response = await api.get<BackendCropResponse>('/crops');
 
-    // Fallback to mock cargo service
-    try {
-      console.log('🔄 Loading cargo from mock service (includes AsyncStorage persistence)...');
-      const result = await mockCargoService.getAllCargo();
-      console.log('✅ Fetched cargo (Mock Service):', result?.length || 0, 'items');
-      if (result && result.length > 0) {
-        console.log('   First 3 items:', result.slice(0, 3).map(c => ({ name: c.name, status: c.status, shipperId: c.shipperId })));
-      }
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to fetch cargo';
-      console.error('❌ Mock cargo fetch failed:', errorMessage);
-      throw new Error(errorMessage);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch cargo');
     }
+
+    const cropsData = response.data.data;
+    const cropsArray = Array.isArray(cropsData) ? cropsData : [];
+
+    logger.debug('Cargo fetched successfully', { count: cropsArray.length });
+
+    // Map backend crops to frontend cargo format
+    return cropsArray.map(mapBackendCropToCargo);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
+    logger.error('Failed to fetch cargo', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Get cargo by ID - tries real API first, falls back to mock
+ * Get cargo by ID - connects to real backend API
  */
 export const getCargoById = async (id: string): Promise<Cargo> => {
   try {
-    console.log('📦 Attempting to fetch cargo from real API...');
-    const response = await api.get<Cargo>(`/cargo/${id}`);
-    console.log('✅ Fetched cargo (Real API)');
-    return response.data;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock cargo service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    logger.info('Fetching cargo by ID', { id });
+    const response = await api.get<BackendCropResponse>(`/crops/${id}`);
 
-    // Fallback to mock cargo service
-    try {
-      const result = await mockCargoService.getCargoById(id);
-      console.log('✅ Fetched cargo (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to fetch cargo';
-      console.error('❌ Mock cargo fetch failed:', errorMessage);
-      throw new Error(errorMessage);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch cargo');
     }
+
+    logger.debug('Cargo fetched successfully', { id });
+
+    // Map backend crop to frontend cargo format
+    return mapBackendCropToCargo(response.data.data);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
+    logger.error('Failed to fetch cargo by ID', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Create a new cargo - tries real API first, falls back to mock
+ * Create a new cargo - connects to real backend API
  */
 export const createCargo = async (
   cargoData: Omit<Cargo, '_id' | 'id'>
 ): Promise<Cargo> => {
   try {
-    console.log('📦 Attempting to create cargo with real API...');
-    console.log('📦 Cargo data:', cargoData);
-    const response = await api.post<any>('/cargo', cargoData);
-    console.log('✅ Cargo created (Real API) raw response:', response.data);
-    
-    // Handle wrapped API response: { success: true, data: {...} }
-    const newCargo = response.data?.data || response.data;
-    console.log('✅ Cargo created (Real API):', newCargo);
-    return newCargo;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock cargo service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    logger.info('Creating new cargo', { name: cargoData.name, quantity: cargoData.quantity });
 
-    // Fallback to mock cargo service
-    try {
-      console.log('📦 Calling mockCargoService.createCargo...');
-      const result = await mockCargoService.createCargo(cargoData);
-      console.log('✅ Cargo created (Mock Service):', result);
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to create cargo';
-      console.error('❌ Mock cargo creation failed:', errorMessage);
-      console.error('❌ Mock error details:', mockError);
-      throw new Error(errorMessage);
+    // Map frontend cargo format to backend crop format
+    const backendCropData = mapCargoToBackendCrop(cargoData);
+
+    const response = await api.post<BackendCropResponse>('/crops', backendCropData);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to create cargo');
     }
+
+    logger.info('Cargo created successfully', { id: response.data.data._id });
+
+    // Map backend crop to frontend cargo format
+    return mapBackendCropToCargo(response.data.data);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create cargo';
+    logger.error('Failed to create cargo', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Update cargo - tries real API first, falls back to mock
+ * Update cargo - connects to real backend API
  */
 export const updateCargo = async (
   id: string,
   cargoData: Partial<Omit<Cargo, '_id' | 'id' | 'shipperId'>>
 ): Promise<Cargo> => {
   try {
-    console.log('📦 Attempting to update cargo with real API...');
-    const response = await api.put<Cargo>(`/cargo/${id}`, cargoData);
-    console.log('✅ Cargo updated (Real API)');
-    return response.data;
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock cargo service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    logger.info('Updating cargo', { id });
 
-    // Fallback to mock cargo service
-    try {
-      const result = await mockCargoService.updateCargo(id, cargoData);
-      console.log('✅ Cargo updated (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to update cargo';
-      console.error('❌ Mock cargo update failed:', errorMessage);
-      throw new Error(errorMessage);
+    // Map frontend cargo format to backend crop format
+    const backendCropData = mapCargoToBackendCrop(cargoData);
+
+    const response = await api.put<BackendCropResponse>(`/crops/${id}`, backendCropData);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to update cargo');
     }
+
+    logger.info('Cargo updated successfully', { id });
+
+    // Map backend crop to frontend cargo format
+    return mapBackendCropToCargo(response.data.data);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update cargo';
+    logger.error('Failed to update cargo', error);
+    throw new Error(errorMessage);
   }
 };
 
 /**
- * Delete cargo - tries real API first, falls back to mock
+ * Delete cargo - connects to real backend API
  */
 export const deleteCargo = async (id: string): Promise<void> => {
   try {
-    console.log('📦 Attempting to delete cargo with real API...');
-    await api.delete(`/cargo/${id}`);
-    console.log('✅ Cargo deleted (Real API)');
-  } catch (error) {
-    console.log('⚠️ Real API failed, using mock cargo service...');
-    console.error('API Error:', error instanceof Error ? error.message : 'Unknown error');
+    logger.info('Deleting cargo', { id });
 
-    // Fallback to mock cargo service
-    try {
-      const result = await mockCargoService.deleteCargo(id);
-      console.log('✅ Cargo deleted (Mock Service)');
-      return result;
-    } catch (mockError) {
-      const errorMessage = mockError instanceof Error ? mockError.message : 'Failed to delete cargo';
-      console.error('❌ Mock cargo delete failed:', errorMessage);
-      throw new Error(errorMessage);
+    const response = await api.delete<BackendCropResponse>(`/crops/${id}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to delete cargo');
     }
+
+    logger.info('Cargo deleted successfully', { id });
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete cargo';
+    logger.error('Failed to delete cargo', error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Get cargo by user ID - connects to real backend API
+ */
+export const getCargoByUserId = async (userId: string): Promise<Cargo[]> => {
+  try {
+    logger.info('Fetching cargo by user ID', { userId });
+    const response = await api.get<BackendCropResponse>(`/crops/user/${userId}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch cargo');
+    }
+
+    const cropsData = response.data.data;
+    const cropsArray = Array.isArray(cropsData) ? cropsData : [];
+
+    logger.debug('Cargo fetched successfully', { userId, count: cropsArray.length });
+
+    // Map backend crops to frontend cargo format
+    return cropsArray.map(mapBackendCropToCargo);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
+    logger.error('Failed to fetch cargo by user ID', error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Get cargo by farmer ID - connects to real backend API
+ * Note: This is an alias for getCargoByUserId for backward compatibility
+ */
+export const getCargoByFarmerId = async (farmerId: string): Promise<Cargo[]> => {
+  try {
+    logger.info('Fetching cargo by farmer ID', { farmerId });
+    const response = await api.get<BackendCropResponse>(`/crops/farmer/${farmerId}`);
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to fetch cargo');
+    }
+
+    const cropsData = response.data.data;
+    const cropsArray = Array.isArray(cropsData) ? cropsData : [];
+
+    logger.debug('Cargo fetched successfully', { farmerId, count: cropsArray.length });
+
+    // Map backend crops to frontend cargo format
+    return cropsArray.map(mapBackendCropToCargo);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
+    logger.error('Failed to fetch cargo by farmer ID', error);
+    throw new Error(errorMessage);
   }
 };

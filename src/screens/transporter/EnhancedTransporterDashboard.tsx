@@ -25,6 +25,7 @@ import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { findBestMatches, calculateDailyEarningPotential } from '../../services/loadMatchingService';
 import { calculateDistance } from '../../services/routeOptimizationService';
+import { logger } from '../../utils/logger';
 
 const { width } = Dimensions.get('window');
 
@@ -55,41 +56,41 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   // Auto-refresh when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('📲 EnhancedTransporterDashboard focused - refreshing data...');
-      
+      logger.debug('EnhancedTransporterDashboard focused, refreshing data');
+
       const refreshData = async () => {
         try {
           await dispatch(fetchAllOrders());
-          console.log('✅ Orders fetched');
+          logger.debug('Orders fetched');
         } catch (err) {
-          console.error('❌ Orders fetch error:', err);
+          logger.error('Failed to fetch orders', err);
         }
 
         try {
           await dispatch(fetchCargo());
-          console.log('✅ Cargo fetched');
+          logger.debug('Cargo fetched');
         } catch (err) {
-          console.error('❌ Cargo fetch error:', err);
+          logger.error('Failed to fetch cargo', err);
         }
 
         const userId = user?.id || user?._id;
         if (userId) {
           try {
             await dispatch(fetchTransporterTrips(userId));
-            console.log('✅ Transporter trips fetched');
+            logger.debug('Transporter trips fetched');
           } catch (err) {
-            console.error('❌ Trips fetch error:', err);
+            logger.error('Failed to fetch trips', err);
           }
         }
 
         try {
           await getCurrentLocation();
-          console.log('✅ Location updated');
+          logger.debug('Location updated');
         } catch (err) {
-          console.error('❌ Location error:', err);
+          logger.error('Failed to get location', err);
         }
       };
-      
+
       refreshData();
     }, [dispatch, user])
   );
@@ -99,8 +100,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        console.log('Location permission denied');
-        // Use Kigali as default
+        logger.warn('Location permission denied, using default location');
         setCurrentLocation({ latitude: -1.9706, longitude: 30.1044 });
         return;
       }
@@ -114,8 +114,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
         longitude: location.coords.longitude,
       });
     } catch (error) {
-      console.log('Error getting location:', error);
-      // Use Kigali as default
+      logger.error('Error getting location, using default', error);
       setCurrentLocation({ latitude: -1.9706, longitude: 30.1044 });
     }
   };
@@ -150,15 +149,14 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   };
 
   // Calculate statistics using trips data (which updates in real-time)
-  console.log('📊 Dashboard Data:', {
+  logger.debug('Dashboard statistics calculated', {
     totalTrips: trips.length,
-    trips: trips.map(t => ({ id: t._id, status: t.status, createdAt: t.createdAt }))
+    activeTripsCount: trips.filter(t => t.status === 'in_transit' || t.status === 'accepted').length,
   });
 
   const activeTrips = trips.filter(
     trip => trip.status === 'in_transit' || trip.status === 'accepted'
   );
-  console.log('🚗 Active trips:', activeTrips.length);
 
   const completedToday = trips.filter(trip => {
     if (trip.status !== 'completed') return false;
@@ -166,7 +164,6 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
     const tripDate = new Date(trip.updatedAt || trip.createdAt).toDateString();
     return today === tripDate;
   });
-  console.log('✅ Completed today:', completedToday.length);
 
   const todayEarnings = completedToday.reduce((sum, trip) => {
     // Use earnings from trip if available, otherwise calculate from distance
@@ -185,7 +182,6 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
     }
     return sum;
   }, 0);
-  console.log('💰 Today earnings:', todayEarnings);
 
   // Count both orders and cargo as available loads
   // Only count cargo with status 'listed' - 'matched' means it's been accepted
@@ -199,9 +195,11 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
   const availableLoads = [...availableOrders, ...availableCargo];
 
-  console.log('📋 Available orders:', availableOrders.length);
-  console.log('📦 Available cargo (status="listed"):', availableCargo.length);
-  console.log('🎯 Total available loads:', availableLoads.length);
+  logger.debug('Available loads calculated', {
+    availableOrders: availableOrders.length,
+    availableCargo: availableCargo.length,
+    totalAvailable: availableLoads.length,
+  });
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);

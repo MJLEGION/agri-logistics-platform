@@ -111,7 +111,6 @@ class TransactionServiceClass {
       });
 
       // Step 1: Process payment
-      console.log('💳 Processing payment...');
       const paymentResult = await this.processPayment(
         transactionId,
         request
@@ -135,7 +134,6 @@ class TransactionServiceClass {
       });
 
       // Step 2: Create escrow
-      console.log('🔒 Creating escrow...');
       const totalAmount = request.items.reduce((sum, item) => sum + item.total, 0) + (request.platformFee || 0);
       
       const escrow = await escrowService.createEscrow(
@@ -159,7 +157,6 @@ class TransactionServiceClass {
       });
 
       // Step 3: Generate digital receipt
-      console.log('📄 Generating receipt...');
       const receipt = await receiptService.generateReceipt(
         transactionId,
         request.orderId,
@@ -199,7 +196,6 @@ class TransactionServiceClass {
       });
 
       // Step 4: Email receipt to both parties
-      console.log('📧 Emailing receipt...');
       try {
         await receiptService.emailReceipt(receipt.receiptId, request.farmerEmail);
         await receiptService.emailReceipt(receipt.receiptId, request.transporterEmail);
@@ -215,13 +211,6 @@ class TransactionServiceClass {
       await this.updateTransactionStatus(transactionId, 'escrow_held', {
         escrowId: escrow.escrowId,
         receiptId: receipt.receiptId,
-      });
-
-      console.log('✅ Transaction completed successfully:', {
-        transactionId,
-        escrowId: escrow.escrowId,
-        receiptId: receipt.receiptId,
-        amount: totalAmount,
       });
 
       return {
@@ -311,11 +300,6 @@ class TransactionServiceClass {
       // Update transaction status
       await this.updateTransactionStatus(transactionId, 'completed');
 
-      console.log('✅ Delivery confirmed and escrow released:', {
-        transactionId,
-        escrowId: txRecord.escrowId,
-      });
-
       return {
         success: true,
         transactionId,
@@ -397,12 +381,6 @@ class TransactionServiceClass {
       // Update transaction status
       await this.updateTransactionStatus(transactionId, 'refunded');
 
-      console.log('✅ Refund processed:', {
-        transactionId,
-        escrowId: txRecord.escrowId,
-        reason,
-      });
-
       return {
         success: true,
         transactionId,
@@ -478,12 +456,6 @@ class TransactionServiceClass {
 
       // Update transaction status
       await this.updateTransactionStatus(transactionId, 'disputed');
-
-      console.log('⚠️ Dispute raised:', {
-        transactionId,
-        escrowId: txRecord.escrowId,
-        initiatedBy,
-      });
 
       return {
         success: true,
@@ -575,9 +547,7 @@ class TransactionServiceClass {
       //   email: request.email,
       // });
 
-      console.log('✅ Payment processed:', { paymentId, amount: total, method: request.paymentMethod });
-
-      return {
+            return {
         success: true,
         paymentId,
       };

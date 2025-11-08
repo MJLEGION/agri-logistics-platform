@@ -14,8 +14,7 @@ export interface SMSNotification {
 export const sendSMS = async (notification: SMSNotification): Promise<boolean> => {
   try {
     const response = await api.post('/notifications/sms', notification);
-    console.log('✅ SMS sent successfully:', response.data);
-    return true;
+        return true;
   } catch (error: any) {
     console.error('❌ SMS sending failed:', error);
     return false;
@@ -107,11 +106,6 @@ export const notifyPaymentReceived = async (
  * Mock SMS sending for testing
  */
 export const mockSendSMS = async (notification: SMSNotification): Promise<boolean> => {
-  console.log('📱 [MOCK SMS]');
-  console.log(`To: ${notification.to}`);
-  console.log(`Type: ${notification.type}`);
-  console.log(`Message: ${notification.message}`);
-  console.log('---');
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000));

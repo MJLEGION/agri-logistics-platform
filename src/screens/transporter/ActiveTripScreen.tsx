@@ -29,18 +29,13 @@ export default function ActiveTripScreen({ navigation }: any) {
 
   // Find active trip for this driver
   useEffect(() => {
-    console.log('🔍 DEBUG: Looking for active trip');
-    console.log('📋 User ID:', user?._id || user?.id);
-    console.log('📋 Total orders:', orders.length);
-    console.log('📋 All orders:', orders.map(o => ({ id: o._id, transporterId: o.transporterId, status: o.status })));
     
     const myActiveTrip = orders.find(
       (order) =>
         order.transporterId === (user?._id || user?.id) &&
         order.status === 'in_progress'
     );
-    console.log('✅ Found active trip:', myActiveTrip || 'None');
-    setActiveTrip(myActiveTrip || null);
+        setActiveTrip(myActiveTrip || null);
   }, [orders, user?._id, user?.id]);
 
   // Listen to trip updates
@@ -61,35 +56,26 @@ export default function ActiveTripScreen({ navigation }: any) {
   }, [activeTrip]);
 
   const handleCompleteDelivery = async () => {
-    console.log('🔘 COMPLETE DELIVERY BUTTON CLICKED!');
-    console.log('📋 activeTrip:', activeTrip);
     
     if (!activeTrip) {
-      console.log('❌ No activeTrip found!');
       alert('No active trip found');
       return;
     }
 
-    console.log('🔘 COMPLETE DELIVERY BUTTON CLICKED! Order ID:', activeTrip._id || activeTrip.id);
     
     // Try using browser confirm as fallback for web
     const isWeb = typeof window !== 'undefined' && !window.cordova;
-    console.log('🌐 Is Web Platform:', isWeb);
     
     if (isWeb) {
       const confirmed = window.confirm('Mark this delivery as complete? 🎉 Earnings will be added to your account.');
-      console.log('✔️ Browser confirm result:', confirmed);
       
       if (confirmed) {
         try {
           setIsLoading(true);
           const tripId = activeTrip._id || activeTrip.id;
-          console.log('🚀 Starting complete delivery for ID:', tripId);
           
           const result = await orderService.completeDelivery(tripId);
-          console.log('✅ Complete delivery successful:', result);
-          
-          tripService.completeTrip(tripId);
+                    tripService.completeTrip(tripId);
           // Refresh BOTH orders and trips so dashboard updates
           await dispatch(fetchOrders());
           const transporterId = user?._id || user?.id;
@@ -113,7 +99,6 @@ export default function ActiveTripScreen({ navigation }: any) {
           setIsLoading(false);
         }
       } else {
-        console.log('❌ User cancelled the action');
       }
     } else {
       // Native/mobile platform - use Alert.alert
@@ -125,12 +110,9 @@ export default function ActiveTripScreen({ navigation }: any) {
             try {
               setIsLoading(true);
               const tripId = activeTrip._id || activeTrip.id;
-              console.log('🚀 Starting complete delivery for ID:', tripId);
               
               const result = await orderService.completeDelivery(tripId);
-              console.log('✅ Complete delivery successful:', result);
-              
-              tripService.completeTrip(tripId);
+                            tripService.completeTrip(tripId);
               // Refresh BOTH orders and trips so dashboard updates
               await dispatch(fetchOrders());
               const transporterId = user?._id || user?.id;
@@ -185,9 +167,6 @@ export default function ActiveTripScreen({ navigation }: any) {
   const status = tripInfo?.status || activeTrip.status;
   
   // Debug logging
-  console.log('🚗 ActiveTrip Status:', status);
-  console.log('🚗 ActiveTrip:', activeTrip);
-  console.log('🚗 Should button show?', status !== 'completed');
   
   const earnings = Math.round(
     (activeTrip.quantity * 1000) / 50 || // Simplified: 1000 RWF per unit ~

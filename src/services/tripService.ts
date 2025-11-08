@@ -78,7 +78,6 @@ export const tripService = {
 
     activeTrips.set(orderId, trip);
     tripEmitter.emit('trip_started', trip);
-    console.log(`✅ Trip started for order ${orderId}`);
 
     return trip;
   },
@@ -135,7 +134,6 @@ export const tripService = {
         clearInterval(interval);
         tripUpdater.delete(orderId);
         tripEmitter.emit('trip_arrived', trip);
-        console.log(`🎯 Driver arrived at destination for order ${orderId}`);
       }
 
       // Emit update
@@ -158,7 +156,6 @@ export const tripService = {
     if (trip) {
       trip.status = 'in_transit';
       tripEmitter.emit('trip_in_transit', trip);
-      console.log(`🚚 Delivery started for order ${orderId}`);
     }
     return trip;
   },
@@ -173,7 +170,6 @@ export const tripService = {
         tripUpdater.delete(orderId);
       }
       tripEmitter.emit('trip_completed', trip);
-      console.log(`✅ Trip completed for order ${orderId}`);
     }
     return trip;
   },

@@ -145,7 +145,6 @@ export const initiateMockPayment = async (
       const key = `mock_payment_${paymentData.orderId}`;
       await AsyncStorage.setItem(key, JSON.stringify(transaction));
     } catch (e) {
-      console.log('AsyncStorage not available (web app)');
     }
 
     return {
@@ -188,7 +187,6 @@ export const checkMockPaymentStatus = async (
           transactionStore.set(referenceId, tx);
         }
       } catch (e) {
-        console.log('AsyncStorage not available');
       }
     }
 
@@ -339,7 +337,6 @@ export const getCachedMockPayment = async (orderId: string): Promise<any> => {
     const cached = await AsyncStorage.getItem(`mock_payment_${orderId}`);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
-    console.log('No cached payment found');
     return null;
   }
 };
@@ -350,8 +347,7 @@ export const getCachedMockPayment = async (orderId: string): Promise<any> => {
 export const clearMockPaymentHistory = async (): Promise<void> => {
   try {
     transactionStore.clear();
-    console.log('✅ Payment history cleared');
-  } catch (error) {
+      } catch (error) {
     console.error('Error clearing payment history:', error);
   }
 };

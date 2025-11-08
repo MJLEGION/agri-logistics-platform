@@ -16,13 +16,22 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.agrilogistics.platform",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE"
+      "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY_HERE",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

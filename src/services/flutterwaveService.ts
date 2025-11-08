@@ -37,12 +37,6 @@ export const initiateFlutterwavePayment = async (
   paymentData: FlutterwavePaymentRequest
 ): Promise<FlutterwavePaymentResponse> => {
   try {
-    console.log('💳 Initiating Flutterwave payment...', {
-      amount: paymentData.amount,
-      method: paymentData.paymentMethod,
-      orderId: paymentData.orderId,
-    });
-
     // Format phone number
     const formattedPhone = formatPhoneNumber(paymentData.phoneNumber);
 
@@ -64,9 +58,7 @@ export const initiateFlutterwavePayment = async (
       currency: paymentData.currency || 'RWF',
     });
 
-    console.log('✅ Flutterwave payment initiated:', response.data);
-
-    // Cache transaction for reference
+        // Cache transaction for reference
     if (response.data.referenceId) {
       await cacheTransaction({
         orderId: paymentData.orderId,
@@ -101,13 +93,9 @@ export const checkFlutterwavePaymentStatus = async (
   referenceId: string
 ): Promise<FlutterwavePaymentResponse> => {
   try {
-    console.log('🔍 Checking payment status:', referenceId);
-
-    const response = await api.get(`/payments/flutterwave/status/${referenceId}`);
+        const response = await api.get(`/payments/flutterwave/status/${referenceId}`);
     
-    console.log('✅ Payment status:', response.data);
-
-    return response.data;
+        return response.data;
   } catch (error: any) {
     console.error('❌ Status check failed:', error);
 
@@ -230,8 +218,7 @@ const cacheTransaction = async (transaction: CachedTransaction): Promise<void> =
   try {
     const key = `fw_tx_${transaction.orderId}`;
     await AsyncStorage.setItem(key, JSON.stringify(transaction));
-    console.log('✅ Transaction cached:', key);
-  } catch (error) {
+      } catch (error) {
     console.error('Failed to cache transaction:', error);
   }
 };
@@ -257,8 +244,7 @@ export const clearCachedTransaction = async (orderId: string): Promise<void> => 
   try {
     const key = `fw_tx_${orderId}`;
     await AsyncStorage.removeItem(key);
-    console.log('✅ Transaction cache cleared:', key);
-  } catch (error) {
+      } catch (error) {
     console.error('Error clearing transaction cache:', error);
   }
 };

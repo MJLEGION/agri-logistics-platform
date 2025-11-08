@@ -278,6 +278,161 @@ npm run web
 
 ---
 
+## 🖥️ Backend Setup
+
+This application requires a Node.js + Express + MongoDB backend to function properly.
+
+### Backend Installation
+
+1. **Navigate to backend directory**
+
+   ```bash
+   cd ../agri-logistics-backend
+   ```
+
+2. **Install backend dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Configure backend environment**
+
+   Create `.env` file in backend root:
+
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb+srv://your_connection_string
+   JWT_SECRET=your-super-secret-jwt-key
+   JWT_REFRESH_SECRET=your-super-secret-refresh-token-key
+   NODE_ENV=development
+   ```
+
+4. **Seed demo accounts** (optional but recommended)
+
+   ```bash
+   node scripts/seedDemoAccounts.js
+   ```
+
+5. **Start the backend server**
+
+   ```bash
+   npm start
+   ```
+
+   Backend will run on `http://localhost:5000`
+
+### Demo Accounts
+
+After seeding, you can use these credentials to test the application:
+
+#### **Shipper Account**
+- **Phone**: `0788000001`
+- **Password**: `password123`
+- **Use for**: Listing cargo, requesting transport, rating transporters
+
+#### **Transporter Account**
+- **Phone**: `0789000003`
+- **Password**: `password123`
+- **Use for**: Browsing loads, accepting trips, completing deliveries
+
+---
+
+## 📦 Building for Production
+
+### Build Android APK
+
+1. **Install EAS CLI**
+
+   ```bash
+   npm install -g eas-cli
+   ```
+
+2. **Login to Expo**
+
+   ```bash
+   eas login
+   ```
+
+3. **Configure build**
+
+   ```bash
+   eas build:configure
+   ```
+
+4. **Build APK** (Android)
+
+   ```bash
+   eas build --platform android --profile preview
+   ```
+
+   The APK will be available in your Expo dashboard for download.
+
+5. **Build for App Store** (iOS - macOS only)
+
+   ```bash
+   eas build --platform ios --profile preview
+   ```
+
+### Alternative: Local APK Build
+
+```bash
+# For Android APK
+expo build:android -t apk
+
+# For iOS
+expo build:ios
+```
+
+---
+
+## 🧪 Testing Guide
+
+### Manual Testing Workflow
+
+1. **Authentication Flow**
+   - Register new account
+   - Login with demo credentials
+   - Logout and re-login
+   - Test role-based navigation
+
+2. **Shipper Flow Test**
+   - Login as shipper (0788000001)
+   - List new cargo
+   - View cargo in "My Cargo"
+   - Request transport
+   - Track active orders
+   - Rate transporter after delivery
+
+3. **Transporter Flow Test**
+   - Login as transporter (0789000003)
+   - Browse available loads
+   - Accept a trip
+   - View trip in "Active Trips"
+   - Complete delivery
+   - View earnings dashboard
+
+4. **Cross-Platform Testing**
+   - Test on Android device/emulator
+   - Test on web browser
+   - Test on different screen sizes
+   - Test with different data values
+
+5. **Performance Testing**
+   - Test with slow network
+   - Test with multiple cargo items
+   - Test real-time GPS tracking
+   - Test offline functionality
+
+### Testing on Different Devices
+
+- **Low-end Android** (4GB RAM, Android 9): Test performance
+- **Mid-range Android** (6GB RAM, Android 11): Normal usage
+- **High-end Android** (8GB+ RAM, Android 13): Smooth performance
+- **iOS** (iPhone 8+): Test compatibility
+
+---
+
 ## 👥 User Roles & Workflows
 
 ### 🌾 **Farmer Workflow**

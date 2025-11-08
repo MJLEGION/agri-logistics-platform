@@ -173,7 +173,6 @@ export const clearImageCache = async (): Promise<void> => {
     const allKeys = await AsyncStorage.getAllKeys();
     const cacheKeys = allKeys.filter((key) => key.startsWith(CACHE_KEY_PREFIX));
     await AsyncStorage.multiRemove(cacheKeys);
-    console.log(`Cleared ${cacheKeys.length} cached images`);
   } catch (error) {
     console.warn('Cache clear error:', error);
   }

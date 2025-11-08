@@ -144,16 +144,12 @@ export const mockCargoService = {
       const stored = await AsyncStorage.getItem('mockCargo');
       if (stored) {
         mockCargo = JSON.parse(stored); // Update in-memory cache
-        console.log('📦 Cargo loaded from AsyncStorage:', mockCargo.length, 'items');
-        console.log('📦 Cargo items:', mockCargo.map(c => ({ id: c._id, name: c.name, status: c.status })));
-        return mockCargo;
+                        return mockCargo;
       }
-      console.log('📦 No saved cargo in AsyncStorage, using default mock cargo:', mockCargo.length, 'items');
-      return mockCargo;
+            return mockCargo;
     } catch (error) {
       console.error('❌ AsyncStorage error loading cargo:', error);
-      console.log('📦 Falling back to in-memory mock cargo:', mockCargo.length, 'items');
-      return mockCargo;
+            return mockCargo;
     }
   },
 
@@ -173,8 +169,6 @@ export const mockCargoService = {
    */
   createCargo: async (cargoData: any) => {
     try {
-      console.log('%c🎯 MockCargoService: Starting cargo creation', 'color: #4CAF50; font-size: 14px; font-weight: bold');
-      console.log('%cInput data:', 'color: #2196F3; font-weight: bold', cargoData);
       
       // Validate required fields
       if (!cargoData?.name) {
@@ -208,19 +202,13 @@ export const mockCargoService = {
       }) as MockCargo;
 
       mockCargo = [...mockCargo, newCargo];
-      console.log('%c✅ Cargo created successfully!', 'color: #4CAF50; font-size: 13px; font-weight: bold');
-      console.log('%cNew cargo details:', 'color: #2196F3; font-weight: bold', newCargo);
-      console.log('%c📊 Total cargo now:', 'color: #FF9800; font-weight: bold', mockCargo.length, 'items');
       
       // Save to AsyncStorage with error handling
       try {
         const jsonData = JSON.stringify(mockCargo);
-        console.log('%c💾 Saving to AsyncStorage...', 'color: #9C27B0; font-weight: bold');
         await AsyncStorage.setItem('mockCargo', jsonData);
-        console.log('%c✅ Cargo persisted to AsyncStorage successfully', 'color: #4CAF50; font-weight: bold');
       } catch (storageError) {
         console.error('%c⚠️ Warning: Could not save cargo to AsyncStorage:', 'color: #FF9800; font-weight: bold', storageError);
-        console.log('%c💡 Tip: In-memory state is still updated, data will be lost on refresh', 'color: #2196F3; font-style: italic');
       }
       
       return newCargo;
@@ -260,7 +248,6 @@ export const mockCargoService = {
    */
   deleteCargo: async (id: string) => {
     try {
-      console.log('%c🗑️ MockCargoService: Deleting cargo:', 'color: #FF6B6B; font-size: 14px; font-weight: bold', id);
       
       const cargoIndex = mockCargo.findIndex((c) => c._id === id || c.id === id);
 
@@ -269,14 +256,11 @@ export const mockCargoService = {
       }
 
       const deletedCargo = mockCargo[cargoIndex];
-      console.log('%c📋 Cargo to delete:', 'color: #2196F3; font-weight: bold', deletedCargo.name);
       
       // Use spread operator instead of splice to avoid read-only array issue
       mockCargo = [...mockCargo.slice(0, cargoIndex), ...mockCargo.slice(cargoIndex + 1)];
       await AsyncStorage.setItem('mockCargo', JSON.stringify(mockCargo));
       
-      console.log('%c✅ Cargo deleted successfully!', 'color: #4CAF50; font-weight: bold');
-      console.log('%c📊 Remaining cargo:', 'color: #FF9800; font-weight: bold', mockCargo.length, 'items');
       
       return deletedCargo;
     } catch (error: any) {
@@ -295,7 +279,6 @@ export const mockCargoService = {
         mockCargo = JSON.parse(stored);
       }
     } catch (error) {
-      console.log('Using default mock cargo');
     }
   },
 };

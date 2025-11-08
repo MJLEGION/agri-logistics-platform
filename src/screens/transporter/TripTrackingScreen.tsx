@@ -91,7 +91,6 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           );
 
           if (transporterLocation) {
-            console.log('📍 Polled location from backend:', transporterLocation);
             setCurrentLocation({
               latitude: transporterLocation.latitude,
               longitude: transporterLocation.longitude,
@@ -145,26 +144,17 @@ export default function TripTrackingScreen({ route, navigation }: any) {
             try {
               setIsUpdating(true);
               const tripId = trip._id || trip.tripId;
-              console.log('🚀 Starting trip completion for:', tripId);
-              console.log('📋 Trip object:', JSON.stringify({
-                _id: trip._id,
-                tripId: trip.tripId,
-                status: trip.status,
-                shipmentCropName: trip.shipment?.cropName,
-              }));
-              
+
               const result = await dispatch(
                 completeTrip(tripId) as any
               ).unwrap();
 
-              console.log('✅ Trip completion successful:', result);
-              setIsUpdating(false);
+                            setIsUpdating(false);
               Alert.alert('Success', 'Delivery marked as completed!', [
                 {
                   text: 'OK',
                   onPress: () => {
                     // Refresh trips list
-                    console.log('🔄 Refreshing trips list after completion');
                     dispatch(fetchAllTrips() as any);
                     navigation.goBack();
                   },

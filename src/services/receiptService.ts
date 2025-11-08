@@ -168,9 +168,7 @@ class ReceiptServiceClass {
       // Add to index
       await this.addToIndex(receiptId, farmer.id, transporter.id, orderId);
 
-      console.log('✅ Receipt generated:', { receiptId, receiptNumber, amount: total });
-
-      return receipt;
+            return receipt;
     } catch (error) {
       console.error('❌ Failed to generate receipt:', error);
       throw error;
@@ -215,9 +213,7 @@ class ReceiptServiceClass {
         JSON.stringify(receipt)
       );
 
-      console.log('✅ Receipt updated:', { receiptId, paymentStatus, escrowStatus });
-
-      return receipt;
+            return receipt;
     } catch (error) {
       console.error('❌ Failed to update receipt:', error);
       throw error;
@@ -581,9 +577,7 @@ class ReceiptServiceClass {
         JSON.stringify(receipt)
       );
 
-      console.log('✅ Receipt emailed:', { receiptId, emailTo });
-
-      return emailRecord;
+            return emailRecord;
     } catch (error) {
       console.error('❌ Failed to email receipt:', error);
       throw error;
