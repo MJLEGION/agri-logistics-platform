@@ -46,3 +46,4 @@ yarn-error.*
 
 # Windows reserved names that cause Git issues
 nul
+.vercel
