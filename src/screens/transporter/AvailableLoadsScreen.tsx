@@ -217,31 +217,31 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
         if (isCargo) {
           // Handle cargo acceptance
-          // 1. Find the cargo item (already found above)
-          // const cargoItem = cargo.find((c: any) => (c._id || c.id) === actualId);
           if (!cargoItem) {
             throw new Error('Cargo not found');
           }
 
-          // 2. Get current user (transporter) ID
+          // Get current user (transporter) ID
           const transporterId = user?._id || user?.id;
           if (!transporterId) {
             throw new Error('User not logged in');
           }
 
-          // 3. Update cargo status to 'matched' and assign transporter
-          // The backend will handle order creation when cargo is accepted
-          const cargoResult = await dispatch(
-            updateCargo({
-              id: actualId,
-              data: {
-                status: 'matched',
-                transporterId: transporterId
-              }
-            }) as any
-          ).unwrap();
+          // TODO: Backend needs proper endpoint for transporters to accept cargo
+          // Currently /crops/:id can only be updated by owner (shipper)
+          // Need endpoint like: PUT /crops/:id/assign-transporter
 
-          console.log('✅ Cargo accepted and matched to transporter:', cargoResult);
+          // For now, mock the acceptance
+          console.log('✅ Cargo acceptance (mock):', {
+            cargoId: actualId,
+            cargoName: cargoItem.name,
+            transporterId,
+            note: 'Backend integration pending - need /crops/:id/assign-transporter endpoint'
+          });
+
+          // Simulate successful acceptance
+          await new Promise(resolve => setTimeout(resolve, 500));
+
         } else {
           // Handle regular trip acceptance
           const result = await dispatch(acceptTrip(actualId) as any).unwrap();
@@ -270,7 +270,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
     if (!pendingAcceptItem) return;
 
-    const { performAccept } = pendingAcceptItem;
+    const { performAccept, isCargo, item } = pendingAcceptItem;
 
     try {
       await performAccept();
@@ -280,7 +280,11 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       await dispatch(fetchCargo() as any);
       await dispatch(fetchOrders() as any);
 
-      showSuccess('Trip accepted! Check My Trips to mark complete!');
+      const successMessage = isCargo
+        ? `Cargo "${item?.name}" accepted! (Mock - awaiting backend integration)`
+        : 'Trip accepted! Check My Trips to mark complete!';
+
+      showSuccess(successMessage);
       setTimeout(() => navigation.navigate('Home'), 1500);
     } catch (error: any) {
       showError('Error: ' + error.message);
