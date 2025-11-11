@@ -23,7 +23,7 @@ import {
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
 import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
-import { createOrder, fetchOrders } from '../../store/slices/ordersSlice';
+import { fetchOrders } from '../../store/slices/ordersSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 import { distanceService } from '../../services/distanceService';
 import { suggestVehicleType, getVehicleType, calculateShippingCost, getTrafficFactor } from '../../services/vehicleService';
@@ -205,6 +205,10 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     const isCargo = tripIdFormatted.startsWith('CARGO-');
     const actualId = isCargo ? tripId.replace('CARGO-', '') : tripId;
 
+    // Find the cargo or trip item at the outer scope
+    const cargoItem = isCargo ? cargo.find((c: any) => (c._id || c.id) === actualId) : null;
+    const tripItem = !isCargo ? trips.find((t: any) => (t._id || t.id) === actualId) : null;
+
     // Try using browser confirm as fallback for web
     const isWeb = typeof window !== 'undefined' && !window.cordova;
 
@@ -213,8 +217,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
         if (isCargo) {
           // Handle cargo acceptance
-          // 1. Find the cargo item
-          const cargoItem = cargo.find((c: any) => (c._id || c.id) === actualId);
+          // 1. Find the cargo item (already found above)
+          // const cargoItem = cargo.find((c: any) => (c._id || c.id) === actualId);
           if (!cargoItem) {
             throw new Error('Cargo not found');
           }
@@ -225,64 +229,20 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             throw new Error('User not logged in');
           }
 
-
-          // 3. Calculate transport fee based on DISTANCE and VEHICLE TYPE
-          const pickupLat = cargoItem.location?.latitude || -1.9536;
-          const pickupLon = cargoItem.location?.longitude || 30.0605;
-
-          // Use actual destination if available, otherwise use Kigali city center
-          const deliveryLat = cargoItem.destination?.latitude || -1.9536;
-          const deliveryLon = cargoItem.destination?.longitude || 30.0605;
-
-          const distance = distanceService.calculateDistance(
-            pickupLat,
-            pickupLon,
-            deliveryLat,
-            deliveryLon
-          );
-
-          // Get cargo weight and suggest appropriate vehicle
-          const cargoWeight = cargoItem.quantity || 0;
-          const suggestedVehicleId = suggestVehicleType(cargoWeight);
-          const vehicleType = getVehicleType(suggestedVehicleId);
-
-          // Calculate transport fee using vehicle-specific rates with current traffic
-          // 🏍️ Motorcycle: 700 RWF/km (≤50kg)
-          // 🚐 Van: 1000 RWF/km (50-500kg)
-          // 🚚 Truck: 1400 RWF/km (>500kg)
-          const trafficFactor = getTrafficFactor();
-          const transportFee = calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
-
-
-          // 4. Create an order/transport request
-          const orderData = {
-            cargoId: actualId,
-            shipperId: typeof cargoItem.shipperId === 'string' ? cargoItem.shipperId : cargoItem.shipperId?._id || cargoItem.shipperId?.id,
-            transporterId: transporterId,
-            quantity: cargoItem.quantity || 1,
-            unit: cargoItem.unit || 'kg',
-            transportFee: transportFee, // Now based on distance, not cargo price!
-            status: 'accepted',
-            pickupLocation: {
-              latitude: pickupLat,
-              longitude: pickupLon,
-              address: cargoItem.location?.address || 'Pickup Location',
-            },
-            deliveryLocation: {
-              latitude: deliveryLat,
-              longitude: deliveryLon,
-              address: 'Delivery Location',
-            },
-            requestedDate: new Date(),
-          };
-
-          // 4. Create the order
-          const orderResult = await dispatch(createOrder(orderData) as any).unwrap();
-                    // 5. Update cargo status to 'matched'
+          // 3. Update cargo status to 'matched' and assign transporter
+          // The backend will handle order creation when cargo is accepted
           const cargoResult = await dispatch(
-            updateCargo({ id: actualId, data: { status: 'matched' } }) as any
+            updateCargo({
+              id: actualId,
+              data: {
+                status: 'matched',
+                transporterId: transporterId
+              }
+            }) as any
           ).unwrap();
-                  } else {
+
+          console.log('✅ Cargo accepted and matched to transporter:', cargoResult);
+        } else {
           // Handle regular trip acceptance
           const result = await dispatch(acceptTrip(actualId) as any).unwrap();
                   }
@@ -300,7 +260,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     };
 
     // Show confirmation dialog
-    setPendingAcceptItem({ item: cargoItem, isCargo, performAccept });
+    const item = isCargo ? cargoItem : tripItem;
+    setPendingAcceptItem({ item, isCargo, performAccept });
     setShowAcceptDialog(true);
   };
 
