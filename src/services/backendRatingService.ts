@@ -61,12 +61,13 @@ export const createRating = async (ratingData: RatingData): Promise<Rating> => {
 
     const response = await api.post<BackendRatingResponse>('/ratings', ratingData);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to create rating');
+    const ratingResult = response.data.data || response.data;
+    if (!ratingResult || !ratingResult._id) {
+      throw new Error('Failed to create rating - no data returned');
     }
 
     logger.info('Rating created successfully');
-    return response.data.data;
+    return ratingResult;
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create rating';
     logger.error('Failed to create rating', error);
@@ -83,11 +84,7 @@ export const getTransporterRatings = async (transporterId: string): Promise<Rati
 
     const response = await api.get<BackendRatingResponse>(`/ratings/user/${transporterId}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch ratings');
-    }
-
-    const ratingsData = response.data.data;
+    const ratingsData = response.data.data || response.data;
     const ratingsArray = Array.isArray(ratingsData) ? ratingsData : [];
 
     logger.debug('Transporter ratings fetched', { count: ratingsArray.length });
@@ -108,12 +105,13 @@ export const getTransporterStats = async (transporterId: string): Promise<Transp
 
     const response = await api.get<BackendRatingResponse>(`/ratings/transporter/${transporterId}/stats`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch transporter stats');
+    const statsData = response.data.data || response.data;
+    if (!statsData) {
+      throw new Error('Failed to fetch transporter stats - no data returned');
     }
 
     logger.debug('Transporter stats fetched');
-    return response.data.data;
+    return statsData;
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch transporter stats';
     logger.error('Failed to fetch transporter stats', error);
@@ -130,11 +128,7 @@ export const getTransporterReviews = async (transporterId: string): Promise<Rati
 
     const response = await api.get<BackendRatingResponse>(`/ratings/${transporterId}/reviews`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch reviews');
-    }
-
-    const reviewsData = response.data.data;
+    const reviewsData = response.data.data || response.data;
     const reviewsArray = Array.isArray(reviewsData) ? reviewsData : [];
 
     logger.debug('Transporter reviews fetched', { count: reviewsArray.length });
@@ -155,11 +149,7 @@ export const getTopRatedTransporters = async (): Promise<TransporterStats[]> => 
 
     const response = await api.get<BackendRatingResponse>('/ratings/leaderboard');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch leaderboard');
-    }
-
-    const leaderboardData = response.data.data;
+    const leaderboardData = response.data.data || response.data;
     const leaderboardArray = Array.isArray(leaderboardData) ? leaderboardData : [];
 
     logger.debug('Leaderboard fetched', { count: leaderboardArray.length });
@@ -180,12 +170,13 @@ export const updateRating = async (ratingId: string, updates: Partial<RatingData
 
     const response = await api.put<BackendRatingResponse>(`/ratings/${ratingId}`, updates);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to update rating');
+    const ratingResult = response.data.data || response.data;
+    if (!ratingResult || !ratingResult._id) {
+      throw new Error('Failed to update rating - no data returned');
     }
 
     logger.info('Rating updated successfully');
-    return response.data.data;
+    return ratingResult;
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update rating';
     logger.error('Failed to update rating', error);
@@ -200,11 +191,7 @@ export const deleteRating = async (ratingId: string): Promise<void> => {
   try {
     logger.info('Deleting rating', { ratingId });
 
-    const response = await api.delete<BackendRatingResponse>(`/ratings/${ratingId}`);
-
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to delete rating');
-    }
+    await api.delete<BackendRatingResponse>(`/ratings/${ratingId}`);
 
     logger.info('Rating deleted successfully');
   } catch (error: any) {

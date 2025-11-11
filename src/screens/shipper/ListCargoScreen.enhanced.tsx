@@ -1,9 +1,10 @@
 // src/screens/shipper/ListCargoScreen.enhanced.tsx
 // Enhanced version with destination input, vehicle selection, and dynamic pricing
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Modal } from 'react-native';
 import { createCargo } from '../../store/slices/cargoSlice';
 import { useTheme } from '../../contexts/ThemeContext';
+import { showToast } from '../../services/toastService';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { distanceService } from '../../services/distanceService';
 import { suggestVehicleType, getVehicleType, calculateShippingCost, getTrafficFactor, getTrafficDescription, VEHICLE_TYPES } from '../../services/vehicleService';
@@ -306,20 +307,25 @@ export default function ListCargoScreen({ navigation }: any) {
     
     // Validation
     if (!cargoName || !quantity || !readyDate || !destinationAddress) {
-      Alert.alert('Error', 'Please fill all required fields including destination');
+      showToast.error('Please fill all required fields including destination');
       return;
     }
 
     if (!user?._id && !user?.id) {
-      Alert.alert('Error', 'User ID is missing. Please try logging in again.');
+      showToast.error('User ID is missing. Please try logging in again.');
       return;
     }
 
+    const parsedQuantity = parseFloat(quantity);
+    const parsedPrice = pricePerUnit ? parseFloat(pricePerUnit) : undefined;
+
+    // Production logging disabled
+
     const cargoData = {
       name: cargoName,
-      quantity: parseFloat(quantity),
+      quantity: parsedQuantity,
       unit,
-      pricePerUnit: pricePerUnit ? parseFloat(pricePerUnit) : undefined,
+      pricePerUnit: parsedPrice,
       readyDate: readyDate.toISOString().split('T')[0],
       shipperId: user?._id || user?.id,
       status: 'listed',
@@ -336,8 +342,8 @@ export default function ListCargoScreen({ navigation }: any) {
           address: originAddress,
         };
       })(),
-      // Destination location
-      destination: (() => {
+      // Destination location (only if destination address is provided)
+      destination: destinationAddress ? (() => {
         // First try to find in preset destinations
         const presetDest = RWANDA_DESTINATIONS.find(d => d.name === destinationAddress);
         if (presetDest) {
@@ -355,9 +361,10 @@ export default function ListCargoScreen({ navigation }: any) {
           longitude: geocoded.longitude,
           address: destinationAddress,
         };
-      })(),
+      })() : undefined,
     };
 
+    // Production logging disabled
 
     try {
       const result = await dispatch(createCargo(cargoData as any));
@@ -386,11 +393,11 @@ export default function ListCargoScreen({ navigation }: any) {
         }, 2000);
       } else {
         setSubmissionSuccess(false);
-        Alert.alert('Error', result.payload || 'Failed to list cargo');
+        showToast.error(result.payload || 'Failed to list cargo');
       }
     } catch (error: any) {
       setSubmissionSuccess(false);
-      Alert.alert('Error', error?.message || 'Failed to list cargo');
+      showToast.error(error?.message || 'Failed to list cargo');
     }
   };
 

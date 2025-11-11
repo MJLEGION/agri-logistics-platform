@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { Spacing, BorderRadius, Typography } from '../config/ModernDesignSystem';
+import { Spacing, BorderRadius, Typography, Components } from '../config/designSystem';
 import { Ionicons } from '@expo/vector-icons';
 
 interface InputProps extends TextInputProps {
@@ -107,6 +107,17 @@ const Input = React.forwardRef<TextInput, InputProps>(
             placeholderTextColor={theme.textMuted}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
+            accessible={true}
+            accessibilityLabel={label || props.placeholder}
+            accessibilityHint={helperText}
+            accessibilityState={{
+              disabled: props.editable === false,
+            }}
+            accessibilityValue={
+              props.value
+                ? { text: props.secureTextEntry ? 'Password hidden' : String(props.value) }
+                : undefined
+            }
             {...props}
           />
         </View>
@@ -116,9 +127,12 @@ const Input = React.forwardRef<TextInput, InputProps>(
             style={[
               styles.errorText,
               {
-                color: theme.danger,
+                color: theme.error,
               },
             ]}
+            accessible={true}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
           >
             {error}
           </Text>
@@ -132,6 +146,7 @@ const Input = React.forwardRef<TextInput, InputProps>(
                 color: theme.textTertiary,
               },
             ]}
+            accessible={true}
           >
             {helperText}
           </Text>

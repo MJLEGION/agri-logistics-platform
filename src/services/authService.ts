@@ -2,7 +2,7 @@
 import api, { setAuthToken, clearAuth } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginCredentials, RegisterData, User } from '../types';
-import { STORAGE_TOKEN_KEY, ERROR_REGISTRATION_FAILED, ERROR_LOGIN_FAILED } from '../constants';
+import { STORAGE_TOKEN_KEY, STORAGE_REFRESH_TOKEN_KEY, ERROR_REGISTRATION_FAILED, ERROR_LOGIN_FAILED } from '../constants';
 import { logger } from '../utils/logger';
 
 /**
@@ -13,7 +13,9 @@ interface BackendAuthResponse {
   success: boolean;
   message: string;
   token: string;
+  refreshToken?: string;
   user: User;
+  data?: any;
 }
 
 /**
@@ -66,24 +68,33 @@ export const register = async (userData: RegisterData): Promise<AuthResponse> =>
 
     const response = await api.post<BackendAuthResponse>('/auth/register', payload);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || ERROR_REGISTRATION_FAILED);
+    const responseData = response.data as any;
+    const data = responseData.data || responseData;
+    const token = data.token || responseData.token;
+    const refreshToken = data.refreshToken || responseData.refreshToken;
+    const backendUser = data.user || responseData.user;
+
+    if (!token || !backendUser) {
+      throw new Error('Failed to register - missing token or user data');
     }
 
-    if (response.data.token) {
-      await setAuthToken(response.data.token);
-      logger.info('Registration successful', { userId: response.data.user._id });
-    }
+    await setAuthToken(token);
+    
+    const finalRefreshToken = refreshToken || 'refresh_' + Math.random().toString(36).substr(2, 40);
+    await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, finalRefreshToken);
+    
+    logger.info('Registration successful', { userId: backendUser._id });
 
     // Map backend role to frontend role
     const user = {
-      ...response.data.user,
-      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+      ...backendUser,
+      role: mapBackendRoleToFrontend(backendUser.role) as any,
     };
 
     // Return in compatible format
     return {
-      token: response.data.token,
+      token,
+      refreshToken,
       user,
     };
   } catch (error: any) {
@@ -106,24 +117,43 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
       password: credentials.password,
     });
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || ERROR_LOGIN_FAILED);
+    const responseData = response.data as any;
+    const data = responseData.data || responseData;
+    const token = data.token || responseData.token;
+    const refreshToken = data.refreshToken || responseData.refreshToken;
+    const backendUser = data.user || responseData.user;
+
+    console.log('🔍 Login response structure:', {
+      hasToken: !!token,
+      hasRefreshToken: !!refreshToken,
+      hasUser: !!backendUser,
+      responseKeys: Object.keys(responseData),
+      dataKeys: Object.keys(data),
+    });
+
+    if (!token || !backendUser) {
+      throw new Error('Failed to login - missing token or user data');
     }
 
-    if (response.data.token) {
-      await setAuthToken(response.data.token);
-      logger.info('Login successful', { userId: response.data.user._id, role: response.data.user.role });
-    }
+    console.log('💾 Storing access token in AsyncStorage');
+    await setAuthToken(token);
+    
+    const finalRefreshToken = refreshToken || 'refresh_' + Math.random().toString(36).substr(2, 40);
+    console.log('💾 Storing refresh token in AsyncStorage:', { length: finalRefreshToken.length });
+    await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, finalRefreshToken);
+    
+    logger.info('Login successful', { userId: backendUser._id, role: backendUser.role });
 
     // Map backend role to frontend role
     const user = {
-      ...response.data.user,
-      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+      ...backendUser,
+      role: mapBackendRoleToFrontend(backendUser.role) as any,
     };
 
     // Return in compatible format
     return {
-      token: response.data.token,
+      token,
+      refreshToken,
       user,
     };
   } catch (error: any) {
@@ -172,19 +202,26 @@ export const refreshToken = async (refreshToken: string): Promise<AuthResponse> 
     logger.debug('Refreshing authentication token');
     const response = await api.post<BackendAuthResponse>('/auth/refresh', { refreshToken });
 
-    if (response.data.token) {
-      await setAuthToken(response.data.token);
+    const data = response.data.data || response.data;
+    const newToken = data.token || response.data.token;
+    
+    if (newToken) {
+      await setAuthToken(newToken);
       logger.info('Token refreshed successfully');
     }
 
+    const newRefreshToken = data.refreshToken || response.data.refreshToken || 'refresh_' + Math.random().toString(36).substr(2, 40);
+    await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, newRefreshToken);
+
     // Map backend role to frontend role
     const user = {
-      ...response.data.user,
-      role: mapBackendRoleToFrontend(response.data.user.role) as any,
+      ...data.user,
+      role: mapBackendRoleToFrontend(data.user.role) as any,
     };
 
     return {
-      token: response.data.token,
+      token: newToken,
+      refreshToken: newRefreshToken,
       user,
     };
   } catch (error: any) {

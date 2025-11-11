@@ -88,11 +88,7 @@ export const getAllOrders = async (): Promise<Order[]> => {
     logger.info('Fetching all orders from backend API');
     const response = await api.get<BackendOrderResponse>('/orders');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch orders');
-    }
-
-    const ordersData = response.data.data;
+    const ordersData = response.data.data || response.data;
     const ordersArray = Array.isArray(ordersData) ? ordersData : [];
 
     logger.debug('Orders fetched successfully', { count: ordersArray.length });
@@ -114,11 +110,7 @@ export const getUserOrders = async (userId: string): Promise<Order[]> => {
     logger.info('Fetching orders for user', { userId });
     const response = await api.get<BackendOrderResponse>(`/orders/user/${userId}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch user orders');
-    }
-
-    const ordersData = response.data.data;
+    const ordersData = response.data.data || response.data;
     const ordersArray = Array.isArray(ordersData) ? ordersData : [];
 
     logger.debug('User orders fetched successfully', { userId, count: ordersArray.length });
@@ -140,11 +132,7 @@ export const getMyOrders = async (): Promise<Order[]> => {
     logger.info('Fetching my orders from backend API');
     const response = await api.get<BackendOrderResponse>('/orders/my-orders');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch my orders');
-    }
-
-    const ordersData = response.data.data;
+    const ordersData = response.data.data || response.data;
     const ordersArray = Array.isArray(ordersData) ? ordersData : [];
 
     logger.debug('My orders fetched successfully', { count: ordersArray.length });
@@ -166,14 +154,15 @@ export const getOrderById = async (id: string): Promise<Order> => {
     logger.info('Fetching order by ID', { id });
     const response = await api.get<BackendOrderResponse>(`/orders/${id}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch order');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to fetch order - no data returned');
     }
 
     logger.debug('Order fetched successfully', { id });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch order';
     logger.error('Failed to fetch order by ID', error);
@@ -193,14 +182,15 @@ export const createOrder = async (orderData: any): Promise<Order> => {
 
     const response = await api.post<BackendOrderResponse>('/orders', backendOrderData);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to create order');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to create order - no data returned');
     }
 
-    logger.info('Order created successfully', { id: response.data.data._id });
+    logger.info('Order created successfully', { id: orderData._id });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create order';
     logger.error('Failed to create order', error);
@@ -220,14 +210,15 @@ export const updateOrder = async (id: string, orderData: any): Promise<Order> =>
 
     const response = await api.put<BackendOrderResponse>(`/orders/${id}`, backendOrderData);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to update order');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to update order - no data returned');
     }
 
     logger.info('Order updated successfully', { id });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update order';
     logger.error('Failed to update order', error);
@@ -242,11 +233,7 @@ export const deleteOrder = async (id: string): Promise<void> => {
   try {
     logger.info('Deleting order', { id });
 
-    const response = await api.delete<BackendOrderResponse>(`/orders/${id}`);
-
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to delete order');
-    }
+    await api.delete<BackendOrderResponse>(`/orders/${id}`);
 
     logger.info('Order deleted successfully', { id });
   } catch (error: any) {
@@ -265,14 +252,15 @@ export const acceptOrder = async (orderId: string): Promise<Order> => {
 
     const response = await api.put<BackendOrderResponse>(`/orders/${orderId}/accept`, {});
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to accept order');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to accept order - no data returned');
     }
 
     logger.info('Order accepted successfully', { orderId });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to accept order';
     logger.error('Failed to accept order', error);
@@ -295,14 +283,15 @@ export const assignTransporter = async (
       status: 'accepted',
     });
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to assign transporter');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to assign transporter - no data returned');
     }
 
     logger.info('Transporter assigned successfully', { orderId, transporterId });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to assign transporter';
     logger.error('Failed to assign transporter', error);
@@ -321,14 +310,15 @@ export const completeDelivery = async (orderId: string): Promise<Order> => {
       status: 'completed',
     });
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to complete delivery');
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
+      throw new Error('Failed to complete delivery - no data returned');
     }
 
     logger.info('Delivery completed successfully', { orderId });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(response.data.data);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to complete delivery';
     logger.error('Failed to complete delivery', error);

@@ -10,11 +10,12 @@ import ordersReducer from './slices/ordersSlice';
 import transportersReducer from './slices/transportersSlice';
 import tripsReducer from '../logistics/store/tripsSlice';
 import matchingReducer from '../logistics/store/matchingSlice';
+import addressReducer from './slices/addressSlice';
 
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth', 'cargo'], // Added 'cargo' to persist user-created cargo across navigation
+  whitelist: ['auth', 'cargo', 'address'],
 };
 
 const rootReducer = combineReducers({
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   transporters: transportersReducer,
   trips: tripsReducer,
   matching: matchingReducer,
+  address: addressReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

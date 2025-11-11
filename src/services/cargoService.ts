@@ -41,14 +41,20 @@ interface BackendCrop {
 const mapBackendCropToCargo = (crop: BackendCrop): Cargo => ({
   _id: crop._id,
   id: crop._id,
-  shipperId: crop.farmerId, // Backend uses "farmerId", frontend uses "shipperId"
+  shipperId: crop.farmerId,
   name: crop.name,
   quantity: crop.quantity,
   unit: crop.unit,
-  readyDate: crop.harvestDate, // Backend uses "harvestDate", frontend uses "readyDate"
+  readyDate: crop.harvestDate,
   location: crop.location,
   status: crop.status,
   pricePerUnit: crop.pricePerUnit,
+  destination: (crop as any).destination,
+  distance: (crop as any).distance,
+  eta: (crop as any).eta,
+  shippingCost: (crop as any).shippingCost,
+  suggestedVehicle: (crop as any).suggestedVehicle,
+  paymentDetails: (crop as any).paymentDetails,
   createdAt: crop.createdAt,
   updatedAt: crop.updatedAt,
 });
@@ -67,6 +73,14 @@ const mapCargoToBackendCrop = (cargo: Partial<Cargo>): Partial<BackendCrop> => {
   if (cargo.readyDate) backendCrop.harvestDate = cargo.readyDate;
   if (cargo.location) backendCrop.location = cargo.location;
   if (cargo.status) backendCrop.status = cargo.status;
+  
+  // Include transportation and pricing fields
+  if (cargo.destination) backendCrop.destination = cargo.destination;
+  if (cargo.distance !== undefined) backendCrop.distance = cargo.distance;
+  if (cargo.eta !== undefined) backendCrop.eta = cargo.eta;
+  if (cargo.shippingCost !== undefined) backendCrop.shippingCost = cargo.shippingCost;
+  if (cargo.suggestedVehicle) backendCrop.suggestedVehicle = cargo.suggestedVehicle;
+  if (cargo.paymentDetails) backendCrop.paymentDetails = cargo.paymentDetails;
 
   return backendCrop;
 };
@@ -79,11 +93,7 @@ export const getAllCargo = async (): Promise<Cargo[]> => {
     logger.info('Fetching all cargo from backend API');
     const response = await api.get<BackendCropResponse>('/crops');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch cargo');
-    }
-
-    const cropsData = response.data.data;
+    const cropsData = response.data.data || response.data;
     const cropsArray = Array.isArray(cropsData) ? cropsData : [];
 
     logger.debug('Cargo fetched successfully', { count: cropsArray.length });
@@ -105,14 +115,15 @@ export const getCargoById = async (id: string): Promise<Cargo> => {
     logger.info('Fetching cargo by ID', { id });
     const response = await api.get<BackendCropResponse>(`/crops/${id}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch cargo');
+    const cropData = response.data.data || response.data;
+    if (!cropData) {
+      throw new Error('No cargo data received');
     }
 
     logger.debug('Cargo fetched successfully', { id });
 
     // Map backend crop to frontend cargo format
-    return mapBackendCropToCargo(response.data.data);
+    return mapBackendCropToCargo(cropData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
     logger.error('Failed to fetch cargo by ID', error);
@@ -134,14 +145,15 @@ export const createCargo = async (
 
     const response = await api.post<BackendCropResponse>('/crops', backendCropData);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to create cargo');
+    const cropData = response.data.data || response.data;
+    if (!cropData || !cropData._id) {
+      throw new Error('Failed to create cargo - no data returned');
     }
 
-    logger.info('Cargo created successfully', { id: response.data.data._id });
+    logger.info('Cargo created successfully', { id: cropData._id });
 
     // Map backend crop to frontend cargo format
-    return mapBackendCropToCargo(response.data.data);
+    return mapBackendCropToCargo(cropData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create cargo';
     logger.error('Failed to create cargo', error);
@@ -164,14 +176,15 @@ export const updateCargo = async (
 
     const response = await api.put<BackendCropResponse>(`/crops/${id}`, backendCropData);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to update cargo');
+    const cropData = response.data.data || response.data;
+    if (!cropData || !cropData._id) {
+      throw new Error('Failed to update cargo - no data returned');
     }
 
     logger.info('Cargo updated successfully', { id });
 
     // Map backend crop to frontend cargo format
-    return mapBackendCropToCargo(response.data.data);
+    return mapBackendCropToCargo(cropData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update cargo';
     logger.error('Failed to update cargo', error);
@@ -182,18 +195,24 @@ export const updateCargo = async (
 /**
  * Delete cargo - connects to real backend API
  */
-export const deleteCargo = async (id: string): Promise<void> => {
+export const deleteCargo = async (id: string, userId?: string): Promise<void> => {
   try {
-    logger.info('Deleting cargo', { id });
+    logger.info('Deleting cargo', { id, userId });
+    console.log(`🎯 cargoService: Making DELETE request to /crops/${id}:`, { id, userId });
 
-    const response = await api.delete<BackendCropResponse>(`/crops/${id}`);
-
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to delete cargo');
+    const deleteConfig: any = {};
+    if (userId) {
+      deleteConfig.data = { userId };
     }
 
+    const response = await api.delete<BackendCropResponse>(`/crops/${id}`, deleteConfig);
+    
+    console.log('✅ cargoService: DELETE response status:', response.status);
     logger.info('Cargo deleted successfully', { id });
   } catch (error: any) {
+    console.error('❌ cargoService: DELETE request failed:', error);
+    console.error('❌ cargoService: Error status:', error?.response?.status);
+    console.error('❌ cargoService: Error data:', error?.response?.data);
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete cargo';
     logger.error('Failed to delete cargo', error);
     throw new Error(errorMessage);
@@ -208,11 +227,7 @@ export const getCargoByUserId = async (userId: string): Promise<Cargo[]> => {
     logger.info('Fetching cargo by user ID', { userId });
     const response = await api.get<BackendCropResponse>(`/crops/user/${userId}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch cargo');
-    }
-
-    const cropsData = response.data.data;
+    const cropsData = response.data.data || response.data;
     const cropsArray = Array.isArray(cropsData) ? cropsData : [];
 
     logger.debug('Cargo fetched successfully', { userId, count: cropsArray.length });
@@ -235,11 +250,7 @@ export const getCargoByFarmerId = async (farmerId: string): Promise<Cargo[]> => 
     logger.info('Fetching cargo by farmer ID', { farmerId });
     const response = await api.get<BackendCropResponse>(`/crops/farmer/${farmerId}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch cargo');
-    }
-
-    const cropsData = response.data.data;
+    const cropsData = response.data.data || response.data;
     const cropsArray = Array.isArray(cropsData) ? cropsData : [];
 
     logger.debug('Cargo fetched successfully', { farmerId, count: cropsArray.length });

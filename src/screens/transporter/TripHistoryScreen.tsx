@@ -125,7 +125,7 @@ export default function TripHistoryScreen({ navigation }: any) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return '#10B981';
+        return '#10797D';
       case 'in_transit':
         return '#3B82F6';
       case 'accepted':
@@ -317,7 +317,7 @@ export default function TripHistoryScreen({ navigation }: any) {
             <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>
               Completion
             </Text>
-            <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+            <Text style={[styles.summaryValue, { color: '#10797D' }]}>
               {stats.completionRate}%
             </Text>
           </View>

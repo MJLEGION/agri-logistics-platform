@@ -206,8 +206,8 @@ export default function RoleSelectionScreen({ navigation }: any) {
       icon: 'leaf',
       title: 'Shipper',
       description: 'List and ship your cargo',
-      color: '#27AE60',
-      gradient: ['#27AE60', '#2ECC71'],
+      color: '#10797D',
+      gradient: ['#10797D', '#0D5F66'],
       features: ['List cargo', 'Manage shipments', 'Track deliveries'],
     },
     {
@@ -216,7 +216,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
       title: 'Transporter',
       description: 'Find loads and deliver crops efficiently',
       color: '#1E8449',
-      gradient: ['#1E8449', '#27AE60'],
+      gradient: ['#1E8449', '#10797D'],
       features: ['Find loads', 'Optimize routes', 'Earn more'],
     },
   ];
@@ -226,7 +226,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header - Gold, White, Green Theme */}
         <LinearGradient
-          colors={['#27AE60', '#2ECC71', '#27AE60']}
+          colors={['#10797D', '#0D5F66', '#10797D']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -453,7 +453,7 @@ export default function RoleSelectionScreen({ navigation }: any) {
                           <Ionicons
                             name="checkmark-circle"
                             size={20}
-                            color="#27AE60"
+                            color="#10797D"
                           />
                           <Text style={[styles.previewFeatureText, { color: theme.text }]}>
                             {feature}
@@ -479,8 +479,8 @@ export default function RoleSelectionScreen({ navigation }: any) {
           fadeOut
           colors={
             selectedRoleForConfetti === 'shipper'
-              ? ['#27AE60', '#2ECC71', '#1B9954', '#34D679']
-              : ['#1E8449', '#27AE60', '#16663A', '#2ECC71']
+              ? ['#10797D', '#0D5F66', '#1B9954', '#34D679']
+              : ['#1E8449', '#10797D', '#16663A', '#0D5F66']
           }
         />
       )}

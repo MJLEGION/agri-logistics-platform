@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Alert,
+  ActionSheetIOS,
   Animated,
   Dimensions,
   ScrollView,
@@ -20,6 +20,8 @@ import * as ImagePicker from 'expo-image-picker';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppSelector } from '../../store';
+import { showToast } from '../../services/toastService';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 const { width } = Dimensions.get('window');
 
@@ -69,6 +71,7 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
     enableNotifications: true,
   });
   const [saving, setSaving] = useState(false);
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
 
   const progressAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -96,7 +99,7 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
         setProfileData({ ...profileData, profilePicture: result.assets[0].uri });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      showToast.error('Failed to pick image');
     }
   };
 
@@ -104,7 +107,7 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'We need camera permissions to take a photo.');
+        showToast.warning('We need camera permissions to take a photo.');
         return;
       }
 
@@ -118,7 +121,7 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
         setProfileData({ ...profileData, profilePicture: result.assets[0].uri });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      showToast.error('Failed to take photo');
     }
   };
 
@@ -151,22 +154,35 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
   };
 
   const handleSkip = () => {
-    Alert.alert(
-      'Skip Profile Completion?',
-      'You can always complete your profile later from Settings. However, a complete profile helps you:' +
-      '\n\n• Build trust with other users' +
-      '\n• Get better matches' +
-      '\n• Receive important updates' +
-      '\n\nAre you sure you want to skip?',
-      [
-        { text: 'Continue Setup', style: 'cancel' },
+    setShowSkipDialog(true);
+  };
+
+  const handleConfirmSkip = () => {
+    setShowSkipDialog(false);
+    navigation.replace(user?.role === 'transporter' ? 'TransporterHome' : 'ShipperHome');
+  };
+
+  const handlePhotoSelection = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
         {
-          text: 'Skip for Now',
-          style: 'destructive',
-          onPress: () => navigation.replace(user?.role === 'transporter' ? 'TransporterHome' : 'ShipperHome'),
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
+          cancelButtonIndex: 0,
         },
-      ]
-    );
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            takePhoto();
+          } else if (buttonIndex === 2) {
+            pickImage();
+          }
+        }
+      );
+    } else {
+      // For Android/Web, show a simple choice via toast and buttons
+      // Since we don't have a good cross-platform ActionSheet, we'll just directly call pickImage
+      // User can add a third-party library like @expo/action-sheet if needed
+      pickImage();
+    }
   };
 
   const handleComplete = async () => {
@@ -181,7 +197,7 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
       }, 1500);
     } catch (error) {
       setSaving(false);
-      Alert.alert('Error', 'Failed to save profile. Please try again.');
+      showToast.error('Failed to save profile. Please try again.');
     }
   };
 
@@ -220,14 +236,12 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
         A profile picture helps others recognize you and builds trust
       </Text>
       <TouchableOpacity
-        onPress={() => {
-          Alert.alert('Choose Photo', 'Select an option', [
-            { text: 'Take Photo', onPress: takePhoto },
-            { text: 'Choose from Library', onPress: pickImage },
-            { text: 'Cancel', style: 'cancel' },
-          ]);
-        }}
+        onPress={handlePhotoSelection}
         style={styles.photoContainer}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Add profile photo"
+        accessibilityHint="Choose or take a photo for your profile"
       >
         {profileData.profilePicture ? (
           <Image source={{ uri: profileData.profilePicture }} style={styles.profilePhoto} />
@@ -659,7 +673,16 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
     >
       {/* Header */}
       <LinearGradient colors={[theme.tertiary, theme.tertiary + 'CC']} style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton} disabled={currentStep === STEPS.WELCOME}>
+        <TouchableOpacity
+          onPress={handleBack}
+          style={styles.backButton}
+          disabled={currentStep === STEPS.WELCOME}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Return to previous step"
+          accessibilityState={{ disabled: currentStep === STEPS.WELCOME }}
+        >
           <Ionicons name="arrow-back" size={24} color={currentStep === STEPS.WELCOME ? 'transparent' : '#FFF'} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -668,7 +691,14 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
             Step {currentStep + 1} of {totalSteps + 1}
           </Text>
         </View>
-        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+        <TouchableOpacity
+          onPress={handleSkip}
+          style={styles.skipButton}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Skip profile setup"
+          accessibilityHint="Skip profile completion and go to home screen"
+        >
           <Text style={styles.skipButtonText}>Skip</Text>
         </TouchableOpacity>
       </LinearGradient>
@@ -702,6 +732,11 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
           ]}
           onPress={currentStep === STEPS.COMPLETE ? handleComplete : handleNext}
           disabled={saving}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={currentStep === STEPS.COMPLETE ? 'Get started' : 'Continue to next step'}
+          accessibilityHint={currentStep === STEPS.COMPLETE ? 'Save profile and go to home screen' : 'Proceed to next profile setup step'}
+          accessibilityState={{ disabled: saving, busy: saving }}
         >
           <Text style={styles.nextButtonText}>
             {saving ? 'Saving...' : currentStep === STEPS.COMPLETE ? 'Get Started' : 'Continue'}
@@ -709,6 +744,18 @@ export default function ProfileCompletionScreen({ navigation, route }: any) {
           {!saving && <Ionicons name="arrow-forward" size={20} color="#FFF" />}
         </TouchableOpacity>
       </View>
+
+      {/* Skip Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showSkipDialog}
+        title="Skip Profile Completion?"
+        message="You can always complete your profile later from Settings. However, a complete profile helps you:\n\n• Build trust with other users\n• Get better matches\n• Receive important updates\n\nAre you sure you want to skip?"
+        cancelText="Continue Setup"
+        confirmText="Skip for Now"
+        onCancel={() => setShowSkipDialog(false)}
+        onConfirm={handleConfirmSkip}
+        isDestructive={true}
+      />
     </KeyboardAvoidingView>
   );
 }

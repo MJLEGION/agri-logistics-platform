@@ -277,7 +277,7 @@ export default function RegisterScreen({ route, navigation }: any) {
         >
           {/* Header - Gold, White, Green Theme */}
           <LinearGradient
-            colors={['#27AE60', '#2ECC71', '#27AE60']}
+            colors={['#10797D', '#0D5F66', '#10797D']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -530,8 +530,8 @@ export default function RegisterScreen({ route, navigation }: any) {
           fadeOut
           colors={
             role === 'shipper'
-              ? ['#27AE60', '#2ECC71', '#1B9954', '#34D679', '#FFD700']
-              : ['#1E8449', '#27AE60', '#16663A', '#2ECC71', '#FFD700']
+              ? ['#10797D', '#0D5F66', '#1B9954', '#34D679', '#FFD700']
+              : ['#1E8449', '#10797D', '#16663A', '#0D5F66', '#FFD700']
           }
         />
       )}

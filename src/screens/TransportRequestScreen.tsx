@@ -12,7 +12,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Dimensions,
   Modal,
@@ -33,6 +32,8 @@ import {
 } from '../logistics/store/matchingSlice';
 import { matchingService, MatchingRequest } from '../services/matchingService';
 import { distanceService } from '../services/distanceService';
+import { showToast } from '../services/toastService';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +58,8 @@ export default function TransportRequestScreen({
 
   const [showMatchDetails, setShowMatchDetails] = useState(false);
   const [selectedMatchForDetail, setSelectedMatchForDetail] = useState<any>(null);
+  const [showAutoAssignSuccess, setShowAutoAssignSuccess] = useState(false);
+  const [showTripCreatedDialog, setShowTripCreatedDialog] = useState(false);
 
   // Mock user location - in production, use real GPS
   const mockUserLocation = {
@@ -77,7 +80,7 @@ export default function TransportRequestScreen({
    */
   const handleRequestTransport = async () => {
     if (!cargo) {
-      Alert.alert('Error', 'No cargo information available');
+      showToast.error('No cargo information available');
       return;
     }
 
@@ -95,7 +98,7 @@ export default function TransportRequestScreen({
       // Dispatch the async thunk to find matches
       await dispatch(findMatchingTransporters(matchingRequest) as any);
     } catch (error) {
-      Alert.alert('Error', 'Failed to find matching transporters');
+      showToast.error('Failed to find matching transporters');
       console.error('Matching error:', error);
     }
   };
@@ -105,7 +108,7 @@ export default function TransportRequestScreen({
    */
   const handleAutoAssign = async () => {
     if (!matchingResult) {
-      Alert.alert('Error', 'No matching results available');
+      showToast.error('No matching results available');
       return;
     }
 
@@ -114,31 +117,11 @@ export default function TransportRequestScreen({
 
       // Show success message
       setTimeout(() => {
-        Alert.alert(
-          '✅ Auto-Assignment Successful!',
-          `A transporter has been automatically assigned to your request.\n\n${
-            autoAssignedTransporter?.transporter.name || 'Best match'
-          } (${autoAssignedTransporter?.transporter.vehicle_type})\n\nETA: ${autoAssignedTransporter?.eta} minutes\nEstimated Cost: ${autoAssignedTransporter?.cost.toLocaleString()} RWF`,
-          [
-            {
-              text: 'View Details',
-              onPress: () => {
-                if (autoAssignedTransporter) {
-                  setSelectedMatchForDetail(autoAssignedTransporter);
-                  setShowMatchDetails(true);
-                }
-              },
-            },
-            {
-              text: 'Confirm & Create Trip',
-              onPress: () => handleConfirmAndCreateTrip(),
-              style: 'default',
-            },
-          ]
-        );
+        showToast.success('Auto-assignment successful!');
+        setShowAutoAssignSuccess(true);
       }, 500);
     } catch (error) {
-      Alert.alert('Error', 'Failed to auto-assign transporter');
+      showToast.error('Failed to auto-assign transporter');
       console.error('Auto-assign error:', error);
     }
   };
@@ -148,23 +131,24 @@ export default function TransportRequestScreen({
    */
   const handleConfirmAndCreateTrip = () => {
     if (!autoAssignedTransporter || !cargo) {
-      Alert.alert('Error', 'Missing required information');
+      showToast.error('Missing required information');
       return;
     }
 
-    Alert.alert(
-      '✅ Trip Created!',
-      `Trip request sent to ${autoAssignedTransporter.transporter.name}\n\n📍 Pickup: ${mockUserLocation.address}\n📍 Delivery: ${mockDeliveryLocation.address}\n💰 Cost: ${autoAssignedTransporter.cost.toLocaleString()} RWF\n⏱️ ETA: ${autoAssignedTransporter.eta} minutes`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            dispatch(clearMatching());
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    setShowAutoAssignSuccess(false);
+    setShowTripCreatedDialog(true);
+  };
+
+  /**
+   * Finalize trip creation after confirmation
+   */
+  const handleFinalizeTrip = () => {
+    setShowTripCreatedDialog(false);
+    showToast.success(`Trip request sent to ${autoAssignedTransporter?.transporter.name || 'transporter'}`);
+    setTimeout(() => {
+      dispatch(clearMatching());
+      navigation.goBack();
+    }, 500);
   };
 
   /**
@@ -182,7 +166,13 @@ export default function TransportRequestScreen({
           <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
             {/* Header */}
             <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setShowMatchDetails(false)}>
+              <TouchableOpacity
+                onPress={() => setShowMatchDetails(false)}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                accessibilityHint="Dismiss transporter details modal"
+              >
                 <Ionicons name="close" size={28} color={theme.text} />
               </TouchableOpacity>
               <Text style={[styles.modalTitle, { color: theme.text }]}>
@@ -194,7 +184,7 @@ export default function TransportRequestScreen({
             <ScrollView style={styles.modalScroll}>
               {/* Transporter Info */}
               <LinearGradient
-                colors={['#10B981', '#059669']}
+                colors={['#10797D', '#0D5F66']}
                 style={styles.transporterCard}
               >
                 <View style={styles.transporterHeader}>
@@ -287,7 +277,7 @@ export default function TransportRequestScreen({
                     </Text>
                   </View>
                   <View style={styles.estimateItem}>
-                    <Ionicons name="wallet" size={20} color="#10B981" />
+                    <Ionicons name="wallet" size={20} color="#10797D" />
                     <Text style={[styles.estimateValue, { color: theme.text }]}>
                       {match.cost.toLocaleString()} RWF
                     </Text>
@@ -309,7 +299,7 @@ export default function TransportRequestScreen({
                       styles.scoreProgress,
                       {
                         width: `${match.score}%`,
-                        backgroundColor: match.score >= 70 ? '#10B981' : '#F59E0B',
+                        backgroundColor: match.score >= 70 ? '#10797D' : '#F59E0B',
                       },
                     ]}
                   />
@@ -319,11 +309,15 @@ export default function TransportRequestScreen({
               {/* Action Buttons */}
               <View style={styles.modalActions}>
                 <TouchableOpacity
-                  style={[styles.confirmButton, { backgroundColor: '#10B981' }]}
+                  style={[styles.confirmButton, { backgroundColor: '#10797D' }]}
                   onPress={() => {
                     setShowMatchDetails(false);
                     handleConfirmAndCreateTrip();
                   }}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirm and create trip"
+                  accessibilityHint={`Create trip with ${selectedMatchForDetail?.transporter?.name || 'transporter'}`}
                 >
                   <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   <Text style={styles.confirmButtonText}>Confirm & Create Trip</Text>
@@ -332,6 +326,10 @@ export default function TransportRequestScreen({
                 <TouchableOpacity
                   style={[styles.cancelButton, { backgroundColor: theme.border }]}
                   onPress={() => setShowMatchDetails(false)}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  accessibilityHint="Close without creating trip"
                 >
                   <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                 </TouchableOpacity>
@@ -354,6 +352,10 @@ export default function TransportRequestScreen({
           setSelectedMatchForDetail(match);
           setShowMatchDetails(true);
         }}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={`View details for ${match.transporter.name}`}
+        accessibilityHint={`${match.transporter.vehicle_type}, ${match.distance.toFixed(1)} km away, ${match.cost.toLocaleString()} RWF`}
       >
       {/* Is Auto-Match Badge */}
       {match.isAutoMatch && (
@@ -380,7 +382,7 @@ export default function TransportRequestScreen({
           </View>
         </View>
         <View style={styles.scoreBox}>
-          <Text style={[styles.scoreText, { color: '#10B981' }]}>
+          <Text style={[styles.scoreText, { color: '#10797D' }]}>
             {match.score}
           </Text>
           <Text style={[styles.scoreLabel, { color: theme.textSecondary }]}>
@@ -404,7 +406,7 @@ export default function TransportRequestScreen({
           </Text>
         </View>
         <View style={styles.detailItem}>
-          <Ionicons name="wallet" size={16} color="#10B981" />
+          <Ionicons name="wallet" size={16} color="#10797D" />
           <Text style={[styles.detailValue, { color: theme.text }]}>
             {match.cost.toLocaleString()} RWF
           </Text>
@@ -435,7 +437,13 @@ export default function TransportRequestScreen({
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Navigate to previous screen"
+          >
             <Text style={styles.backButton}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>🚚 Request Transport</Text>
@@ -447,7 +455,7 @@ export default function TransportRequestScreen({
           <View style={[styles.cargoCard, { backgroundColor: theme.card }]}>
             <View style={styles.cargoHeader}>
               <View style={styles.cargoIcon}>
-                <Ionicons name="leaf" size={32} color="#10B981" />
+                <Ionicons name="leaf" size={32} color="#10797D" />
               </View>
               <View style={styles.cargoInfo}>
                 <Text style={[styles.cargoName, { color: theme.text }]}>
@@ -460,7 +468,7 @@ export default function TransportRequestScreen({
             </View>
             <View style={[styles.locationInfo, { borderTopColor: theme.border }]}>
               <View style={styles.locationRow}>
-                <Ionicons name="pin" size={16} color="#10B981" />
+                <Ionicons name="pin" size={16} color="#10797D" />
                 <Text style={[styles.locationText, { color: theme.text }]}>
                   {mockUserLocation.address}
                 </Text>
@@ -488,6 +496,11 @@ export default function TransportRequestScreen({
             ]}
             onPress={handleRequestTransport}
             disabled={loading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Find matching transporters"
+            accessibilityHint={`Search for transporters to deliver ${cargo?.quantity || 0} ${cargo?.unit || 'kg'} of ${cargo?.name || cargo?.cropName || 'cargo'}`}
+            accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
@@ -507,7 +520,13 @@ export default function TransportRequestScreen({
               <Text style={[styles.resultsTitle, { color: theme.text }]}>
                 ✨ {matchingResult.matches.length} Transporters Found
               </Text>
-              <TouchableOpacity onPress={handleRequestTransport}>
+              <TouchableOpacity
+                onPress={handleRequestTransport}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh search"
+                accessibilityHint="Search for transporters again"
+              >
                 <Ionicons name="refresh" size={20} color="#8B5CF6" />
               </TouchableOpacity>
             </View>
@@ -523,8 +542,12 @@ export default function TransportRequestScreen({
                 </View>
                 {renderMatchCard(autoAssignedTransporter)}
                 <TouchableOpacity
-                  style={[styles.assignButton, { backgroundColor: '#10B981' }]}
+                  style={[styles.assignButton, { backgroundColor: '#10797D' }]}
                   onPress={handleConfirmAndCreateTrip}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirm and create trip"
+                  accessibilityHint={`Create trip with ${autoAssignedTransporter?.transporter?.name || 'auto-assigned transporter'}`}
                 >
                   <Ionicons name="checkmark-circle" size={20} color="#fff" />
                   <Text style={styles.assignButtonText}>Confirm & Create Trip</Text>
@@ -548,6 +571,11 @@ export default function TransportRequestScreen({
                 ]}
                 onPress={handleAutoAssign}
                 disabled={loading}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Auto-assign best transporter"
+                accessibilityHint="Automatically select the best matching transporter based on distance, rating, and cost"
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
@@ -582,6 +610,10 @@ export default function TransportRequestScreen({
             <TouchableOpacity
               style={[styles.retryButton, { backgroundColor: '#8B5CF6' }]}
               onPress={handleRequestTransport}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Try again"
+              accessibilityHint="Search for transporters again"
             >
               <Text style={styles.retryButtonText}>Try Again</Text>
             </TouchableOpacity>
@@ -591,6 +623,36 @@ export default function TransportRequestScreen({
 
       {/* Match Details Modal */}
       {renderMatchDetailsModal()}
+
+      {/* Auto-Assign Success Dialog */}
+      <ConfirmDialog
+        visible={showAutoAssignSuccess}
+        title="Auto-Assignment Successful!"
+        message={`${autoAssignedTransporter?.transporter.name || 'A transporter'} has been automatically assigned to your request.\n\nVehicle: ${autoAssignedTransporter?.transporter.vehicle_type}\nETA: ${autoAssignedTransporter?.eta} minutes\nEstimated Cost: ${autoAssignedTransporter?.cost.toLocaleString()} RWF`}
+        cancelText="View Details"
+        confirmText="Confirm & Create Trip"
+        onCancel={() => {
+          setShowAutoAssignSuccess(false);
+          if (autoAssignedTransporter) {
+            setSelectedMatchForDetail(autoAssignedTransporter);
+            setShowMatchDetails(true);
+          }
+        }}
+        onConfirm={handleConfirmAndCreateTrip}
+        isDestructive={false}
+      />
+
+      {/* Trip Created Dialog */}
+      <ConfirmDialog
+        visible={showTripCreatedDialog}
+        title="Trip Created!"
+        message={`Trip request sent to ${autoAssignedTransporter?.transporter.name || 'transporter'}\n\nPickup: ${mockUserLocation.address}\nDelivery: ${mockDeliveryLocation.address}\nCost: ${autoAssignedTransporter?.cost.toLocaleString()} RWF\nETA: ${autoAssignedTransporter?.eta} minutes`}
+        cancelText="Cancel"
+        confirmText="OK"
+        onCancel={() => setShowTripCreatedDialog(false)}
+        onConfirm={handleFinalizeTrip}
+        isDestructive={false}
+      />
     </View>
   );
 }
@@ -637,7 +699,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: '#10B98120',
+    backgroundColor: '#10797D20',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,

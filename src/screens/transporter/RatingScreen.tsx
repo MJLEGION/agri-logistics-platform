@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +16,8 @@ import { ratingService } from '../../services/ratingService';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { useTheme } from '../../contexts/ThemeContext';
+import { showToast } from '../../services/toastService';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 interface RatingScreenProps {
   transactionId: string;
@@ -51,6 +52,7 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showSkipDialog, setShowSkipDialog] = useState(false);
 
   const maxCommentLength = 1000;
   const minCommentLength = 0;
@@ -68,12 +70,12 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
   const handleSubmitRating = async () => {
     // Validation
     if (rating === 0) {
-      Alert.alert('Error', 'Please select a rating (1-5 stars)');
+      showToast.error('Please select a rating (1-5 stars)');
       return;
     }
 
     if (comment.length > maxCommentLength) {
-      Alert.alert('Error', `Comment cannot exceed ${maxCommentLength} characters`);
+      showToast.error(`Comment cannot exceed ${maxCommentLength} characters`);
       return;
     }
 
@@ -103,38 +105,19 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
       );
 
       setSubmitted(true);
-      
-      Alert.alert(
-        'Success',
-        `Your ${rating}-star rating has been submitted! Thank you for your feedback.`,
-        [
-          {
-            text: 'View Profile',
-            onPress: () => {
-              navigation.navigate('TransporterProfile', {
-                transporterId: actualTransporterId,
-              });
-            },
-          },
-          {
-            text: 'Go Home',
-            onPress: () => {
-              navigation.navigate('Home');
-            },
-          },
-        ]
-      );
 
-      // Reset form
+      showToast.success(`Your ${rating}-star rating has been submitted! Thank you for your feedback.`);
+
+      // Reset form and navigate home
       setTimeout(() => {
         setRating(0);
         setComment('');
         setSubmitted(false);
-      }, 500);
+        navigation.navigate('Home');
+      }, 1000);
     } catch (error) {
       console.error('Error submitting rating:', error);
-      Alert.alert(
-        'Error',
+      showToast.error(
         error instanceof Error ? error.message : 'Failed to submit rating. Please try again.'
       );
     } finally {
@@ -275,22 +258,13 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
 
             <TouchableOpacity
               style={styles.skipButton}
-              onPress={() => {
-                Alert.alert(
-                  'Skip Rating?',
-                  'Skipping helps the transporter improve. Are you sure?',
-                  [
-                    { text: 'Cancel', onPress: () => {} },
-                    {
-                      text: 'Skip',
-                      onPress: () => {
-                        navigation.navigate('Home');
-                      },
-                    },
-                  ]
-                );
-              }}
+              onPress={() => setShowSkipDialog(true)}
               disabled={loading}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Skip rating"
+              accessibilityHint="Skip rating and go to home screen"
+              accessibilityState={{ disabled: loading }}
             >
               <Text style={styles.skipButtonText}>Skip for now</Text>
             </TouchableOpacity>
@@ -314,6 +288,21 @@ const RatingScreen: React.FC<RatingScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+
+      {/* Skip Rating Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showSkipDialog}
+        title="Skip Rating?"
+        message="Your feedback helps the transporter improve. Are you sure you want to skip?"
+        cancelText="Cancel"
+        confirmText="Skip"
+        onCancel={() => setShowSkipDialog(false)}
+        onConfirm={() => {
+          setShowSkipDialog(false);
+          navigation.navigate('Home');
+        }}
+        isDestructive={true}
+      />
     </KeyboardAvoidingView>
   );
 };

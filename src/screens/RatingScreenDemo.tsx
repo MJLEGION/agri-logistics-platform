@@ -18,11 +18,11 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { showToast } from '../services/toastService';
 
 interface TestScenario {
   name: string;
@@ -81,7 +81,7 @@ export default function RatingScreenDemo() {
 
   const handleCustomRating = () => {
     if (!customParams.transporterName.trim() || !customParams.transporterId.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showToast.error('Please fill in all fields');
       return;
     }
 
@@ -116,6 +116,10 @@ export default function RatingScreenDemo() {
               key={index}
               style={styles.scenarioCard}
               onPress={() => handleLaunchRating(scenario.params)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Test scenario: ${scenario.name}`}
+              accessibilityHint={`Launch rating screen for ${scenario.params.transporterName}`}
             >
               <View style={styles.scenarioContent}>
                 <Ionicons name="star" size={20} color="#FFD700" />
@@ -164,6 +168,10 @@ export default function RatingScreenDemo() {
             <TouchableOpacity
               style={styles.customButton}
               onPress={handleCustomRating}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Test custom rating"
+              accessibilityHint="Launch rating screen with custom transporter details"
             >
               <Text style={styles.customButtonText}>Test Custom Rating</Text>
             </TouchableOpacity>
@@ -211,27 +219,27 @@ export default function RatingScreenDemo() {
           
           <View style={styles.featureList}>
             <View style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#10797D" />
               <Text style={styles.featureText}>Rating submission</Text>
             </View>
             
             <View style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#10797D" />
               <Text style={styles.featureText}>Star selection UI</Text>
             </View>
             
             <View style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#10797D" />
               <Text style={styles.featureText}>Comment input & validation</Text>
             </View>
             
             <View style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#10797D" />
               <Text style={styles.featureText}>Service integration</Text>
             </View>
             
             <View style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={20} color="#10797D" />
               <Text style={styles.featureText}>Navigation flow</Text>
             </View>
           </View>

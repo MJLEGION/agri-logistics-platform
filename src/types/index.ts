@@ -20,6 +20,7 @@ export interface User {
   id?: string; // For backward compatibility
   name: string;
   phone: string;
+  email?: string;
   role: UserRole;
   location?: {
     latitude: number;

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { Spacing, BorderRadius, Shadows, Typography } from '../config/ModernDesignSystem';
+import { Spacing, BorderRadius, Shadows, Typography, ZIndex } from '../config/designSystem';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -110,6 +110,16 @@ const Toast: React.FC<ToastProps> = ({
 
   if (!visible) return null;
 
+  const getAccessibilityLabel = (): string => {
+    const typeLabels: Record<ToastType, string> = {
+      success: 'Success',
+      error: 'Error',
+      warning: 'Warning',
+      info: 'Information',
+    };
+    return `${typeLabels[type]}: ${message}`;
+  };
+
   return (
     <Animated.View
       style={[
@@ -120,6 +130,10 @@ const Toast: React.FC<ToastProps> = ({
           opacity,
         },
       ]}
+      accessible={true}
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
     >
       <Ionicons name={getIcon() as any} size={24} color="#FFFFFF" />
 
@@ -128,12 +142,26 @@ const Toast: React.FC<ToastProps> = ({
       </Text>
 
       {action && (
-        <TouchableOpacity onPress={action.onPress} style={styles.actionButton}>
+        <TouchableOpacity
+          onPress={action.onPress}
+          style={styles.actionButton}
+          accessible={true}
+          accessibilityLabel={action.label}
+          accessibilityRole="button"
+          accessibilityHint="Tap to perform action"
+        >
           <Text style={styles.actionText}>{action.label}</Text>
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity onPress={hideToast} style={styles.closeButton}>
+      <TouchableOpacity
+        onPress={hideToast}
+        style={styles.closeButton}
+        accessible={true}
+        accessibilityLabel="Close notification"
+        accessibilityRole="button"
+        accessibilityHint="Double tap to dismiss"
+      >
         <Ionicons name="close" size={20} color="#FFFFFF" />
       </TouchableOpacity>
     </Animated.View>
@@ -151,7 +179,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     ...Shadows.lg,
-    zIndex: 9999,
+    zIndex: ZIndex.notification,
   },
   message: {
     flex: 1,

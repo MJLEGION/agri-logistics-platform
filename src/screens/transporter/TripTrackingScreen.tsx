@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Platform,
   Animated,
@@ -15,6 +14,8 @@ import {
 import * as Location from 'expo-location';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { showToast } from '../../services/toastService';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { Card } from '../../components/common/Card';
 import TripMapView from '../../components/TripMapView';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -32,7 +33,8 @@ export default function TripTrackingScreen({ route, navigation }: any) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [locationPermission, setLocationPermission] = useState<boolean | null>(null);
   const [isPollingActive, setIsPollingActive] = useState(false);
-  
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize real-time GPS tracking with 5-second updates
@@ -132,47 +134,34 @@ export default function TripTrackingScreen({ route, navigation }: any) {
     }
   };
 
-  const handleMarkCompleted = async () => {
-    Alert.alert(
-      'Complete Delivery',
-      'Mark this delivery as completed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              setIsUpdating(true);
-              const tripId = trip._id || trip.tripId;
+  const handleMarkCompleted = () => {
+    setShowCompleteDialog(true);
+  };
 
-              const result = await dispatch(
-                completeTrip(tripId) as any
-              ).unwrap();
+  const handleConfirmComplete = async () => {
+    setShowCompleteDialog(false);
+    try {
+      setIsUpdating(true);
+      const tripId = trip._id || trip.tripId;
 
-                            setIsUpdating(false);
-              Alert.alert('Success', 'Delivery marked as completed!', [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Refresh trips list
-                    dispatch(fetchAllTrips() as any);
-                    navigation.goBack();
-                  },
-                },
-              ]);
-            } catch (error: any) {
-              setIsUpdating(false);
-              console.error('❌ Complete error:', error);
-              console.error('Error details:', JSON.stringify(error));
-              Alert.alert(
-                'Error',
-                error?.message || String(error) || 'Failed to complete delivery'
-              );
-            }
-          },
-        },
-      ]
-    );
+      const result = await dispatch(
+        completeTrip(tripId) as any
+      ).unwrap();
+
+      setIsUpdating(false);
+      showToast.success('Delivery marked as completed!');
+
+      // Refresh trips list and navigate back
+      dispatch(fetchAllTrips() as any);
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
+    } catch (error: any) {
+      setIsUpdating(false);
+      console.error('❌ Complete error:', error);
+      console.error('Error details:', JSON.stringify(error));
+      showToast.error(error?.message || String(error) || 'Failed to complete delivery');
+    }
   };
 
   const handleRefreshLocation = async () => {
@@ -212,7 +201,7 @@ export default function TripTrackingScreen({ route, navigation }: any) {
       }
     } catch (error) {
       console.error('Error refreshing location:', error);
-      Alert.alert('Error', 'Failed to refresh location');
+      showToast.error('Failed to refresh location');
     } finally {
       setIsUpdating(false);
     }
@@ -239,7 +228,13 @@ export default function TripTrackingScreen({ route, navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Return to previous screen"
+        >
           <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>Trip Tracking</Text>
@@ -308,6 +303,11 @@ export default function TripTrackingScreen({ route, navigation }: any) {
               style={[styles.refreshButton, { backgroundColor: theme.info }]}
               onPress={handleRefreshLocation}
               disabled={isUpdating}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh location"
+              accessibilityHint="Update current GPS location on map"
+              accessibilityState={{ disabled: isUpdating, busy: isUpdating }}
             >
               {isUpdating ? (
                 <ActivityIndicator color="#fff" size="small" />
@@ -324,6 +324,11 @@ export default function TripTrackingScreen({ route, navigation }: any) {
                 style={[styles.completeButton, { backgroundColor: theme.success }]}
                 onPress={handleMarkCompleted}
                 disabled={isUpdating}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Mark completed"
+                accessibilityHint="Mark this delivery as completed"
+                accessibilityState={{ disabled: isUpdating, busy: isUpdating }}
               >
                 {isUpdating ? (
                   <ActivityIndicator color="#fff" size="small" />
@@ -385,6 +390,18 @@ export default function TripTrackingScreen({ route, navigation }: any) {
           </Card>
         )}
       </ScrollView>
+
+      {/* Complete Trip Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showCompleteDialog}
+        title="Complete Delivery"
+        message="Mark this delivery as completed?"
+        cancelText="Cancel"
+        confirmText="Confirm"
+        onCancel={() => setShowCompleteDialog(false)}
+        onConfirm={handleConfirmComplete}
+        isDestructive={false}
+      />
     </View>
   );
 }

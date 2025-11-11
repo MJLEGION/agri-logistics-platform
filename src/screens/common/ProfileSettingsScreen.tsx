@@ -9,9 +9,9 @@ import {
   Image,
   Switch,
   TextInput,
-  Alert,
   ActivityIndicator,
   Platform,
+  ActionSheetIOS,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,20 +19,33 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { Card } from '../../components/common/Card';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import ProfileStrengthIndicator from '../../components/profile/ProfileStrengthIndicator';
 import { profileService } from '../../services/profileService';
 import { logger } from '../../utils/logger';
 import { ErrorState } from '../../components/common/ErrorState';
+import AddressManager from '../../components/AddressManager';
+import Button from '../../components/Button';
+import { showToast } from '../../services/toastService';
 
 interface ProfileData {
   name: string;
   phone: string;
+  email?: string;
   profilePicture?: string;
   age?: string;
   gender?: 'male' | 'female' | 'other' | '';
   location?: string;
   professionalTitle?: string;
   bio?: string;
+}
+
+interface PaymentMethod {
+  id: string;
+  type: 'mobile_money' | 'bank_transfer' | 'card';
+  provider?: string;
+  accountNumber?: string;
+  isDefault: boolean;
 }
 
 interface NotificationPreferences {
@@ -73,15 +86,28 @@ export default function ProfileSettingsScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
 
+  const isShipper = user?.role === 'shipper';
+  const isTransporter = user?.role === 'transporter';
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'profile' | 'professional' | 'notifications' | 'privacy' | 'account'>('profile');
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
+  const [certToRemove, setCertToRemove] = useState<string | null>(null);
+
+  const shipperTabs = ['profile', 'addresses', 'payment', 'account'] as const;
+  const transporterTabs = ['profile', 'professional', 'account', 'notifications', 'privacy', 'addresses'] as const;
+  const availableTabs = isShipper ? shipperTabs : transporterTabs;
+
+  type TabType = typeof availableTabs[number];
+  const [activeTab, setActiveTab] = useState<TabType>(availableTabs[0]);
 
   // Profile Data
   const [profileData, setProfileData] = useState<ProfileData>({
     name: user?.name || '',
     phone: user?.phone || '',
+    email: user?.email || '',
     profilePicture: undefined,
     age: '',
     gender: '',
@@ -89,6 +115,9 @@ export default function ProfileSettingsScreen({ navigation }: any) {
     professionalTitle: '',
     bio: '',
   });
+
+  // Payment Methods
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
 
   // Notification Preferences
   const [notifications, setNotifications] = useState<NotificationPreferences>({
@@ -128,7 +157,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'We need camera roll permissions to update your profile picture.');
+        showToast.warning('We need camera roll permissions to update your profile picture.');
       }
     }
   };
@@ -185,10 +214,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
 
       logger.info('Profile data loaded successfully');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to load profile data';
-      logger.error('Error loading profile:', error);
-      setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      logger.warn('Profile data endpoint not available, using local data:', error?.message);
     } finally {
       setLoading(false);
     }
@@ -207,7 +233,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
         setProfileData({ ...profileData, profilePicture: result.assets[0].uri });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+      showToast.error('Failed to pick image');
     }
   };
 
@@ -215,7 +241,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'We need camera permissions to take a photo.');
+        showToast.warning('We need camera permissions to take a photo.');
         return;
       }
 
@@ -229,25 +255,33 @@ export default function ProfileSettingsScreen({ navigation }: any) {
         setProfileData({ ...profileData, profilePicture: result.assets[0].uri });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      showToast.error('Failed to take photo');
     }
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Update Profile Picture',
-      'Choose an option',
-      [
-        { text: 'Take Photo', onPress: takePhoto },
-        { text: 'Choose from Library', onPress: pickImage },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Take Photo', 'Choose from Library'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            takePhoto();
+          } else if (buttonIndex === 2) {
+            pickImage();
+          }
+        }
+      );
+    } else {
+      setShowImagePicker(true);
+    }
   };
 
   const saveProfile = async () => {
     if (!user?._id) {
-      Alert.alert('Error', 'User ID not found');
+      showToast.error('User ID not found');
       return;
     }
 
@@ -288,12 +322,12 @@ export default function ProfileSettingsScreen({ navigation }: any) {
       }
 
       logger.info('Profile saved successfully');
-      Alert.alert('Success', 'Profile updated successfully');
+      showToast.success('Profile updated successfully');
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to update profile';
       logger.error('Error saving profile:', error);
       setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      showToast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -348,42 +382,58 @@ export default function ProfileSettingsScreen({ navigation }: any) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: theme.text }]}>Age</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Email</Text>
           <TextInput
             style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-            value={profileData.age}
-            onChangeText={(text) => setProfileData({ ...profileData, age: text })}
-            placeholder="Enter your age"
+            value={profileData.email || ''}
+            onChangeText={(text) => setProfileData({ ...profileData, email: text })}
+            placeholder="Enter your email address"
             placeholderTextColor={theme.textSecondary}
-            keyboardType="number-pad"
+            keyboardType="email-address"
           />
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: theme.text }]}>Gender</Text>
-          <View style={styles.genderOptions}>
-            {['male', 'female', 'other'].map((gender) => (
-              <TouchableOpacity
-                key={gender}
-                style={[
-                  styles.genderButton,
-                  { borderColor: theme.border },
-                  profileData.gender === gender && { backgroundColor: theme.tertiary, borderColor: theme.tertiary },
-                ]}
-                onPress={() => setProfileData({ ...profileData, gender: gender as any })}
-              >
-                <Text
-                  style={[
-                    styles.genderButtonText,
-                    { color: profileData.gender === gender ? '#FFF' : theme.text },
-                  ]}
-                >
-                  {gender.charAt(0).toUpperCase() + gender.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        {isTransporter && (
+          <>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Age</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                value={profileData.age}
+                onChangeText={(text) => setProfileData({ ...profileData, age: text })}
+                placeholder="Enter your age"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Gender</Text>
+              <View style={styles.genderOptions}>
+                {['male', 'female', 'other'].map((gender) => (
+                  <TouchableOpacity
+                    key={gender}
+                    style={[
+                      styles.genderButton,
+                      { borderColor: theme.border },
+                      profileData.gender === gender && { backgroundColor: theme.tertiary, borderColor: theme.tertiary },
+                    ]}
+                    onPress={() => setProfileData({ ...profileData, gender: gender as any })}
+                  >
+                    <Text
+                      style={[
+                        styles.genderButtonText,
+                        { color: profileData.gender === gender ? '#FFF' : theme.text },
+                      ]}
+                    >
+                      {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </>
+        )}
 
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: theme.text }]}>Location</Text>
@@ -396,31 +446,35 @@ export default function ProfileSettingsScreen({ navigation }: any) {
           />
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: theme.text }]}>
-            Professional Title {user?.role === 'transporter' ? '(e.g., Truck Driver, Logistics Manager)' : '(e.g., Farmer, Distributor)'}
-          </Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-            value={profileData.professionalTitle}
-            onChangeText={(text) => setProfileData({ ...profileData, professionalTitle: text })}
-            placeholder="Enter your title"
-            placeholderTextColor={theme.textSecondary}
-          />
-        </View>
+        {isTransporter && (
+          <>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>
+                Professional Title (e.g., Truck Driver, Logistics Manager)
+              </Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                value={profileData.professionalTitle}
+                onChangeText={(text) => setProfileData({ ...profileData, professionalTitle: text })}
+                placeholder="Enter your title"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: theme.text }]}>Bio</Text>
-          <TextInput
-            style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-            value={profileData.bio}
-            onChangeText={(text) => setProfileData({ ...profileData, bio: text })}
-            placeholder="Tell us about yourself..."
-            placeholderTextColor={theme.textSecondary}
-            multiline
-            numberOfLines={4}
-          />
-        </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.text }]}>Bio</Text>
+              <TextInput
+                style={[styles.input, styles.textArea, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+                value={profileData.bio}
+                onChangeText={(text) => setProfileData({ ...profileData, bio: text })}
+                placeholder="Tell us about yourself..."
+                placeholderTextColor={theme.textSecondary}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -678,18 +732,14 @@ export default function ProfileSettingsScreen({ navigation }: any) {
   };
 
   const removeCertification = (id: string) => {
-    Alert.alert(
-      'Remove Certification',
-      'Are you sure you want to remove this certification?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => setCertifications(certifications.filter((cert) => cert.id !== id)),
-        },
-      ]
-    );
+    setCertToRemove(id);
+  };
+
+  const handleConfirmRemoveCert = () => {
+    if (certToRemove) {
+      setCertifications(certifications.filter((cert) => cert.id !== certToRemove));
+      setCertToRemove(null);
+    }
   };
 
   const renderProfessionalTab = () => (
@@ -845,7 +895,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
                   <Ionicons
                     name={cert.verified ? 'checkmark-circle' : 'ribbon'}
                     size={24}
-                    color={cert.verified ? '#10B981' : theme.tertiary}
+                    color={cert.verified ? '#10797D' : theme.tertiary}
                   />
                   <View style={styles.certInfo}>
                     <Text style={[styles.certName, { color: theme.text }]}>{cert.name}</Text>
@@ -861,7 +911,7 @@ export default function ProfileSettingsScreen({ navigation }: any) {
                       </Text>
                     )}
                     {cert.verified && (
-                      <Text style={[styles.verifiedBadge, { color: '#10B981' }]}>✓ Verified</Text>
+                      <Text style={[styles.verifiedBadge, { color: '#10797D' }]}>✓ Verified</Text>
                     )}
                   </View>
                   <TouchableOpacity
@@ -906,13 +956,27 @@ export default function ProfileSettingsScreen({ navigation }: any) {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Actions</Text>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Coming Soon', 'This feature will be available soon')}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => showToast.info('Help & Support feature will be available soon')}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Help and Support"
+          accessibilityHint="Feature coming soon"
+        >
           <Ionicons name="help-circle" size={24} color={theme.tertiary} />
           <Text style={[styles.actionButtonText, { color: theme.text }]}>Help & Support</Text>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => Alert.alert('Coming Soon', 'This feature will be available soon')}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => showToast.info('Terms & Privacy feature will be available soon')}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Terms and Privacy"
+          accessibilityHint="Feature coming soon"
+        >
           <Ionicons name="document-text" size={24} color={theme.tertiary} />
           <Text style={[styles.actionButtonText, { color: theme.text }]}>Terms & Privacy</Text>
           <Ionicons name="chevron-forward" size={20} color={theme.textSecondary} />
@@ -920,19 +984,76 @@ export default function ProfileSettingsScreen({ navigation }: any) {
 
         <TouchableOpacity
           style={[styles.actionButton, styles.dangerButton]}
-          onPress={() => Alert.alert(
-            'Delete Account',
-            'Are you sure you want to delete your account? This action cannot be undone.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete', style: 'destructive', onPress: () => console.log('Delete account') },
-            ]
-          )}
+          onPress={() => setShowDeleteAccountDialog(true)}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          accessibilityHint="This action cannot be undone"
         >
           <Ionicons name="trash" size={24} color={theme.error} />
           <Text style={[styles.actionButtonText, { color: theme.error }]}>Delete Account</Text>
           <Ionicons name="chevron-forward" size={20} color={theme.error} />
         </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderPaymentTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Payment Methods</Text>
+
+        {paymentMethods.length === 0 ? (
+          <View style={styles.emptyStateContainer}>
+            <Ionicons name="card" size={48} color={theme.textSecondary} />
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>No payment methods added</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>Add a payment method to receive payments</Text>
+          </View>
+        ) : (
+          <View style={styles.paymentList}>
+            {paymentMethods.map((method) => (
+              <Card key={method.id} style={styles.paymentCard}>
+                <View style={styles.paymentRow}>
+                  <View style={styles.paymentInfo}>
+                    <Ionicons name="card" size={20} color={theme.tertiary} style={styles.paymentIcon} />
+                    <View>
+                      <Text style={[styles.paymentType, { color: theme.text }]}>
+                        {method.type === 'mobile_money' ? 'Mobile Money' : method.type === 'bank_transfer' ? 'Bank Transfer' : 'Card'}
+                      </Text>
+                      {method.provider && (
+                        <Text style={[styles.paymentProvider, { color: theme.textSecondary }]}>{method.provider}</Text>
+                      )}
+                    </View>
+                  </View>
+                  {method.isDefault && (
+                    <View style={[styles.defaultBadge, { backgroundColor: theme.success + '20' }]}>
+                      <Text style={[styles.defaultBadgeText, { color: theme.success }]}>Default</Text>
+                    </View>
+                  )}
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
+
+        <Button
+          title="+ Add Payment Method"
+          onPress={() => showToast.info('Payment method management feature coming soon')}
+          variant="primary"
+          size="lg"
+          accessibilityLabel="Add payment method"
+          accessibilityHint="Feature coming soon"
+          fullWidth
+          style={{ marginTop: 16 }}
+        />
+      </View>
+    </View>
+  );
+
+  const renderAddressesTab = () => (
+    <View style={styles.tabContent}>
+      <View style={{ padding: 16 }}>
+        <AddressManager userId={user?._id || user?.id || ''} />
       </View>
     </View>
   );
@@ -961,10 +1082,10 @@ export default function ProfileSettingsScreen({ navigation }: any) {
       </LinearGradient>
 
       {/* Tabs */}
-      <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'profile' && styles.activeTab]}
-          onPress={() => setActiveTab('profile')}
+          onPress={() => setActiveTab('profile' as TabType)}
         >
           <Ionicons name="person" size={20} color={activeTab === 'profile' ? theme.tertiary : theme.textSecondary} />
           <Text style={[styles.tabText, { color: activeTab === 'profile' ? theme.tertiary : theme.textSecondary }]}>
@@ -972,49 +1093,89 @@ export default function ProfileSettingsScreen({ navigation }: any) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
-          onPress={() => setActiveTab('professional')}
-        >
-          <Ionicons name="briefcase" size={20} color={activeTab === 'professional' ? theme.tertiary : theme.textSecondary} />
-          <Text style={[styles.tabText, { color: activeTab === 'professional' ? theme.tertiary : theme.textSecondary }]}>
-            Pro
-          </Text>
-        </TouchableOpacity>
+        {isTransporter && (
+          <>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
+              onPress={() => setActiveTab('professional' as TabType)}
+            >
+              <Ionicons name="briefcase" size={20} color={activeTab === 'professional' ? theme.tertiary : theme.textSecondary} />
+              <Text style={[styles.tabText, { color: activeTab === 'professional' ? theme.tertiary : theme.textSecondary }]}>
+                Pro
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'notifications' && styles.activeTab]}
-          onPress={() => setActiveTab('notifications')}
-        >
-          <Ionicons name="notifications" size={20} color={activeTab === 'notifications' ? theme.tertiary : theme.textSecondary} />
-          <Text style={[styles.tabText, { color: activeTab === 'notifications' ? theme.tertiary : theme.textSecondary }]}>
-            Alerts
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'notifications' && styles.activeTab]}
+              onPress={() => setActiveTab('notifications' as TabType)}
+            >
+              <Ionicons name="notifications" size={20} color={activeTab === 'notifications' ? theme.tertiary : theme.textSecondary} />
+              <Text style={[styles.tabText, { color: activeTab === 'notifications' ? theme.tertiary : theme.textSecondary }]}>
+                Alerts
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'privacy' && styles.activeTab]}
-          onPress={() => setActiveTab('privacy')}
-        >
-          <Ionicons name="shield" size={20} color={activeTab === 'privacy' ? theme.tertiary : theme.textSecondary} />
-          <Text style={[styles.tabText, { color: activeTab === 'privacy' ? theme.tertiary : theme.textSecondary }]}>
-            Privacy
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'privacy' && styles.activeTab]}
+              onPress={() => setActiveTab('privacy' as TabType)}
+            >
+              <Ionicons name="shield" size={20} color={activeTab === 'privacy' ? theme.tertiary : theme.textSecondary} />
+              <Text style={[styles.tabText, { color: activeTab === 'privacy' ? theme.tertiary : theme.textSecondary }]}>
+                Privacy
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {isShipper && (
+          <>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'addresses' && styles.activeTab]}
+              onPress={() => setActiveTab('addresses' as TabType)}
+            >
+              <Ionicons name="location" size={20} color={activeTab === 'addresses' ? theme.tertiary : theme.textSecondary} />
+              <Text style={[styles.tabText, { color: activeTab === 'addresses' ? theme.tertiary : theme.textSecondary }]}>
+                Addresses
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'payment' && styles.activeTab]}
+              onPress={() => setActiveTab('payment' as TabType)}
+            >
+              <Ionicons name="card" size={20} color={activeTab === 'payment' ? theme.tertiary : theme.textSecondary} />
+              <Text style={[styles.tabText, { color: activeTab === 'payment' ? theme.tertiary : theme.textSecondary }]}>
+                Payment
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {isTransporter && (
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'addresses' && styles.activeTab]}
+            onPress={() => setActiveTab('addresses' as TabType)}
+          >
+            <Ionicons name="location" size={20} color={activeTab === 'addresses' ? theme.tertiary : theme.textSecondary} />
+            <Text style={[styles.tabText, { color: activeTab === 'addresses' ? theme.tertiary : theme.textSecondary }]}>
+              Addresses
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={[styles.tab, activeTab === 'account' && styles.activeTab]}
-          onPress={() => setActiveTab('account')}
+          onPress={() => setActiveTab('account' as TabType)}
         >
           <Ionicons name="settings" size={20} color={activeTab === 'account' ? theme.tertiary : theme.textSecondary} />
           <Text style={[styles.tabText, { color: activeTab === 'account' ? theme.tertiary : theme.textSecondary }]}>
             Account
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
       {/* Error State */}
-      {error && (
+      {error && activeTab !== 'addresses' && (
         <View style={{ padding: 16 }}>
           <ErrorState
             message={error}
@@ -1042,15 +1203,22 @@ export default function ProfileSettingsScreen({ navigation }: any) {
         {!error && activeTab === 'notifications' && renderNotificationsTab()}
         {!error && activeTab === 'privacy' && renderPrivacyTab()}
         {!error && activeTab === 'account' && renderAccountTab()}
+        {!error && activeTab === 'addresses' && renderAddressesTab()}
+        {!error && activeTab === 'payment' && renderPaymentTab()}
       </ScrollView>
 
       {/* Save Button (only show for profile, notifications, and privacy tabs) */}
-      {activeTab !== 'account' && (
+      {activeTab !== 'account' && activeTab !== 'addresses' && activeTab !== 'payment' && (
         <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
           <TouchableOpacity
             style={[styles.saveButton, { backgroundColor: theme.tertiary }]}
             onPress={saveProfile}
             disabled={saving}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Save changes"
+            accessibilityHint="Save profile changes"
+            accessibilityState={{ disabled: saving, busy: saving }}
           >
             {saving ? (
               <ActivityIndicator color="#FFF" />
@@ -1062,6 +1230,50 @@ export default function ProfileSettingsScreen({ navigation }: any) {
             )}
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        visible={!!certToRemove}
+        title="Remove Certification"
+        message="Are you sure you want to remove this certification?"
+        cancelText="Cancel"
+        confirmText="Remove"
+        onCancel={() => setCertToRemove(null)}
+        onConfirm={handleConfirmRemoveCert}
+        isDestructive={true}
+      />
+
+      <ConfirmDialog
+        visible={showDeleteAccountDialog}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This action cannot be undone."
+        cancelText="Cancel"
+        confirmText="Delete"
+        onCancel={() => setShowDeleteAccountDialog(false)}
+        onConfirm={() => {
+          setShowDeleteAccountDialog(false);
+          console.log('Delete account');
+          showToast.info('Account deletion feature coming soon');
+        }}
+        isDestructive={true}
+      />
+
+      {/* Image Picker Dialog for Android/Web */}
+      {Platform.OS !== 'ios' && (
+        <ConfirmDialog
+          visible={showImagePicker}
+          title="Update Profile Picture"
+          message="Choose an option"
+          cancelText="Cancel"
+          confirmText="Take Photo"
+          onCancel={() => setShowImagePicker(false)}
+          onConfirm={() => {
+            setShowImagePicker(false);
+            takePhoto();
+          }}
+          isDestructive={false}
+        />
       )}
     </View>
   );
@@ -1422,5 +1634,57 @@ const styles = StyleSheet.create({
   },
   certRemove: {
     padding: 4,
+  },
+  emptyStateContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  emptyStateSubtext: {
+    fontSize: 13,
+    marginTop: 4,
+  },
+  paymentList: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  paymentCard: {
+    marginBottom: 0,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  paymentInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  paymentIcon: {
+    marginRight: 4,
+  },
+  paymentType: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  paymentProvider: {
+    fontSize: 12,
+  },
+  defaultBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  defaultBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

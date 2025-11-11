@@ -19,7 +19,7 @@ export const VEHICLE_TYPES: Record<string, VehicleType> = {
     icon: '🏍️',
     minWeight: 0,
     maxWeight: 50,
-    baseRatePerKm: 300,
+    baseRatePerKm: 425,
     description: 'Fast delivery for small items',
     capacity: 'Up to 50 kg',
   },
@@ -29,7 +29,7 @@ export const VEHICLE_TYPES: Record<string, VehicleType> = {
     icon: '🚐',
     minWeight: 50,
     maxWeight: 500,
-    baseRatePerKm: 500,
+    baseRatePerKm: 1000,
     description: 'Medium-sized cargo, general purpose',
     capacity: '50 - 500 kg',
   },
@@ -39,7 +39,7 @@ export const VEHICLE_TYPES: Record<string, VehicleType> = {
     icon: '🚚',
     minWeight: 500,
     maxWeight: 5000,
-    baseRatePerKm: 800,
+    baseRatePerKm: 1400,
     description: 'Large bulk shipments',
     capacity: '500 kg - 5 tons',
   },
@@ -79,16 +79,8 @@ export const calculateShippingCost = (
   const baseCost = distance * vehicle.baseRatePerKm;
   const costWithTraffic = baseCost * trafficFactor;
 
-  // Vehicle-specific minimum charges (more reasonable)
-  // Moto: 1,000 RWF, Van: 2,000 RWF, Truck: 3,000 RWF
-  const minCharges: Record<string, number> = {
-    'moto': 1000,
-    'van': 2000,
-    'truck': 3000,
-  };
-  const minCharge = minCharges[vehicleId] || 2000;
-
-  return Math.max(Math.round(costWithTraffic), minCharge);
+  // No minimum charges - show exact calculated amount
+  return Math.round(costWithTraffic);
 };
 
 /**

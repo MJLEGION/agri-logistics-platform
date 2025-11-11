@@ -1,7 +1,10 @@
 // src/components/common/ConfirmDialog.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { Spacing, BorderRadius, Shadows, Typography, ZIndex } from '../../config/designSystem';
+import Button from '../Button';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -32,37 +35,78 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onCancel}
+      statusBarTranslucent
+      accessible={true}
+      accessibilityLabel={`${title}. ${message}`}
+      accessibilityRole="alert"
     >
-      <View style={styles.backdrop}>
-        <View style={[styles.dialog, { backgroundColor: theme.card }]}>
-          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-          <Text style={[styles.message, { color: theme.textSecondary }]}>
+      <View style={[styles.backdrop, { backgroundColor: theme.overlay }]}>
+        <View
+          style={[
+            styles.dialog,
+            {
+              backgroundColor: theme.surface,
+              shadowColor: theme.shadow,
+            },
+          ]}
+          accessible={true}
+          accessibilityRole="alertdialog"
+        >
+          {/* Icon */}
+          <View style={[styles.iconContainer, { backgroundColor: isDestructive ? `${theme.error}20` : `${theme.primary}20` }]}>
+            <Ionicons
+              name={isDestructive ? 'warning' : 'information-circle'}
+              size={32}
+              color={isDestructive ? theme.error : theme.primary}
+            />
+          </View>
+
+          {/* Title */}
+          <Text
+            style={[
+              styles.title,
+              { color: theme.text },
+              Typography.h4,
+            ]}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            {title}
+          </Text>
+
+          {/* Message */}
+          <Text
+            style={[
+              styles.message,
+              { color: theme.textSecondary },
+              Typography.body,
+            ]}
+          >
             {message}
           </Text>
 
+          {/* Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: theme.border }]}
+            <Button
+              title={cancelText}
               onPress={onCancel}
-            >
-              <Text style={[styles.buttonText, { color: theme.text }]}>
-                {cancelText}
-              </Text>
-            </TouchableOpacity>
+              variant="outline"
+              size="md"
+              style={styles.cancelButton}
+              gradient={false}
+              accessibilityLabel={`${cancelText} button`}
+              accessibilityHint="Dismiss this dialog"
+            />
 
-            <TouchableOpacity
-              style={[
-                styles.button,
-                {
-                  backgroundColor: isDestructive ? '#FF6B6B' : theme.primary,
-                },
-              ]}
+            <Button
+              title={confirmText}
               onPress={onConfirm}
-            >
-              <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
-                {confirmText}
-              </Text>
-            </TouchableOpacity>
+              variant={isDestructive ? 'danger' : 'primary'}
+              size="md"
+              style={styles.confirmButton}
+              accessibilityLabel={`${confirmText} button`}
+              accessibilityHint={isDestructive ? 'This action cannot be undone' : 'Confirm this action'}
+            />
           </View>
         </View>
       </View>
@@ -73,45 +117,44 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: ZIndex.modal,
   },
   dialog: {
-    borderRadius: 12,
-    padding: 24,
-    width: '80%',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xxl,
+    width: '85%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...Shadows.xl,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
   },
   message: {
-    fontSize: 14,
-    marginBottom: 24,
-    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: Spacing.xxl,
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
+    gap: Spacing.md,
+    width: '100%',
+    justifyContent: 'space-between',
   },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-    minWidth: 80,
-    alignItems: 'center',
+  cancelButton: {
+    flex: 1,
   },
-  buttonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  confirmButton: {
+    flex: 1,
   },
 });

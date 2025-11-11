@@ -116,8 +116,10 @@ export const mockAuthService = {
     mockUsers.push(newUser);
 
     // Save to AsyncStorage
+    const refreshToken = 'refresh_' + Math.random().toString(36).substr(2, 20);
     await AsyncStorage.setItem('mockUsers', JSON.stringify(mockUsers));
     await AsyncStorage.setItem('token', newUser.token);
+    await AsyncStorage.setItem('refreshToken', refreshToken);
 
     // Return user without password
     return {
@@ -126,6 +128,7 @@ export const mockAuthService = {
       phone: newUser.phone,
       role: newUser.role === 'farmer' ? 'shipper' : newUser.role, // Normalize 'farmer' to 'shipper'
       token: newUser.token,
+      refreshToken,
     };
   },
 
@@ -166,16 +169,19 @@ export const mockAuthService = {
       throw new Error('Invalid password');
     }
 
-    // Save token
+    // Save token and generate refresh token
+    const refreshToken = 'refresh_' + Math.random().toString(36).substr(2, 20);
     await AsyncStorage.setItem('token', user.token);
+    await AsyncStorage.setItem('refreshToken', refreshToken);
     
-        // Return user without password
+    // Return user without password
     return {
       _id: user._id,
       name: user.name,
       phone: user.phone,
       role: user.role === 'farmer' ? 'shipper' : user.role, // Normalize 'farmer' to 'shipper'
       token: user.token,
+      refreshToken,
     };
   },
 

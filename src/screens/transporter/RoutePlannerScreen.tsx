@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   TextInput,
   Animated,
   Pressable,
@@ -25,6 +24,8 @@ import {
   calculateEarnings,
   calculateFuelCost,
 } from '../../services/routeOptimizationService';
+import { showToast } from '../../services/toastService';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 
 export default function RoutePlannerScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -36,6 +37,7 @@ export default function RoutePlannerScreen({ navigation }: any) {
   const [selectedLoads, setSelectedLoads] = useState<any[]>([]);
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
 
   useEffect(() => {
     getCurrentLocation();
@@ -81,12 +83,12 @@ export default function RoutePlannerScreen({ navigation }: any) {
 
   const optimizeRoute = () => {
     if (!currentLocation) {
-      Alert.alert('Error', 'Unable to get current location');
+      showToast.error('Unable to get current location');
       return;
     }
 
     if (selectedLoads.length === 0) {
-      Alert.alert('No Loads Selected', 'Please select at least one load to optimize');
+      showToast.warning('Please select at least one load to optimize');
       return;
     }
 
@@ -126,8 +128,9 @@ export default function RoutePlannerScreen({ navigation }: any) {
         netProfit,
         restStops,
       });
+      showToast.success('Route optimized successfully!');
     } catch (error) {
-      Alert.alert('Error', 'Failed to optimize route');
+      showToast.error('Failed to optimize route');
     } finally {
       setIsOptimizing(false);
     }
@@ -138,11 +141,24 @@ export default function RoutePlannerScreen({ navigation }: any) {
     setSelectedLoads([]);
   };
 
+  const handleStartNavigation = () => {
+    setShowNavigationDialog(false);
+    if (selectedLoads[0]) {
+      navigation.navigate('TripTracking', { trip: selectedLoads[0] });
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
       <LinearGradient colors={['#EC4899', '#DB2777']} style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Navigate to previous screen"
+        >
           <Ionicons name="chevron-back" size={24} color="#FFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Route Planner</Text>
@@ -199,6 +215,11 @@ export default function RoutePlannerScreen({ navigation }: any) {
                         },
                       ]}
                       onPress={() => toggleLoad(load)}
+                      accessible={true}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel={`Load: ${load.cropId?.name || 'Cargo'}, ${load.quantity}`}
+                      accessibilityHint={`Route from ${load.pickupLocation.address.split(',')[0]} to ${load.deliveryLocation.address.split(',')[0]}`}
+                      accessibilityState={{ checked: isSelected }}
                     >
                       <View style={styles.loadLeft}>
                         <View
@@ -239,6 +260,10 @@ export default function RoutePlannerScreen({ navigation }: any) {
             <TouchableOpacity
               style={[styles.button, { backgroundColor: theme.error }]}
               onPress={clearRoute}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Clear selection"
+              accessibilityHint="Remove all selected loads and reset route"
             >
               <Ionicons name="close-circle" size={20} color="#FFF" />
               <Text style={styles.buttonText}>Clear</Text>
@@ -247,6 +272,11 @@ export default function RoutePlannerScreen({ navigation }: any) {
               style={[styles.button, { backgroundColor: '#EC4899', flex: 2 }]}
               onPress={optimizeRoute}
               disabled={isOptimizing}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Optimize route"
+              accessibilityHint={`Calculate optimal route for ${selectedLoads.length} selected loads`}
+              accessibilityState={{ disabled: isOptimizing, busy: isOptimizing }}
             >
               <Ionicons name="git-network" size={20} color="#FFF" />
               <Text style={styles.buttonText}>
@@ -260,10 +290,10 @@ export default function RoutePlannerScreen({ navigation }: any) {
         {optimizedRoute && (
           <>
             {/* Summary Card */}
-            <View style={[styles.card, { backgroundColor: '#10B981' + '15' }]}>
+            <View style={[styles.card, { backgroundColor: '#10797D' + '15' }]}>
               <View style={styles.cardHeader}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                <Text style={[styles.cardTitle, { color: '#10B981' }]}>
+                <Ionicons name="checkmark-circle" size={24} color="#10797D" />
+                <Text style={[styles.cardTitle, { color: '#10797D' }]}>
                   Route Optimized!
                 </Text>
               </View>
@@ -292,7 +322,7 @@ export default function RoutePlannerScreen({ navigation }: any) {
                   <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                     Earnings
                   </Text>
-                  <Text style={[styles.statValue, { color: '#10B981' }]}>
+                  <Text style={[styles.statValue, { color: '#10797D' }]}>
                     {optimizedRoute.totalEarnings.toLocaleString()} RWF
                   </Text>
                 </View>
@@ -310,7 +340,7 @@ export default function RoutePlannerScreen({ navigation }: any) {
                   <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
                     Net Profit
                   </Text>
-                  <Text style={[styles.statValue, { color: '#10B981', fontSize: 20 }]}>
+                  <Text style={[styles.statValue, { color: '#10797D', fontSize: 20 }]}>
                     {optimizedRoute.netProfit.toLocaleString()} RWF
                   </Text>
                 </View>
@@ -338,9 +368,9 @@ export default function RoutePlannerScreen({ navigation }: any) {
               <View style={styles.routeSequence}>
                 {/* Start */}
                 <View style={styles.sequenceItem}>
-                  <View style={[styles.sequenceDot, { backgroundColor: '#10B981' }]} />
+                  <View style={[styles.sequenceDot, { backgroundColor: '#10797D' }]} />
                   <View style={styles.sequenceContent}>
-                    <Text style={[styles.sequenceLabel, { color: '#10B981' }]}>START</Text>
+                    <Text style={[styles.sequenceLabel, { color: '#10797D' }]}>START</Text>
                     <Text style={[styles.sequenceAddress, { color: theme.text }]}>
                       {currentLocation.address}
                     </Text>
@@ -413,24 +443,12 @@ export default function RoutePlannerScreen({ navigation }: any) {
 
             {/* Start Navigation Button */}
             <TouchableOpacity
-              style={[styles.startButton, { backgroundColor: '#10B981' }]}
-              onPress={() =>
-                Alert.alert(
-                  'Start Navigation',
-                  'This would open turn-by-turn navigation. For now, use the trip tracking screen.',
-                  [
-                    { text: 'Cancel' },
-                    {
-                      text: 'View on Map',
-                      onPress: () => {
-                        if (selectedLoads[0]) {
-                          navigation.navigate('TripTracking', { trip: selectedLoads[0] });
-                        }
-                      },
-                    },
-                  ]
-                )
-              }
+              style={[styles.startButton, { backgroundColor: '#10797D' }]}
+              onPress={() => setShowNavigationDialog(true)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Start navigation"
+              accessibilityHint={`Begin turn-by-turn navigation for ${optimizedRoute.waypoints.length} stops`}
             >
               <Ionicons name="navigate-circle" size={24} color="#FFF" />
               <Text style={styles.startButtonText}>Start Navigation</Text>
@@ -438,6 +456,18 @@ export default function RoutePlannerScreen({ navigation }: any) {
           </>
         )}
       </ScrollView>
+
+      {/* Navigation Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showNavigationDialog}
+        title="Start Navigation"
+        message="This would open turn-by-turn navigation. For now, use the trip tracking screen."
+        cancelText="Cancel"
+        confirmText="View on Map"
+        onCancel={() => setShowNavigationDialog(false)}
+        onConfirm={handleStartNavigation}
+        isDestructive={false}
+      />
     </View>
   );
 }

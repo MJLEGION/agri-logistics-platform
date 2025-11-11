@@ -1,6 +1,6 @@
 // src/screens/shipper/MyCargoScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Animated, Pressable, PanResponder } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Animated, Pressable, PanResponder } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -9,12 +9,13 @@ import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { fetchCargo, deleteCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { distanceService } from '../../services/distanceService';
-import { suggestVehicleType, getVehicleType, calculateShippingCost } from '../../services/vehicleService';
+import { suggestVehicleType, getVehicleType, calculateShippingCost, getTrafficFactor, getTrafficDescription } from '../../services/vehicleService';
 import SearchBar from '../../components/SearchBar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
-import Toast, { useToast } from '../../components/Toast';
+import { showToast } from '../../services/toastService';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import Divider from '../../components/Divider';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,8 +26,7 @@ export default function MyCargoScreen({ navigation }: any) {
   const { cargo, isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
-  const { toast, showSuccess, showError, hideToast } = useToast();
-  
+
   // ✨ Pizzazz Animations
   const animations = useScreenAnimations(6);
 
@@ -82,21 +82,29 @@ export default function MyCargoScreen({ navigation }: any) {
     if (!pendingDeleteId) return;
 
     logger.info('Deleting cargo', { cargoId: pendingDeleteId });
+    const cargoItem = myListings.find(c => c._id === pendingDeleteId || c.id === pendingDeleteId);
+    console.log('🎯 MyCargoScreen: Cargo to delete:', {
+      id: pendingDeleteId,
+      shipperId: cargoItem?.shipperId,
+      userId: user?._id || user?.id,
+    });
     setDialogVisible(false);
 
     try {
-      const result = await dispatch(deleteCargo(pendingDeleteId));
+      const result = await dispatch(deleteCargo(pendingDeleteId)) as any;
 
       if (result.type.includes('fulfilled')) {
         logger.info('Cargo deleted successfully', { cargoId: pendingDeleteId });
-        showSuccess('Cargo deleted successfully!');
+        showToast.success('Cargo deleted successfully!');
+        dispatch(fetchCargo());
       } else {
-        logger.error('Failed to delete cargo', result.payload);
-        showError('Failed to delete cargo. Please try again.');
+        const errorMessage = result.payload || 'Failed to delete cargo. Please try again.';
+        logger.error('Failed to delete cargo', { cargoId: pendingDeleteId, error: errorMessage });
+        showToast.error(errorMessage);
       }
     } catch (error: any) {
       logger.error('Error deleting cargo', error);
-      showError('An error occurred while deleting cargo.');
+      showToast.error(error?.message || 'An error occurred while deleting cargo.');
     }
     
     setPendingDeleteId(null);
@@ -112,8 +120,13 @@ export default function MyCargoScreen({ navigation }: any) {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.title, { color: theme.card }]}>My Cargo</Text>
+        </View>
+        <View style={{ padding: 16 }}>
+          <ListSkeleton count={4} />
+        </View>
       </View>
     );
   }
@@ -121,7 +134,13 @@ export default function MyCargoScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Navigate to previous screen"
+        >
           <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>My Cargo ({myListings.length})</Text>
@@ -170,7 +189,15 @@ export default function MyCargoScreen({ navigation }: any) {
             // If no destination, use Kigali city center as default
             const deliveryLat = item.destination?.latitude || -1.9536;
             const deliveryLon = item.destination?.longitude || 30.0605;
-            const hasDestination = !!(item.destination?.latitude && item.destination?.longitude);
+
+            // Check if destination is actually set (not just default values or missing)
+            // A valid destination must have coordinates AND an address
+            const hasDestination = !!(
+              item.destination?.latitude &&
+              item.destination?.longitude &&
+              item.destination?.address &&
+              item.destination?.address.trim() !== ''
+            );
 
             const distance = distanceService.calculateDistance(
               pickupLat,
@@ -183,12 +210,32 @@ export default function MyCargoScreen({ navigation }: any) {
             const cargoWeight = item.quantity || 0;
             const suggestedVehicleId = suggestVehicleType(cargoWeight);
             const vehicleType = getVehicleType(suggestedVehicleId);
-            const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+
+            // Get current traffic conditions
+            const trafficFactor = getTrafficFactor();
+            const trafficDesc = getTrafficDescription(trafficFactor);
+
+            // Use pre-calculated shippingCost if available, otherwise calculate with current traffic
+            const transportFee = item.shippingCost !== undefined && item.shippingCost > 0
+              ? item.shippingCost
+              : calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
+
+            // Production logging disabled for performance
+            // console.log('%c📦 MyCargoScreen - Cargo card data:', 'color: #2196F3; font-weight: bold', {
+            //   cargoName: item.name,
+            //   transportFee: transportFee,
+            // });
 
             return (
               <View style={styles.cardWrapper}>
                 <Card>
-                  <TouchableOpacity onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('CargoDetails', { cargoId: item._id || item.id })}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${item.name} cargo details`}
+                    accessibilityHint="Double tap to view full cargo information"
+                  >
                     {/* Header Section */}
                     <View style={styles.cargoCardHeader}>
                       <View style={styles.cargoInfo}>
@@ -197,17 +244,17 @@ export default function MyCargoScreen({ navigation }: any) {
                         </Text>
                         <View style={styles.badgeRow}>
                           <Badge
-                            label={`${item.quantity} ${item.unit}`}
+                            text={`${item.quantity} ${item.unit}`}
                             variant="gray"
                             size="sm"
                           />
                           <Badge
-                            label={vehicleType?.name || '🚚 Truck'}
-                            variant="secondary"
+                            text={vehicleType?.name || '🚚 Truck'}
+                            variant="gray"
                             size="sm"
                           />
                           <Badge
-                            label={item.status}
+                            text={item.status}
                             variant={item.status === 'listed' ? 'primary' : item.status === 'matched' ? 'success' : 'gray'}
                             size="sm"
                           />
@@ -253,14 +300,19 @@ export default function MyCargoScreen({ navigation }: any) {
                         <View style={styles.pricingDivider} />
                         <View style={styles.pricingItem}>
                           <Text style={[styles.pricingLabel, { color: theme.textSecondary }]}>
-                            🚚 Transport Fee {!hasDestination && '(Est.)'}
+                            🚚 Transport Fee {!item.destination && '(Est.)'}
                           </Text>
                           <Text style={[styles.pricingValue, { color: theme.success }]}>
                             {transportFee.toLocaleString()} RWF
                           </Text>
                           <Text style={[styles.pricingSubtext, { color: theme.textSecondary }]}>
-                            {distance} km × {vehicleType?.baseRatePerKm} RWF/km
+                            {item.distance ?? distance} km × {vehicleType?.baseRatePerKm} RWF/km
                           </Text>
+                          {!(item.shippingCost !== undefined && item.shippingCost > 0) && trafficFactor > 1.0 && (
+                            <Text style={[styles.trafficBadge, { color: trafficFactor > 1.3 ? '#EF4444' : trafficFactor > 1.1 ? '#F59E0B' : theme.success }]}>
+                              {trafficDesc} (×{trafficFactor})
+                            </Text>
+                          )}
                         </View>
                       </View>
                     </View>
@@ -293,6 +345,8 @@ export default function MyCargoScreen({ navigation }: any) {
                       size="sm"
                       icon={<Ionicons name="eye-outline" size={16} color={theme.primary} />}
                       style={{ flex: 1, marginRight: 8 }}
+                      accessibilityLabel={`View details for ${item.name}`}
+                      accessibilityHint="Navigate to cargo details screen"
                     />
                     <Button
                       title="Delete"
@@ -301,6 +355,8 @@ export default function MyCargoScreen({ navigation }: any) {
                       size="sm"
                       icon={<Ionicons name="trash-outline" size={16} color="#fff" />}
                       style={{ flex: 1 }}
+                      accessibilityLabel={`Delete ${item.name}`}
+                      accessibilityHint="This action cannot be undone"
                     />
                   </View>
                 </Card>
@@ -319,14 +375,6 @@ export default function MyCargoScreen({ navigation }: any) {
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         isDestructive={true}
-      />
-
-      {/* Toast Notifications */}
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={hideToast}
       />
     </View>
   );
@@ -492,6 +540,11 @@ const styles = StyleSheet.create({
   pricingSubtext: {
     fontSize: 11,
     marginTop: 2,
+  },
+  trafficBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
   },
   detailsSection: {
     gap: 8,

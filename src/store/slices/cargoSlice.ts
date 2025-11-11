@@ -22,11 +22,25 @@ export const fetchCargo = createAsyncThunk<Cargo[], void, { rejectValue: string 
 
 export const createCargo = createAsyncThunk<Cargo, any, { rejectValue: string }>(
   'cargo/create',
-  async (cargoData, { rejectWithValue }) => {
+  async (cargoData, { rejectWithValue, getState }) => {
     try {
       console.log('🎯 cargoSlice: Creating cargo...');
+      console.log('🎯 cargoSlice: Cargo data being sent:', {
+        name: cargoData.name,
+        shipperId: cargoData.shipperId,
+      });
+      const state = getState() as any;
+      const user = state.auth?.user;
+      console.log('🎯 cargoSlice: Current user in Redux:', {
+        userId: user?._id,
+        userIdAlt: user?.id,
+        userName: user?.name,
+      });
       const result = await cargoService.createCargo(cargoData);
-      console.log('✅ cargoSlice: Cargo created successfully:', result);
+      console.log('✅ cargoSlice: Cargo created successfully:', {
+        cargoId: result._id || result.id,
+        shipperId: result.shipperId,
+      });
       return result;
     } catch (error: any) {
       console.error('❌ cargoSlice: Error creating cargo:', error);
@@ -50,16 +64,25 @@ export const updateCargo = createAsyncThunk<Cargo, UpdateCargoParams, { rejectVa
 
 export const deleteCargo = createAsyncThunk<string, string, { rejectValue: string }>(
   'cargo/delete',
-  async (id, { rejectWithValue }) => {
+  async (id, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as any;
+      const user = state.auth?.user;
       console.log('🎯 cargoSlice: Deleting cargo with ID:', id);
-      await cargoService.deleteCargo(id);
+      console.log('🎯 cargoSlice: User making delete request:', {
+        userId: user?._id || user?.id,
+        userName: user?.name,
+      });
+      await cargoService.deleteCargo(id, user?._id || user?.id);
       console.log('✅ cargoSlice: Cargo deleted successfully:', id);
       return id;
     }
     catch (error: any) {
       console.error('❌ cargoSlice: Error deleting cargo:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete cargo';
+      console.error('❌ cargoSlice: Error response:', error?.response);
+      console.error('❌ cargoSlice: Error message:', error?.message);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete cargo';
+      console.error('❌ cargoSlice: Final error message:', errorMessage);
       return rejectWithValue(errorMessage);
     }
   }

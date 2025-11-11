@@ -37,11 +37,7 @@ export const getAllTransporters = async (): Promise<Transporter[]> => {
     logger.info('Fetching all transporters from backend API');
     const response = await api.get<BackendTransporterResponse>('/transporters');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch transporters');
-    }
-
-    const transportersData = response.data.data;
+    const transportersData = response.data.data || response.data;
     const transportersArray = Array.isArray(transportersData) ? transportersData : [];
 
     logger.debug('Transporters fetched successfully', { count: transportersArray.length });
@@ -61,11 +57,7 @@ export const getAvailableTransporters = async (): Promise<Transporter[]> => {
     logger.info('Fetching available transporters from backend API');
     const response = await api.get<BackendTransporterResponse>('/transporters/available');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch available transporters');
-    }
-
-    const transportersData = response.data.data;
+    const transportersData = response.data.data || response.data;
     const transportersArray = Array.isArray(transportersData) ? transportersData : [];
 
     logger.debug('Available transporters fetched successfully', { count: transportersArray.length });
@@ -85,12 +77,13 @@ export const getTransporterById = async (id: string): Promise<Transporter> => {
     logger.info('Fetching transporter by ID', { id });
     const response = await api.get<BackendTransporterResponse>(`/transporters/${id}`);
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch transporter');
+    const transporterData = response.data.data || response.data;
+    if (!transporterData) {
+      throw new Error('No transporter data received');
     }
 
     logger.debug('Transporter fetched successfully', { id });
-    return response.data.data;
+    return transporterData;
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch transporter';
     logger.error('Failed to fetch transporter by ID', error);
@@ -106,12 +99,13 @@ export const getMyTransporterProfile = async (): Promise<Transporter> => {
     logger.info('Fetching my transporter profile');
     const response = await api.get<BackendTransporterResponse>('/transporters/profile/me');
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || 'Failed to fetch transporter profile');
+    const transporterData = response.data.data || response.data;
+    if (!transporterData) {
+      throw new Error('No transporter profile data received');
     }
 
     logger.debug('Transporter profile fetched successfully');
-    return response.data.data;
+    return transporterData;
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch transporter profile';
     logger.error('Failed to fetch transporter profile', error);

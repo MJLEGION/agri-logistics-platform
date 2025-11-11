@@ -111,32 +111,48 @@ api.interceptors.response.use(
 
         try {
           const refreshToken = await AsyncStorage.getItem(STORAGE_REFRESH_TOKEN_KEY);
+          console.log('🔍 Attempting token refresh - refreshToken exists:', !!refreshToken);
+          
           if (!refreshToken) {
-            // No refresh token - don't clear auth, let caller decide what to do
-            // This is important for mock-first architecture where token refresh may not be available
+            console.error('❌ NO REFRESH TOKEN STORED! Token refresh impossible. User must log in again.');
             logError(error, 'No refresh token available - letting mock service handle this');
             isRefreshing = false;
             return Promise.reject(error);
           }
 
-          // Attempt to refresh token
+          console.log('🔄 Calling /auth/refresh with stored refresh token...');
           const response = await axios.post(
             `${API_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
             { refreshToken },
             { timeout: API_TIMEOUT }
           );
 
-          const newToken = response.data.token;
+          console.log('✅ Token refresh response:', response.data);
+          
+          const data = response.data.data || response.data;
+          const newToken = data.token || response.data.token;
+          const newRefreshToken = data.refreshToken || response.data.refreshToken;
+          
           if (newToken) {
+            console.log('💾 Storing new access token');
             await AsyncStorage.setItem(STORAGE_TOKEN_KEY, newToken);
+            
+            if (newRefreshToken) {
+              console.log('💾 Storing new refresh token');
+              await AsyncStorage.setItem(STORAGE_REFRESH_TOKEN_KEY, newRefreshToken);
+            }
+            
             api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            console.log('✅ Token refreshed successfully, retrying original request');
             processQueue(newToken);
             return api(originalRequest);
+          } else {
+            console.error('❌ Token refresh response missing token:', response.data);
+            return Promise.reject(new Error('Token refresh response missing token'));
           }
         } catch (refreshError) {
           console.error('❌ Token refresh failed:', refreshError);
-          // Don't clear auth on refresh failure - let mock service try
           logError(error, 'Token refresh attempt failed');
           return Promise.reject(refreshError);
         } finally {

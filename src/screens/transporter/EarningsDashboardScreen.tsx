@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +19,7 @@ import {
 } from '../../logistics/utils/tripCalculations';
 import { fetchAllTrips } from '../../logistics/store/tripsSlice';
 import PaymentModal from '../../components/PaymentModal';
+import { showToast } from '../../services/toastService';
 
 type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
@@ -103,11 +103,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
 
   const handleRequestPayout = () => {
     if (stats.netEarnings < minimumWithdrawal) {
-      Alert.alert(
-        'Insufficient Balance',
-        `You need at least ${minimumWithdrawal.toLocaleString()} RWF to request a payout. Your current balance is ${stats.netEarnings.toLocaleString()} RWF.`,
-        [{ text: 'OK', style: 'cancel' }]
-      );
+      showToast.warning(`You need at least ${minimumWithdrawal.toLocaleString()} RWF to request a payout. Your current balance is ${stats.netEarnings.toLocaleString()} RWF.`);
       return;
     }
 
@@ -117,22 +113,15 @@ export default function EarningsDashboardScreen({ navigation }: any) {
   const handlePayoutSuccess = async (transactionId: string, referenceId: string) => {
     try {
       setShowPayoutModal(false);
-      Alert.alert(
-        '✅ Payout Request Successful!',
-        `Your request for ${stats.netEarnings.toLocaleString()} RWF has been submitted.\n\nTransaction ID: ${referenceId.substring(0, 12)}...\n\nYou should receive the funds within 1-2 business days.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Could navigate to a transaction history or refresh
-              dispatch(fetchAllTrips() as any);
-            },
-          },
-        ]
-      );
+      showToast.success(`Payout request for ${stats.netEarnings.toLocaleString()} RWF submitted successfully! Transaction ID: ${referenceId.substring(0, 12)}...`);
+
+      // Refresh trips after a delay
+      setTimeout(() => {
+        dispatch(fetchAllTrips() as any);
+      }, 1000);
     } catch (error) {
       console.error('Error processing payout:', error);
-      Alert.alert('Error', 'There was an issue processing your payout request. Please try again.');
+      showToast.error('There was an issue processing your payout request. Please try again.');
     }
   };
 
@@ -146,7 +135,13 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           end={{ x: 1, y: 1 }}
           style={styles.header}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Navigate to previous screen"
+          >
             <Text style={styles.backButton}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>💰 Earnings Dashboard</Text>
@@ -165,6 +160,10 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                 },
               ]}
               onPress={() => setTimePeriod(period)}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`View earnings for ${periodLabels[period].toLowerCase()}`}
+              accessibilityState={{ selected: timePeriod === period }}
             >
               <Text
                 style={[
@@ -212,6 +211,11 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           ]}
           onPress={handleRequestPayout}
           disabled={stats.netEarnings < minimumWithdrawal}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`Request payout of ${stats.netEarnings.toLocaleString()} RWF`}
+          accessibilityHint={stats.netEarnings < minimumWithdrawal ? `Minimum payout is ${minimumWithdrawal.toLocaleString()} RWF` : 'Open payout request form'}
+          accessibilityState={{ disabled: stats.netEarnings < minimumWithdrawal }}
         >
           <Ionicons name="send" size={20} color="#fff" style={{ marginRight: 8 }} />
           <Text style={styles.payoutButtonText}>
@@ -234,8 +238,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="map" size={24} color="#10B981" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="map" size={24} color="#10797D" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {stats.totalDistance}
@@ -281,7 +285,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                 <Text style={[styles.breakdownLabel, { color: theme.textSecondary }]}>
                   Gross Earnings
                 </Text>
-                <Text style={[styles.breakdownValue, { color: '#10B981' }]}>
+                <Text style={[styles.breakdownValue, { color: '#10797D' }]}>
                   +{stats.totalEarnings.toLocaleString()} RWF
                 </Text>
               </View>
@@ -375,6 +379,10 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                 <TouchableOpacity
                   key={trip._id || trip.tripId}
                   style={[styles.tripCard, { backgroundColor: theme.card }]}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Trip: ${trip.shipment?.cropName || 'Delivery'}, ${trip.shipment?.quantity} ${trip.shipment?.unit}`}
+                  accessibilityHint={`Earned ${earnings.toLocaleString()} RWF`}
                 >
                   <View style={styles.tripLeft}>
                     <View style={[styles.tripIcon, { backgroundColor: '#3B82F6' + '20' }]}>
@@ -389,7 +397,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.tripEarnings, { color: '#10B981' }]}>
+                  <Text style={[styles.tripEarnings, { color: '#10797D' }]}>
                     +{earnings.toLocaleString()}
                   </Text>
                 </TouchableOpacity>
@@ -416,8 +424,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             💡 Tips to Increase Earnings
           </Text>
-          <View style={[styles.tipCard, { backgroundColor: '#10B981' + '10', borderColor: '#10B981' }]}>
-            <Ionicons name="bulb" size={20} color="#10B981" />
+          <View style={[styles.tipCard, { backgroundColor: '#10797D' + '10', borderColor: '#10797D' }]}>
+            <Ionicons name="bulb" size={20} color="#10797D" />
             <Text style={[styles.tipText, { color: theme.text }]}>
               Accept longer trips for higher earnings
             </Text>

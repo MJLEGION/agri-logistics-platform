@@ -1,12 +1,16 @@
 // src/screens/shipper/ListCargoScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Platform, Modal, Animated, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Platform, Modal, Animated, Pressable, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { createCargo } from '../../store/slices/cargoSlice';
+import { fetchAddresses } from '../../store/slices/addressSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { validateTextField, validatePositiveNumber, validatePrice, validateFutureDate } from '../../utils/formValidation';
+import { SavedAddress } from '../../services/addressService';
+import { showToast } from '../../services/toastService';
 
 // Simple Calendar Component for Web
 const Calendar = ({ date, onChange, theme }: any) => {
@@ -48,11 +52,25 @@ const Calendar = ({ date, onChange, theme }: any) => {
   return (
     <View style={[styles.calendar, { borderColor: theme.border }]}>
       <View style={styles.calendarHeader}>
-        <TouchableOpacity onPress={prevMonth} style={styles.monthButton}>
+        <TouchableOpacity
+          onPress={prevMonth}
+          style={styles.monthButton}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
+          accessibilityHint="Navigate to previous month"
+        >
           <Text style={{ color: theme.primary, fontSize: 18 }}>←</Text>
         </TouchableOpacity>
         <Text style={[styles.monthYear, { color: theme.text }]}>{monthName}</Text>
-        <TouchableOpacity onPress={nextMonth} style={styles.monthButton}>
+        <TouchableOpacity
+          onPress={nextMonth}
+          style={styles.monthButton}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
+          accessibilityHint="Navigate to next month"
+        >
           <Text style={{ color: theme.primary, fontSize: 18 }}>→</Text>
         </TouchableOpacity>
       </View>
@@ -72,8 +90,8 @@ const Calendar = ({ date, onChange, theme }: any) => {
             style={[
               styles.dayCell,
               {
-                backgroundColor: day === date.getDate() && 
-                  displayMonth.getMonth() === date.getMonth() && 
+                backgroundColor: day === date.getDate() &&
+                  displayMonth.getMonth() === date.getMonth() &&
                   displayMonth.getFullYear() === date.getFullYear()
                   ? theme.primary
                   : 'transparent',
@@ -82,13 +100,21 @@ const Calendar = ({ date, onChange, theme }: any) => {
             ]}
             onPress={() => day && selectDay(day)}
             disabled={!day}
+            accessible={!!day}
+            accessibilityRole={day ? "button" : "none"}
+            accessibilityLabel={day ? `Select ${day}` : undefined}
+            accessibilityState={{
+              selected: day === date.getDate() &&
+                displayMonth.getMonth() === date.getMonth() &&
+                displayMonth.getFullYear() === date.getFullYear()
+            }}
           >
             <Text
               style={[
                 styles.dayText,
                 {
-                  color: day === date.getDate() && 
-                    displayMonth.getMonth() === date.getMonth() && 
+                  color: day === date.getDate() &&
+                    displayMonth.getMonth() === date.getMonth() &&
                     displayMonth.getFullYear() === date.getFullYear()
                     ? theme.card
                     : day ? theme.text : theme.textSecondary,
@@ -108,6 +134,7 @@ export default function ListCargoScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { isLoading } = useAppSelector((state) => state.cargo);
+  const { addresses } = useAppSelector((state) => state.address);
   const { theme } = useTheme();
   const animations = useScreenAnimations(4); // ✨ Pizzazz animations
   
@@ -118,6 +145,14 @@ export default function ListCargoScreen({ navigation }: any) {
   const [readyDate, setReadyDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  const [selectedDestination, setSelectedDestination] = useState<SavedAddress | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  useEffect(() => {
+    if (user?._id) {
+      dispatch(fetchAddresses(user._id));
+    }
+  }, [dispatch, user]);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'ios') {
@@ -173,7 +208,7 @@ export default function ListCargoScreen({ navigation }: any) {
 
     // If there are validation errors, show them
     if (errors.length > 0) {
-      Alert.alert('Validation Error', errors.join('\n'));
+      showToast.error(errors.join('. '));
       return;
     }
 
@@ -190,38 +225,37 @@ export default function ListCargoScreen({ navigation }: any) {
         longitude: 29.8739,
         address: 'Kigali, Rwanda',
       },
+      destination: selectedDestination ? {
+        address: selectedDestination.address,
+        latitude: selectedDestination.latitude,
+        longitude: selectedDestination.longitude,
+      } : undefined,
     };
 
 
     try {
       const result = await dispatch(createCargo(cargoData));
-      
+
       // Check if the action was fulfilled
       if (result.type.includes('fulfilled')) {
-                // Use setTimeout to ensure alert is shown
+        showToast.success(`Your cargo "${cargoName}" has been successfully listed!`);
+        // Navigate after a short delay to show the toast
         setTimeout(() => {
-          Alert.alert(
-            'Success! ✅',
-            `Your cargo "${cargoName}" has been successfully listed and is now visible to transporters!`,
-            [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
-          );
-        }, 100);
+          navigation.navigate('Home');
+        }, 500);
       } else {
         // Handle rejection
         const errorMessage = result.payload || 'Failed to list cargo. Please try again.';
-        Alert.alert('Error', errorMessage);
+        showToast.error(errorMessage);
       }
     } catch (error: any) {
       console.error('❌ ListCargoScreen: Error creating cargo:', error);
-      
-      const errorMessage = typeof error === 'string' 
-        ? error 
+
+      const errorMessage = typeof error === 'string'
+        ? error
         : error?.message || error?.payload || 'Failed to list cargo. Please try again.';
-      
-      Alert.alert(
-        'Error',
-        errorMessage
-      );
+
+      showToast.error(errorMessage);
     }
   };
 
@@ -229,7 +263,13 @@ export default function ListCargoScreen({ navigation }: any) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
         <View style={[styles.header, { backgroundColor: theme.primary }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Navigate to previous screen"
+          >
             <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
           </TouchableOpacity>
           <Text style={[styles.title, { color: theme.card }]}>List New Cargo</Text>
@@ -272,12 +312,17 @@ export default function ListCargoScreen({ navigation }: any) {
                   key={u}
                   style={[
                     styles.unitButton,
-                    { 
+                    {
                       backgroundColor: unit === u ? theme.primary : theme.card,
                       borderColor: theme.border,
                     }
                   ]}
                   onPress={() => setUnit(u)}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${u} unit`}
+                  accessibilityState={{ selected: unit === u }}
+                  accessibilityHint="Unit of measurement for cargo quantity"
                 >
                   <Text style={[
                     styles.unitText,
@@ -309,13 +354,17 @@ export default function ListCargoScreen({ navigation }: any) {
 
           <Animated.View style={animations.getFloatingCardStyle(3)}>
             <Text style={[styles.label, { color: theme.text }]}>Ready Date *</Text>
-          <TouchableOpacity 
-            onPress={openDatepicker} 
-            style={[styles.input, { 
+          <TouchableOpacity
+            onPress={openDatepicker}
+            style={[styles.input, {
               backgroundColor: theme.card,
               borderColor: theme.border,
               justifyContent: 'center',
             }]}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={`Ready date: ${readyDate.toLocaleDateString()}`}
+            accessibilityHint="Open date picker to select ready date"
           >
             <Text style={{ color: theme.text }}>{readyDate.toLocaleDateString()}</Text>
           </TouchableOpacity>
@@ -339,15 +388,23 @@ export default function ListCargoScreen({ navigation }: any) {
                     </View>
 
                     <View style={styles.modalButtons}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[styles.modalButton, { borderColor: theme.primary }]}
                         onPress={() => setShowDatePicker(false)}
+                        accessible={true}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel"
+                        accessibilityHint="Close date picker without changes"
                       >
                         <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={[styles.modalButton, { backgroundColor: theme.primary }]}
                         onPress={confirmDate}
+                        accessible={true}
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirm date"
+                        accessibilityHint={`Set ready date to ${tempDate.toLocaleDateString()}`}
                       >
                         <Text style={[styles.modalButtonText, { color: theme.card }]}>Confirm</Text>
                       </TouchableOpacity>
@@ -369,12 +426,157 @@ export default function ListCargoScreen({ navigation }: any) {
             )}
           </Animated.View>
 
+          <Animated.View style={animations.getFloatingCardStyle(4)}>
+            <Text style={[styles.label, { color: theme.text }]}>Destination Address</Text>
+            {selectedDestination ? (
+              <View style={[styles.selectedAddressBox, { borderColor: theme.primary, backgroundColor: theme.primary + '10' }]}>
+                <View style={styles.selectedAddressContent}>
+                  <Ionicons name="checkmark-circle" size={20} color={theme.success} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.selectedAddressLabel, { color: theme.text }]}>
+                      {selectedDestination.label}
+                    </Text>
+                    <Text style={[styles.selectedAddressText, { color: theme.textSecondary }]} numberOfLines={1}>
+                      {selectedDestination.address}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setSelectedDestination(null)}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remove destination"
+                    accessibilityHint="Clear selected destination address"
+                  >
+                    <Ionicons name="close-circle" size={20} color={theme.danger} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.input, styles.selectAddressButton, {
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
+                }]}
+                onPress={() => setShowAddressModal(true)}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Select destination address"
+                accessibilityHint="Open saved addresses list"
+              >
+                <Ionicons name="location-outline" size={18} color={theme.primary} />
+                <Text style={[styles.selectAddressText, { color: theme.textSecondary }]}>
+                  Select Destination...
+                </Text>
+              </TouchableOpacity>
+            )}
+            {selectedDestination && (
+              <TouchableOpacity
+                onPress={() => setShowAddressModal(true)}
+                style={[styles.changeButton, { backgroundColor: theme.info + '20' }]}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Change destination address"
+                accessibilityHint="Select a different destination from saved addresses"
+              >
+                <Text style={[styles.changeButtonText, { color: theme.info }]}>Change Destination</Text>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+
+          <Modal visible={showAddressModal} transparent animationType="fade">
+            <View style={[styles.modalOverlay, { backgroundColor: theme.background + 'E6' }]}>
+              <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Select Destination</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowAddressModal(false)}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                    accessibilityHint="Dismiss address selection modal"
+                  >
+                    <Ionicons name="close" size={24} color={theme.text} />
+                  </TouchableOpacity>
+                </View>
+
+                {addresses.length === 0 ? (
+                  <View style={styles.emptyAddresses}>
+                    <Ionicons name="location-outline" size={40} color={theme.textSecondary} />
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
+                      No saved addresses yet
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowAddressModal(false);
+                        navigation.navigate('ProfileSettings');
+                      }}
+                      style={[styles.addAddressButton, { backgroundColor: theme.primary }]}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityLabel="Add new address"
+                      accessibilityHint="Navigate to profile settings to add a new address"
+                    >
+                      <Text style={{ color: theme.card, fontWeight: '600' }}>
+                        + Add Address
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={addresses}
+                    keyExtractor={(item) => item._id || item.id || ''}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={[
+                          styles.addressOption,
+                          {
+                            backgroundColor: selectedDestination?.id === item.id || selectedDestination?._id === item._id ? theme.primary + '20' : theme.card,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                        onPress={() => {
+                          setSelectedDestination(item);
+                          setShowAddressModal(false);
+                        }}
+                        accessible={true}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select ${item.label}`}
+                        accessibilityHint={`Set destination to ${item.address}`}
+                        accessibilityState={{
+                          selected: selectedDestination?.id === item.id || selectedDestination?._id === item._id
+                        }}
+                      >
+                        <Ionicons name="location" size={18} color={theme.primary} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.addressOptionLabel, { color: theme.text }]}>
+                            {item.label}
+                          </Text>
+                          <Text style={[styles.addressOptionText, { color: theme.textSecondary }]} numberOfLines={1}>
+                            {item.address}
+                          </Text>
+                        </View>
+                        {(selectedDestination?.id === item.id || selectedDestination?._id === item._id) && (
+                          <Ionicons name="checkmark-circle" size={18} color={theme.success} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
+              </View>
+            </View>
+          </Modal>
+
           <Text style={[styles.hint, { color: theme.textSecondary }]}>* Required fields</Text>
 
-          <TouchableOpacity 
-            style={[styles.submitButton, { backgroundColor: theme.primary }]} 
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: theme.primary }]}
             onPress={handleSubmit}
             disabled={isLoading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="List cargo"
+            accessibilityHint="Submit cargo listing to make it visible to transporters"
+            accessibilityState={{ disabled: isLoading, busy: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -544,5 +746,74 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  selectedAddressBox: {
+    borderWidth: 2,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  selectedAddressContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  selectedAddressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  selectedAddressText: {
+    fontSize: 12,
+  },
+  selectAddressButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  selectAddressText: {
+    fontSize: 14,
+  },
+  changeButton: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  changeButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyAddresses: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
+  addAddressButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  addressOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  addressOptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  addressOptionText: {
+    fontSize: 12,
   },
 });

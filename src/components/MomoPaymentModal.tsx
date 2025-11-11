@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { showToast } from '../services/toastService';
+import { ConfirmDialog } from './common/ConfirmDialog';
 import { useAppSelector } from '../store';
 import {
   initiateMockPayment,
@@ -46,6 +47,9 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
   const [step, setStep] = useState<'input' | 'processing' | 'success' | 'confirm'>('input');
   const [detectedProvider, setDetectedProvider] = useState<'momo' | 'airtel' | null>(null);
   const [statusCheckInterval, setStatusCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [showPaymentPromptDialog, setShowPaymentPromptDialog] = useState(false);
+  const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
+  const [currentReferenceId, setCurrentReferenceId] = useState<string>('');
 
   // Handle phone number change and detect provider
   const handlePhoneChange = (text: string) => {
@@ -112,26 +116,17 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
           setStep('input');
           setLoading(false);
           onError(statusResult.message);
-          Alert.alert('Payment Failed', statusResult.message);
+          showToast.error(`Payment Failed: ${statusResult.message}`);
         }
 
         // Max attempts reached, still pending
         if (attempts >= maxAttempts) {
           clearInterval(interval);
           setStatusCheckInterval(null);
-          
+
           setStep('input');
           setLoading(false);
-          Alert.alert(
-            'Payment Timeout',
-            'We are still waiting for payment confirmation. Your order may still be processing.',
-            [
-              {
-                text: 'OK',
-                onPress: () => onError('Payment timeout'),
-              },
-            ]
-          );
+          setShowTimeoutDialog(true);
         }
       } catch (error) {
         console.error('Error checking payment status:', error);
@@ -149,17 +144,17 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
     // Validate phone number
     const validation = validatePhoneNumber();
     if (!validation.valid) {
-      Alert.alert('Invalid Phone Number', validation.message || 'Please enter a valid phone number');
+      showToast.error(validation.message || 'Please enter a valid phone number');
       return;
     }
 
     if (!detectedProvider) {
-      Alert.alert('Error', 'Could not detect payment provider. Please check your number.');
+      showToast.error('Could not detect payment provider. Please check your number.');
       return;
     }
 
     if (!user?.email) {
-      Alert.alert('Error', 'Email is required for payment processing');
+      showToast.error('Email is required for payment processing');
       return;
     }
 
@@ -180,41 +175,41 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
       });
 
       if (result.success && result.referenceId) {
-                // User will receive payment prompt on their phone
-        Alert.alert(
-          'Payment Initiated 📱',
-          `You will receive a payment prompt on ${formatPhoneNumber(phoneNumber)}. Please confirm to complete payment.`,
-          [
-            {
-              text: 'I See The Prompt',
-              onPress: () => {
-                // Start polling for payment status
-                pollPaymentStatus(result.referenceId!);
-              },
-            },
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => {
-                setStep('input');
-                setLoading(false);
-              },
-            },
-          ]
-        );
+        // User will receive payment prompt on their phone
+        setCurrentReferenceId(result.referenceId);
+        setShowPaymentPromptDialog(true);
       } else {
         setStep('input');
         setLoading(false);
         onError(result.message);
-        Alert.alert('Payment Error', result.message);
+        showToast.error(`Payment Error: ${result.message}`);
       }
     } catch (error: any) {
       console.error('❌ Payment error:', error);
       setStep('input');
       setLoading(false);
       onError(error.message || 'Payment failed');
-      Alert.alert('Error', 'An error occurred during payment. Please try again.');
+      showToast.error('An error occurred during payment. Please try again.');
     }
+  };
+
+  const handleConfirmPaymentPrompt = () => {
+    setShowPaymentPromptDialog(false);
+    if (currentReferenceId) {
+      pollPaymentStatus(currentReferenceId);
+    }
+  };
+
+  const handleCancelPaymentPrompt = () => {
+    setShowPaymentPromptDialog(false);
+    setStep('input');
+    setLoading(false);
+  };
+
+  const handleConfirmTimeout = () => {
+    setShowTimeoutDialog(false);
+    showToast.warning('Payment timeout - Your order may still be processing');
+    onError('Payment timeout');
   };
 
   const handleClose = () => {
@@ -252,7 +247,14 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
               <Ionicons name="phone-portrait" size={32} color={theme.secondary} />
             </View>
             <Text style={[styles.title, { color: theme.text }]}>Mobile Money Payment</Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Close payment modal"
+              accessibilityHint="Dismiss mobile money payment screen"
+            >
               <Ionicons name="close" size={24} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -355,6 +357,10 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
                 <TouchableOpacity
                   style={[styles.button, styles.cancelButton, { borderColor: theme.border }]}
                   onPress={handleClose}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel payment"
+                  accessibilityHint="Close payment modal without paying"
                 >
                   <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                 </TouchableOpacity>
@@ -362,6 +368,11 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
                   style={[styles.button, styles.payButton, { backgroundColor: theme.secondary }]}
                   onPress={handlePayment}
                   disabled={loading || phoneNumber.length < 9}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pay now"
+                  accessibilityHint={`Initiate ${amount.toLocaleString()} RWF payment via mobile money`}
+                  accessibilityState={{ disabled: loading || phoneNumber.length < 9, busy: loading }}
                 >
                   <Text style={styles.payButtonText}>Pay Now</Text>
                 </TouchableOpacity>
@@ -396,6 +407,29 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
           )}
         </View>
       </View>
+
+      {/* Payment Prompt Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showPaymentPromptDialog}
+        title="Payment Initiated 📱"
+        message={`You will receive a payment prompt on ${formatPhoneNumber(phoneNumber)}. Please confirm to complete payment.`}
+        cancelText="Cancel"
+        confirmText="I See The Prompt"
+        onCancel={handleCancelPaymentPrompt}
+        onConfirm={handleConfirmPaymentPrompt}
+        isDestructive={false}
+      />
+
+      {/* Payment Timeout Dialog */}
+      <ConfirmDialog
+        visible={showTimeoutDialog}
+        title="Payment Timeout"
+        message="We are still waiting for payment confirmation. Your order may still be processing."
+        confirmText="OK"
+        onCancel={() => setShowTimeoutDialog(false)}
+        onConfirm={handleConfirmTimeout}
+        isDestructive={false}
+      />
     </Modal>
   );
 };

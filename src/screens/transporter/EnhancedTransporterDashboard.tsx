@@ -10,7 +10,6 @@ import {
   ScrollView,
   RefreshControl,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +25,7 @@ import { useAppDispatch, useAppSelector } from '../../store';
 import { findBestMatches, calculateDailyEarningPotential } from '../../services/loadMatchingService';
 import { calculateDistance } from '../../services/routeOptimizationService';
 import { logger } from '../../utils/logger';
+import { showToast } from '../../services/toastService';
 
 const { width } = Dimensions.get('window');
 
@@ -203,12 +203,10 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
   const toggleOnlineStatus = () => {
     setIsOnline(!isOnline);
-    Alert.alert(
-      isOnline ? 'Going Offline' : 'Going Online',
+    showToast.success(
       isOnline
-        ? 'You will stop receiving load requests'
-        : 'You will start receiving load requests',
-      [{ text: 'OK' }]
+        ? 'Going offline - You will stop receiving load requests'
+        : 'Going online - You will start receiving load requests'
     );
   };
 
@@ -237,7 +235,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
                   <View
                     style={[
                       styles.statusDot,
-                      { backgroundColor: isOnline ? '#10B981' : '#EF4444' },
+                      { backgroundColor: isOnline ? '#10797D' : '#EF4444' },
                     ]}
                   />
                   <Text style={styles.role}>{isOnline ? 'Online' : 'Offline'}</Text>
@@ -249,11 +247,17 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <TouchableOpacity
                 style={[
                   styles.onlineToggle,
-                  { backgroundColor: isOnline ? '#10B981' : '#EF4444' },
+                  { backgroundColor: isOnline ? '#10797D' : '#EF4444' },
                 ]}
                 onPress={toggleOnlineStatus}
               >
                 <Ionicons name={isOnline ? 'checkmark-circle' : 'close-circle'} size={16} color="#FFF" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.settingsButton}
+                onPress={() => navigation.navigate('ProfileSettings')}
+              >
+                <Ionicons name="settings" size={24} color="#FFF" />
               </TouchableOpacity>
             </View>
           </View>
@@ -270,8 +274,8 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="checkmark-done" size={18} color="#10B981" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="checkmark-done" size={18} color="#10797D" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {completedToday.length}
@@ -294,14 +298,14 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
         {dailyPotential && isOnline && (
           <View style={[styles.potentialCard, { backgroundColor: theme.card }]}>
             <View style={styles.potentialHeader}>
-              <Ionicons name="trending-up" size={24} color="#10B981" />
+              <Ionicons name="trending-up" size={24} color="#10797D" />
               <Text style={[styles.potentialTitle, { color: theme.text }]}>
                 Today's Earning Potential
               </Text>
             </View>
             <View style={styles.potentialStats}>
               <View style={styles.potentialItem}>
-                <Text style={[styles.potentialValue, { color: '#10B981' }]}>
+                <Text style={[styles.potentialValue, { color: '#10797D' }]}>
                   {dailyPotential.estimatedProfit.toLocaleString()} RWF
                 </Text>
                 <Text style={[styles.potentialLabel, { color: theme.textSecondary }]}>
@@ -434,7 +438,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               style={[styles.actionCard, { backgroundColor: theme.card }]}
               onPress={() => navigation.navigate('ActiveTrips')}
             >
-              <LinearGradient colors={['#10B981', '#059669']} style={styles.actionGradient}>
+              <LinearGradient colors={['#10797D', '#0D5F66']} style={styles.actionGradient}>
                 <Ionicons name="car-sport" size={32} color="#FFF" />
                 {activeTrips.length > 0 && (
                   <View style={styles.actionBadge}>
@@ -586,6 +590,13 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   statsContainer: {
     flexDirection: 'row',

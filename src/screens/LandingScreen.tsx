@@ -313,7 +313,7 @@ export default function LandingScreen({ navigation }: any) {
               <View key={index} style={styles.modernServiceCard}>
                 <View style={styles.serviceIconWrapper}>
                   <View style={[styles.serviceIconBg, {
-                    backgroundColor: index === 0 ? '#10B981' : index === 1 ? '#6366F1' : '#F59E0B'
+                    backgroundColor: index === 0 ? '#10797D' : index === 1 ? '#6366F1' : '#F59E0B'
                   }]}>
                     <Ionicons name={service.icon as any} size={24} color="#FFFFFF" />
                   </View>
@@ -341,7 +341,7 @@ export default function LandingScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <View style={styles.modernRoleIconWrapper}>
-                <View style={[styles.modernRoleIcon, { backgroundColor: '#10B981' }]}>
+                <View style={[styles.modernRoleIcon, { backgroundColor: '#10797D' }]}>
                   <Ionicons name="leaf" size={32} color="#FFFFFF" />
                 </View>
               </View>
@@ -351,15 +351,15 @@ export default function LandingScreen({ navigation }: any) {
               </Text>
               <View style={styles.modernRoleFeatures}>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
                   <Text style={styles.modernFeatureText}>Easy cargo listing</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
                   <Text style={styles.modernFeatureText}>Reliable transport</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
                   <Text style={styles.modernFeatureText}>Fair pricing</Text>
                 </View>
               </View>
@@ -1197,7 +1197,7 @@ const styles = StyleSheet.create({
   modernStepLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#10B981',
+    color: '#10797D',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,

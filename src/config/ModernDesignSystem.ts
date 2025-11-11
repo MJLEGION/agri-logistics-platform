@@ -1,207 +1,125 @@
-// src/config/ModernDesignSystem.ts - Modern UI Design System
-// Beautiful colors, gradients, and styling for premium app experience
+// src/config/ModernDesignSystem.ts - DEPRECATED
+// This file is maintained for backward compatibility
+// Use src/config/designSystem.ts for new code
 
+import {
+  LightTheme,
+  Colors,
+  Gradients,
+  Spacing as UnifiedSpacing,
+  BorderRadius as UnifiedBorderRadius,
+  Shadows as UnifiedShadows,
+  Typography as UnifiedTypography,
+  Animations as UnifiedAnimations,
+  Components as UnifiedComponents,
+} from './designSystem';
+
+// Map unified design system to legacy ModernColors interface
 export const ModernColors = {
-  // Primary Brand Colors - Modern Blue
-  primary: '#0EA5E9',
-  primaryDark: '#0284C7',
-  primaryLight: '#38BDF8',
+  // Primary Brand Colors
+  primary: Colors.primary[600],
+  primaryDark: Colors.primary[700],
+  primaryLight: Colors.primary[400],
 
-  // Secondary Colors - Forest Green
-  secondary: '#1B4332',
-  secondaryDark: '#0F2818',
-  secondaryLight: '#2D6A4F',
+  // Secondary Colors
+  secondary: Colors.secondary[600],
+  secondaryDark: Colors.secondary[700],
+  secondaryLight: Colors.secondary[400],
 
   // Success Colors
-  success: '#10B981',
-  successDark: '#059669',
-  successLight: '#34D399',
+  success: Colors.success[500],
+  successDark: Colors.success[700],
+  successLight: Colors.success[300],
 
   // Warning Colors
-  warning: '#F59E0B',
-  warningDark: '#D97706',
-  warningLight: '#FCD34D',
+  warning: Colors.warning[500],
+  warningDark: Colors.warning[700],
+  warningLight: Colors.warning[300],
 
   // Danger Colors
-  danger: '#EF4444',
-  dangerDark: '#DC2626',
-  dangerLight: '#F87171',
+  danger: Colors.error[500],
+  dangerDark: Colors.error[700],
+  dangerLight: Colors.error[300],
 
   // Purple/Accent
-  accent: '#8B5CF6',
-  accentDark: '#7C3AED',
-  accentLight: '#A78BFA',
+  accent: LightTheme.accent,
+  accentDark: Colors.primary[700],
+  accentLight: Colors.primary[400],
 
   // Backgrounds
-  background: '#0F1419',
-  backgroundSecondary: '#1A1F2E',
-  backgroundTertiary: '#26293B',
+  background: LightTheme.background,
+  backgroundSecondary: LightTheme.backgroundAlt,
+  backgroundTertiary: LightTheme.backgroundSection,
 
   // Text Colors
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255, 255, 255, 0.7)',
-  textTertiary: 'rgba(255, 255, 255, 0.5)',
-  textDisabled: 'rgba(255, 255, 255, 0.3)',
+  textPrimary: LightTheme.text,
+  textSecondary: LightTheme.textSecondary,
+  textTertiary: LightTheme.textTertiary,
+  textDisabled: LightTheme.textDisabled,
 
   // Borders & Dividers
-  border: 'rgba(255, 255, 255, 0.1)',
-  borderLight: 'rgba(255, 255, 255, 0.05)',
-  divider: 'rgba(255, 255, 255, 0.08)',
+  border: LightTheme.border,
+  borderLight: LightTheme.borderLight,
+  divider: LightTheme.divider,
 
   // Overlay
-  overlay: 'rgba(0, 0, 0, 0.3)',
-  overlayLight: 'rgba(0, 0, 0, 0.1)',
+  overlay: LightTheme.overlay,
+  overlayLight: LightTheme.overlayLight,
 
   // Status Colors
-  online: '#2ECC71',
-  offline: '#E74C3C',
-  pending: '#F39C12',
-  completed: '#27AE60',
+  online: Colors.success[500],
+  offline: Colors.error[500],
+  pending: Colors.warning[500],
+  completed: Colors.success[600],
 };
 
 export const ModernGradients = {
-  // Primary Brand Gradient - Blue
-  primary: ['#0EA5E9', '#38BDF8'],
-  primaryDark: ['#0284C7', '#0EA5E9'],
+  // Primary Brand Gradient
+  primary: Gradients.primary,
+  primaryDark: Gradients.primaryDark,
 
-  // Secondary Gradient - Forest Green
-  secondary: ['#1B4332', '#2D6A4F'],
+  // Secondary Gradient
+  secondary: Gradients.secondary,
 
   // Success Gradient
-  success: ['#10B981', '#34D399'],
+  success: Gradients.success,
 
   // Danger Gradient
-  danger: ['#EF4444', '#F87171'],
+  danger: Gradients.error,
 
-  // Background Gradient
-  background: ['#0F1419', '#1A1F2E'],
-  backgroundSoft: ['#1A1F2E', '#26293B'],
+  // Background Gradient (use primary for light backgrounds)
+  background: Gradients.primary,
+  backgroundSoft: Gradients.glass,
 
-  // Glass Effect Gradient (for cards/modals)
-  glass: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
+  // Glass Effect Gradient
+  glass: Gradients.glass,
 
-  // Header Gradient - Subtle blue
-  header: ['#0F1419', '#162E4D'],
+  // Header Gradient
+  header: Gradients.primary,
 
   // Button Gradient
-  buttonPrimary: ['#0EA5E9', '#0284C7'],
-  buttonSecondary: ['#1B4332', '#0F2818'],
-  buttonDisabled: ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'],
+  buttonPrimary: Gradients.primary,
+  buttonSecondary: Gradients.secondary,
+  buttonDisabled: ['rgba(200, 200, 200, 0.3)', 'rgba(180, 180, 180, 0.2)'],
 
-  // Card Gradient (subtle)
-  cardGradient: ['rgba(26, 31, 46, 0.8)', 'rgba(15, 20, 25, 0.6)'],
+  // Card Gradient
+  cardGradient: Gradients.glass,
 };
 
-export const ModernSpacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
-};
+export const ModernSpacing = UnifiedSpacing;
 
 // Export as Spacing for easier imports
-export const Spacing = {
-  xs: 4,      // Minimal
-  sm: 8,      // Compact
-  md: 12,     // Standard
-  lg: 16,     // Comfortable
-  xl: 24,     // Generous
-  xxl: 32,    // Large
-  xxxl: 48,   // Extra large
-};
+export const Spacing = UnifiedSpacing;
 
-export const ModernBorderRadius = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  round: 999,
-};
+export const ModernBorderRadius = UnifiedBorderRadius;
 
 // Export as BorderRadius for easier imports
-export const BorderRadius = {
-  none: 0,
-  xs: 4,
-  sm: 6,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  xxl: 20,
-  full: 999,
-};
+export const BorderRadius = UnifiedBorderRadius;
 
-export const ModernShadows = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 15,
-  },
-};
+export const ModernShadows = UnifiedShadows;
 
 // Export as Shadows for easier imports
-export const Shadows = {
-  none: {
-    shadowColor: 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-};
+export const Shadows = UnifiedShadows;
 
 export const ModernFonts = {
   sizes: {
@@ -225,188 +143,20 @@ export const ModernFonts = {
   },
 };
 
-export const ModernComponents = {
-  button: {
-    height: 48,
-    minHeight: 44,
-    minWidth: 100,
-  },
-  input: {
-    height: 48,
-    paddingHorizontal: 16,
-  },
-  card: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  modal: {
-    borderRadius: 20,
-    paddingTop: 16,
-  },
-  tabBar: {
-    height: 70,
-  },
-};
+export const ModernComponents = UnifiedComponents;
 
 // Typography Presets
-export const ModernTypography = {
-  h1: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    lineHeight: 40,
-  },
-  h2: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    lineHeight: 36,
-  },
-  h3: {
-    fontSize: 24,
-    fontWeight: '600' as const,
-    lineHeight: 32,
-  },
-  h4: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    lineHeight: 28,
-  },
-  h5: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    lineHeight: 26,
-  },
-  h6: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    lineHeight: 24,
-  },
-  bodyLarge: {
-    fontSize: 16,
-    fontWeight: '400' as const,
-    lineHeight: 24,
-  },
-  body: {
-    fontSize: 14,
-    fontWeight: '400' as const,
-    lineHeight: 22,
-  },
-  bodySmall: {
-    fontSize: 12,
-    fontWeight: '400' as const,
-    lineHeight: 18,
-  },
-  labelLarge: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    lineHeight: 20,
-    letterSpacing: 0.1,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    lineHeight: 16,
-    letterSpacing: 0.5,
-  },
-  labelSmall: {
-    fontSize: 11,
-    fontWeight: '600' as const,
-    lineHeight: 16,
-    letterSpacing: 0.5,
-  },
-  caption: {
-    fontSize: 10,
-    fontWeight: '400' as const,
-    lineHeight: 14,
-  },
-};
+export const ModernTypography = UnifiedTypography;
 
 // Export as Typography for easier imports
-export const Typography = {
-  h1: {
-    fontSize: 32,
-    fontWeight: '700' as const,
-    lineHeight: 40,
-    letterSpacing: -0.5,
-  },
-  h2: {
-    fontSize: 28,
-    fontWeight: '700' as const,
-    lineHeight: 36,
-    letterSpacing: -0.25,
-  },
-  h3: {
-    fontSize: 24,
-    fontWeight: '600' as const,
-    lineHeight: 32,
-    letterSpacing: 0,
-  },
-  h4: {
-    fontSize: 20,
-    fontWeight: '600' as const,
-    lineHeight: 28,
-  },
-  h5: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    lineHeight: 26,
-  },
-  h6: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    lineHeight: 24,
-  },
-  bodyLarge: {
-    fontSize: 18,
-    fontWeight: '400' as const,
-    lineHeight: 28,
-  },
-  body: {
-    fontSize: 16,
-    fontWeight: '400' as const,
-    lineHeight: 24,
-  },
-  bodySmall: {
-    fontSize: 14,
-    fontWeight: '400' as const,
-    lineHeight: 22,
-  },
-  bodyTiny: {
-    fontSize: 12,
-    fontWeight: '400' as const,
-    lineHeight: 18,
-  },
-  labelLarge: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    lineHeight: 24,
-    letterSpacing: 0.15,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    lineHeight: 20,
-    letterSpacing: 0.5,
-  },
-  labelSmall: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    lineHeight: 16,
-    letterSpacing: 0.5,
-  },
-  caption: {
-    fontSize: 11,
-    fontWeight: '500' as const,
-    lineHeight: 16,
-    letterSpacing: 0.4,
-  },
-};
+export const Typography = UnifiedTypography;
 
 // Animation Durations
 export const ModernAnimations = {
-  fast: 200,
-  normal: 300,
-  slow: 500,
-  verySlow: 800,
+  fast: UnifiedAnimations.duration.fast,
+  normal: UnifiedAnimations.duration.normal,
+  slow: UnifiedAnimations.duration.slow,
+  verySlow: UnifiedAnimations.duration.slower,
 };
 
 // Responsive Breakpoints

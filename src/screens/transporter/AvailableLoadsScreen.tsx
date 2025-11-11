@@ -9,7 +9,6 @@ import {
   FlatList,
   ActivityIndicator,
   Dimensions,
-  Alert,
   RefreshControl,
   Animated,
   Pressable,
@@ -17,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
   fetchTrips,
@@ -26,7 +26,7 @@ import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
 import { createOrder, fetchOrders } from '../../store/slices/ordersSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 import { distanceService } from '../../services/distanceService';
-import { suggestVehicleType, getVehicleType, calculateShippingCost } from '../../services/vehicleService';
+import { suggestVehicleType, getVehicleType, calculateShippingCost, getTrafficFactor } from '../../services/vehicleService';
 import { calculateRemainingETA, formatDuration } from '../../services/etaService';
 import { useLocation } from '../../utils/useLocation';
 import SearchBar from '../../components/SearchBar';
@@ -47,6 +47,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast, showError, showSuccess, hideToast } = useToast();
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false);
+  const [pendingAcceptItem, setPendingAcceptItem] = useState<any>(null);
 
   // ✨ Pizzazz Animations
   const animations = useScreenAnimations(6);
@@ -90,9 +92,10 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     const suggestedVehicleId = suggestVehicleType(cargoWeight);
     const vehicleType = getVehicleType(suggestedVehicleId);
 
-    // Calculate transport fee using vehicle-specific rates
-    // Motorcycle: 300 RWF/km, Van: 500 RWF/km, Truck: 800 RWF/km
-    const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+    // Calculate transport fee using vehicle-specific rates with current traffic
+    // Motorcycle: 700 RWF/km, Van: 1000 RWF/km, Truck: 1400 RWF/km
+    const trafficFactor = getTrafficFactor();
+    const transportFee = calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
 
     return {
       _id: cargoItem._id || cargoItem.id,
@@ -243,11 +246,12 @@ export default function AvailableLoadsScreen({ navigation }: any) {
           const suggestedVehicleId = suggestVehicleType(cargoWeight);
           const vehicleType = getVehicleType(suggestedVehicleId);
 
-          // Calculate transport fee using vehicle-specific rates
-          // 🏍️ Motorcycle: 300 RWF/km (≤50kg)
-          // 🚐 Van: 500 RWF/km (50-500kg)
-          // 🚚 Truck: 800 RWF/km (>500kg)
-          const transportFee = calculateShippingCost(distance, suggestedVehicleId);
+          // Calculate transport fee using vehicle-specific rates with current traffic
+          // 🏍️ Motorcycle: 700 RWF/km (≤50kg)
+          // 🚐 Van: 1000 RWF/km (50-500kg)
+          // 🚚 Truck: 1400 RWF/km (>500kg)
+          const trafficFactor = getTrafficFactor();
+          const transportFee = calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
 
 
           // 4. Create an order/transport request
@@ -295,47 +299,32 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       }
     };
 
-    if (isWeb) {
-      const confirmed = window.confirm(`Accept this ${isCargo ? 'cargo' : 'trip'}? Transport ${cropName}`);
+    // Show confirmation dialog
+    setPendingAcceptItem({ item: cargoItem, isCargo, performAccept });
+    setShowAcceptDialog(true);
+  };
 
-      if (confirmed) {
-        try {
-          await performAccept();
+  const handleConfirmAccept = async () => {
+    setShowAcceptDialog(false);
 
-          // Refresh data immediately after accepting
-          await dispatch(fetchTrips() as any);
-          await dispatch(fetchCargo() as any);
-          await dispatch(fetchOrders() as any);
-                    showSuccess('Trip accepted! Check My Trips to mark complete!');
-          setTimeout(() => navigation.navigate('Home'), 1500);
-        } catch (error: any) {
-          showError('Error: ' + error.message);
-        }
-      } else {
-      }
-    } else {
-      // Native/mobile platform - use Alert.alert
-      Alert.alert(`Accept this ${isCargo ? 'cargo' : 'trip'}?`, `Transport ${cropName}`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Accept',
-          onPress: async () => {
-            try {
-              await performAccept();
+    if (!pendingAcceptItem) return;
 
-              // Refresh data immediately after accepting
-              await dispatch(fetchTrips() as any);
-              await dispatch(fetchCargo() as any);
-              await dispatch(fetchOrders() as any);
-                            showSuccess('Trip accepted! Check My Trips to mark complete!');
-              setTimeout(() => navigation.navigate('Home'), 1500);
-            } catch (error: any) {
-              showError(error.message);
-            }
-          },
-          style: 'default',
-        },
-      ]);
+    const { performAccept } = pendingAcceptItem;
+
+    try {
+      await performAccept();
+
+      // Refresh data immediately after accepting
+      await dispatch(fetchTrips() as any);
+      await dispatch(fetchCargo() as any);
+      await dispatch(fetchOrders() as any);
+
+      showSuccess('Trip accepted! Check My Trips to mark complete!');
+      setTimeout(() => navigation.navigate('Home'), 1500);
+    } catch (error: any) {
+      showError('Error: ' + error.message);
+    } finally {
+      setPendingAcceptItem(null);
     }
   };
 
@@ -567,6 +556,21 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         message={toast.message}
         type={toast.type}
         onHide={hideToast}
+      />
+
+      {/* Accept Trip Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showAcceptDialog}
+        title={pendingAcceptItem?.isCargo ? 'Accept Cargo?' : 'Accept Trip?'}
+        message={`Do you want to accept this ${pendingAcceptItem?.isCargo ? 'cargo' : 'trip'}?`}
+        cancelText="Cancel"
+        confirmText="Accept"
+        onCancel={() => {
+          setShowAcceptDialog(false);
+          setPendingAcceptItem(null);
+        }}
+        onConfirm={handleConfirmAccept}
+        isDestructive={false}
       />
     </View>
   );

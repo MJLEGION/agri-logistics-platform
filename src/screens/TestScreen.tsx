@@ -50,7 +50,7 @@ export default function TestScreen({ navigation }: any) {
 
   const getStatusColor = () => {
     if (!results) return theme.textSecondary;
-    return results.failed === 0 ? '#10B981' : '#EF4444';
+    return results.failed === 0 ? '#10797D' : '#EF4444';
   };
 
   return (
@@ -131,7 +131,7 @@ export default function TestScreen({ navigation }: any) {
 
             <View style={styles.statsGrid}>
               <View style={styles.statBox}>
-                <Text style={[styles.statNumber, { color: '#10B981' }]}>
+                <Text style={[styles.statNumber, { color: '#10797D' }]}>
                   {results.passed}
                 </Text>
                 <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
@@ -168,8 +168,8 @@ export default function TestScreen({ navigation }: any) {
             </View>
 
             {results.failed === 0 ? (
-              <View style={[styles.successBanner, { backgroundColor: '#10B981' + '20' }]}>
-                <Text style={[styles.successText, { color: '#10B981' }]}>
+              <View style={[styles.successBanner, { backgroundColor: '#10797D' + '20' }]}>
+                <Text style={[styles.successText, { color: '#10797D' }]}>
                   🎉 All tests passed! System is working perfectly.
                 </Text>
               </View>
@@ -197,7 +197,7 @@ export default function TestScreen({ navigation }: any) {
 
                   // Determine color based on content
                   let color = '#FFF';
-                  if (cleanLog.includes('✓ PASS')) color = '#10B981';
+                  if (cleanLog.includes('✓ PASS')) color = '#10797D';
                   if (cleanLog.includes('✗ FAIL')) color = '#EF4444';
                   if (cleanLog.includes('TEST') || cleanLog.includes('===')) color = '#3B82F6';
                   if (cleanLog.includes('Success Rate') || cleanLog.includes('Sample')) color = '#F59E0B';

@@ -11,7 +11,7 @@ interface MockCargo {
   quantity: number;
   unit: string;
   pricePerUnit: number;
-  status: 'available' | 'listed' | 'sold' | 'unavailable';
+  status: 'available' | 'listed' | 'sold' | 'unavailable' | 'payment_completed' | 'picked_up' | 'in_transit' | 'delivered' | 'matched';
   description?: string;
   category?: string;
   location?: {
@@ -25,8 +25,20 @@ interface MockCargo {
     address?: string;
   } | null;
   readyDate?: string;
+  distance?: number;
+  eta?: number;
+  shippingCost?: number;
+  suggestedVehicle?: string;
+  paymentDetails?: {
+    transactionId: string;
+    referenceId: string;
+    amount: number;
+    timestamp: string;
+    method: string;
+  };
   createdAt: string;
   updatedAt: string;
+  [key: string]: any;
 }
 
 // Mock crop database (in-memory)
@@ -181,9 +193,8 @@ export const mockCargoService = {
         throw new Error('Shipper ID is required - please make sure you are logged in');
       }
 
-      // Create new cargo with explicit properties
       const id = generateId();
-      const newCargo = Object.assign({}, {
+      const newCargo: MockCargo = {
         _id: id,
         id: id,
         name: cargoData?.name || '',
@@ -191,15 +202,44 @@ export const mockCargoService = {
         quantity: cargoData?.quantity || 0,
         unit: cargoData?.unit || 'kg',
         pricePerUnit: cargoData?.pricePerUnit || 0,
-        status: cargoData?.status || 'listed', // Use provided status or default to 'listed'
+        status: cargoData?.status || 'listed',
         description: cargoData?.description || '',
         category: cargoData?.category || '',
-        location: cargoData?.location || '',
-        destination: cargoData?.destination || null, // ✨ Save destination for transport fee calculation
+        location: cargoData?.location || {},
+        destination: cargoData?.destination || null,
         readyDate: cargoData?.readyDate || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      }) as MockCargo;
+        ...cargoData,
+        _id: id,
+        id: id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      console.log('%c✅ mockCargoService.createCargo - INPUT cargoData:', 'color: #FF6F00; font-weight: bold', {
+        name: cargoData?.name,
+        quantity: cargoData?.quantity,
+        unit: cargoData?.unit,
+        pricePerUnit: cargoData?.pricePerUnit,
+        destination: cargoData?.destination,
+        shippingCost: cargoData?.shippingCost,
+        distance: cargoData?.distance,
+        eta: cargoData?.eta,
+      });
+
+      console.log('%c✅ mockCargoService.createCargo - STORED cargo:', 'color: #4CAF50; font-weight: bold', {
+        cargoId: id,
+        name: newCargo.name,
+        quantity: newCargo.quantity,
+        unit: newCargo.unit,
+        pricePerUnit: newCargo.pricePerUnit,
+        cargoValue: (newCargo.pricePerUnit || 0) * (newCargo.quantity || 0),
+        destination: newCargo.destination,
+        shippingCost: newCargo.shippingCost,
+        distance: newCargo.distance,
+        eta: newCargo.eta,
+      });
 
       mockCargo = [...mockCargo, newCargo];
       

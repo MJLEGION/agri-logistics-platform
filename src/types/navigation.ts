@@ -17,6 +17,7 @@ export type RootStackParamList = {
   CargoDetails: { cargoId: string };
   EditCargo: { cargoId: string };
   ShipperActiveOrders: undefined;
+  ProfileSettings: undefined;
   
   // Transporter Screens
   AvailableLoads: undefined;
@@ -51,6 +52,7 @@ export type EditCargoScreenProps = NavigationProps<'EditCargo'>;
 // Order-related screens
 export type ShipperActiveOrdersScreenProps = NavigationProps<'ShipperActiveOrders'>;
 export type OrderTrackingScreenProps = NavigationProps<'OrderTracking'>;
+export type ProfileSettingsScreenProps = NavigationProps<'ProfileSettings'>;
 
 // Transporter screens
 export type AvailableLoadsScreenProps = NavigationProps<'AvailableLoads'>;

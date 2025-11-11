@@ -27,7 +27,7 @@ import Divider from '../../components/Divider';
 import Toast, { useToast } from '../../components/Toast';
 import Card from '../../components/Card';
 import { UserRole, LoginScreenProps } from '../../types';
-import { ModernColors, ModernGradients, Typography, Spacing, BorderRadius, Shadows } from '../../config/ModernDesignSystem';
+import { Colors, Gradients, Typography, Spacing, BorderRadius, Shadows } from '../../config/designSystem';
 
 const { width, height } = Dimensions.get('window');
 
@@ -58,13 +58,13 @@ const ROLE_INFO: Record<
     icon: 'leaf',
     label: 'Shipper',
     description: 'List and ship your cargo',
-    gradient: ['#27AE60', '#2ECC71'],
+    gradient: ['#10797D', '#0D5F66'],
   },
   transporter: {
     icon: 'car',
     label: 'Transporter',
     description: 'Deliver crops efficiently',
-    gradient: ['#1E8449', '#27AE60'],
+    gradient: ['#1E8449', '#10797D'],
   },
 };
 
@@ -281,7 +281,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         >
           {/* Header - Gold, White, Green Theme */}
           <LinearGradient
-            colors={['#27AE60', '#2ECC71', '#27AE60']}
+            colors={['#10797D', '#0D5F66', '#10797D']}
             style={styles.header}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -323,6 +323,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              accessibilityHint="Navigate to previous screen"
             >
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -391,6 +395,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                       delayLongPress={500}
                       onPressIn={() => handlePressIn(scaleAnim)}
                       onPressOut={() => handlePressOut(scaleAnim)}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${roleData.label} role`}
+                      accessibilityHint={`${roleData.description}. Long press for more information`}
+                      accessibilityState={{ selected: isSelected }}
                     >
                       <LinearGradient
                         colors={roleData.gradient}
@@ -427,6 +436,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             <TouchableOpacity
               style={[styles.demoButton, { backgroundColor: `${theme.primary}15`, borderColor: theme.primary }]}
               onPress={fillDemoCredentials}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Fill demo credentials for ${selectedRole}`}
+              accessibilityHint="Automatically fills in test account credentials"
             >
               <Ionicons name="flash" size={16} color={theme.primary} />
               <Text style={[styles.demoButtonText, { color: theme.primary }]}>
@@ -461,7 +474,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               error={errors.password}
             />
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot password"
+              accessibilityHint="Reset your password"
+            >
               <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
                 Forgot Password?
               </Text>
@@ -475,6 +494,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               fullWidth
               size="lg"
               icon={<Ionicons name="log-in-outline" size={20} color="#FFFFFF" />}
+              accessibilityLabel="Sign in to your account"
+              accessibilityHint={`Sign in as ${selectedRole}`}
             />
 
             <Divider text="OR" spacing="lg" />
@@ -483,7 +504,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               <Text style={[styles.registerText, { color: theme.textSecondary }]}>
                 Don't have an account?{' '}
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('RoleSelection')}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Create new account"
+                accessibilityHint="Navigate to registration screen"
+              >
                 <Text style={[styles.registerLink, { color: theme.primary }]}>
                   Create Account
                 </Text>
@@ -512,6 +539,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           style={styles.previewOverlay}
           activeOpacity={1}
           onPress={() => setPreviewRole(null)}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Close preview modal"
+          accessibilityHint="Tap to dismiss role preview"
         >
           <View style={styles.previewContent}>
             <Card elevated style={styles.previewCard}>
@@ -521,7 +552,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     <Text style={[styles.previewTitle, { color: theme.text }]}>
                       {ROLE_INFO[previewRole].label} Preview
                     </Text>
-                    <TouchableOpacity onPress={() => setPreviewRole(null)}>
+                    <TouchableOpacity
+                      onPress={() => setPreviewRole(null)}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close role preview"
+                      accessibilityHint="Dismiss this preview modal"
+                    >
                       <Ionicons name="close-circle" size={28} color={theme.textSecondary} />
                     </TouchableOpacity>
                   </View>
@@ -545,7 +582,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                           <Ionicons
                             name="checkmark-circle"
                             size={20}
-                            color="#27AE60"
+                            color="#10797D"
                           />
                           <Text style={[styles.previewFeatureText, { color: theme.text }]}>
                             {feature}
@@ -569,7 +606,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           origin={{ x: width / 2, y: height / 2 }}
           autoStart={false}
           fadeOut
-          colors={['#27AE60', '#2ECC71', '#1B9954', '#34D679', '#FFD700', '#FFA500']}
+          colors={['#10797D', '#0D5F66', '#0B484C', '#067A85', '#FFD700', '#FFA500']}
         />
       )}
     </View>

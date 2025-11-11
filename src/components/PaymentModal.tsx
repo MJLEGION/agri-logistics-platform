@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,8 @@ import {
   getProviderName,
   formatPhoneNumber,
 } from '../services/flutterwaveService';
+import { showToast } from '../services/toastService';
+import { ConfirmDialog } from './common/ConfirmDialog';
 
 interface PaymentModalProps {
   visible: boolean;
@@ -51,19 +52,20 @@ export default function PaymentModal({
   const [referenceId, setReferenceId] = useState('');
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [pollCount, setPollCount] = useState(0);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   const detectedProvider = phoneNumber ? detectPaymentProvider(phoneNumber) : null;
   const providerName = detectedProvider ? getProviderName(detectedProvider) : 'MTN MoMo';
 
   const handleInitiatePayment = async () => {
     if (!phoneNumber.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
+      showToast.error('Please enter your phone number');
       return;
     }
 
     const phoneValidation = /^\+?250\d{9}$|^\d{10}$/.test(phoneNumber.replace(/\D/g, ''));
     if (!phoneValidation) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      showToast.error('Please enter a valid phone number');
       return;
     }
 
@@ -90,34 +92,17 @@ export default function PaymentModal({
         setReferenceId(response.referenceId);
         startStatusPolling(response.referenceId);
 
-        // Show prompt confirmation dialog
-        Alert.alert(
-          '📲 Payment Prompt Sent',
-          `You will receive a ${providerName} payment prompt on ${formattedPhone}\n\nEnter your PIN to confirm payment.`,
-          [
-            {
-              text: 'I See The Prompt',
-              onPress: () => {
-                              },
-            },
-            {
-              text: 'Cancel',
-              onPress: () => {
-                cancelPayment();
-              },
-              style: 'cancel',
-            },
-          ]
-        );
+        // Show payment prompt notification
+        showToast.info(`Payment prompt sent to ${formattedPhone}. Enter your PIN to confirm.`);
       } else {
         setPaymentStatus('failed');
-        Alert.alert('Error', response.message || 'Failed to initiate payment');
+        showToast.error(response.message || 'Failed to initiate payment');
         setIsProcessing(false);
       }
     } catch (error) {
       console.error('❌ Payment error:', error);
       setPaymentStatus('failed');
-      Alert.alert('Error', 'Payment initiation failed. Please try again.');
+      showToast.error('Payment initiation failed. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -135,29 +120,19 @@ export default function PaymentModal({
         const status = await checkFlutterwavePaymentStatus(refId);
 
         if (status.success || status.status === 'completed') {
-                    setPaymentStatus('success');
+          setPaymentStatus('success');
           clearInterval(interval);
           setPollingInterval(null);
           setIsProcessing(false);
 
           // Success feedback
           setTimeout(() => {
-            Alert.alert(
-              '✅ Payment Successful!',
-              'Your transaction has been completed successfully.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    onSuccess(
-                      status.transactionId || refId,
-                      status.referenceId || refId
-                    );
-                    resetModal();
-                  },
-                },
-              ]
+            showToast.success('Payment completed successfully!');
+            onSuccess(
+              status.transactionId || refId,
+              status.referenceId || refId
             );
+            resetModal();
           }, 500);
         } else if (status.status === 'failed') {
           setPaymentStatus('failed');
@@ -165,20 +140,14 @@ export default function PaymentModal({
           setPollingInterval(null);
           setIsProcessing(false);
 
-          Alert.alert(
-            '❌ Payment Failed',
-            status.message || 'Your payment could not be processed. Please try again.'
-          );
+          showToast.error(status.message || 'Your payment could not be processed. Please try again.');
         } else if (count >= maxAttempts) {
           setPaymentStatus('failed');
           clearInterval(interval);
           setPollingInterval(null);
           setIsProcessing(false);
 
-          Alert.alert(
-            '⏱️ Payment Timeout',
-            'Payment is taking longer than expected. Please check your phone and try again.'
-          );
+          showToast.warning('Payment is taking longer than expected. Please check your phone and try again.');
         }
       } catch (error) {
         console.error('❌ Status check error:', error);
@@ -207,25 +176,17 @@ export default function PaymentModal({
 
   const handleClose = () => {
     if (isProcessing) {
-      Alert.alert(
-        'Payment In Progress',
-        'A payment is being processed. Are you sure you want to cancel?',
-        [
-          { text: 'Continue Processing', style: 'cancel' },
-          {
-            text: 'Cancel Payment',
-            onPress: () => {
-              cancelPayment();
-              onCancel();
-            },
-            style: 'destructive',
-          },
-        ]
-      );
+      setShowCancelDialog(true);
     } else {
       resetModal();
       onCancel();
     }
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelDialog(false);
+    cancelPayment();
+    onCancel();
   };
 
   return (
@@ -237,7 +198,14 @@ export default function PaymentModal({
             <Text style={[styles.title, { color: theme.text }]}>
               💳 {purpose === 'shipping' ? 'Pay for Shipping' : 'Request Payout'}
             </Text>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.closeButton}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Close payment modal"
+              accessibilityHint={isProcessing ? "Will prompt for cancellation confirmation" : "Dismiss payment modal"}
+            >
               <Ionicons name="close" size={24} color={theme.text} />
             </TouchableOpacity>
           </View>
@@ -263,7 +231,7 @@ export default function PaymentModal({
                     style={[
                       styles.inputGroup,
                       {
-                        borderColor: detectedProvider ? '#10B981' : theme.border,
+                        borderColor: detectedProvider ? '#10797D' : theme.border,
                         backgroundColor: theme.background,
                       },
                     ]}
@@ -278,9 +246,9 @@ export default function PaymentModal({
                       editable={!isProcessing}
                     />
                     {detectedProvider && (
-                      <View style={[styles.providerBadge, { backgroundColor: '#10B98120' }]}>
-                        <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                        <Text style={[styles.providerText, { color: '#10B981' }]}>
+                      <View style={[styles.providerBadge, { backgroundColor: '#10797D20' }]}>
+                        <Ionicons name="checkmark-circle" size={16} color="#10797D" />
+                        <Text style={[styles.providerText, { color: '#10797D' }]}>
                           {providerName}
                         </Text>
                       </View>
@@ -314,13 +282,25 @@ export default function PaymentModal({
                   ]}
                   onPress={handleInitiatePayment}
                   disabled={!detectedProvider || isProcessing}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pay now"
+                  accessibilityHint={`Initiate payment of ${amount.toLocaleString()} RWF via ${providerName}`}
+                  accessibilityState={{ disabled: !detectedProvider || isProcessing, busy: isProcessing }}
                 >
                   <Text style={styles.payButtonText}>
                     {isProcessing ? 'Processing...' : 'Pay Now'}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleClose}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel payment"
+                  accessibilityHint="Close payment modal"
+                >
                   <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
                     Cancel
                   </Text>
@@ -343,6 +323,10 @@ export default function PaymentModal({
                 <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={cancelPayment}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel payment"
+                  accessibilityHint="Stop waiting for payment confirmation"
                 >
                   <Text style={[styles.cancelButtonText, { color: theme.error }]}>
                     Cancel Payment
@@ -354,7 +338,7 @@ export default function PaymentModal({
             {paymentStatus === 'success' && (
               <View style={styles.statusContainer}>
                 <Text style={styles.successIcon}>✅</Text>
-                <Text style={[styles.statusText, { color: '#10B981' }]}>
+                <Text style={[styles.statusText, { color: '#10797D' }]}>
                   Payment Successful!
                 </Text>
                 <Text style={[styles.statusSubtext, { color: theme.textSecondary }]}>
@@ -379,10 +363,21 @@ export default function PaymentModal({
                     setPhoneNumber('');
                     setPollCount(0);
                   }}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Try again"
+                  accessibilityHint="Return to payment form to retry"
                 >
                   <Text style={styles.payButtonText}>Try Again</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleClose}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  accessibilityHint="Close payment modal"
+                >
                   <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
                     Cancel
                   </Text>
@@ -392,6 +387,17 @@ export default function PaymentModal({
           </View>
         </View>
       </View>
+
+      <ConfirmDialog
+        visible={showCancelDialog}
+        title="Payment In Progress"
+        message="A payment is being processed. Are you sure you want to cancel?"
+        cancelText="Continue Processing"
+        confirmText="Cancel Payment"
+        onCancel={() => setShowCancelDialog(false)}
+        onConfirm={handleConfirmCancel}
+        isDestructive={true}
+      />
     </Modal>
   );
 }

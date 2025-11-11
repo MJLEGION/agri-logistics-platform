@@ -176,8 +176,8 @@ export default function VehicleProfileScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statBox, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="cube" size={24} color="#10B981" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="cube" size={24} color="#10797D" />
             </View>
             <Text style={[styles.statValue, { color: theme.text }]}>
               {currentInfo.capacity}

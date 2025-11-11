@@ -25,6 +25,7 @@ import VehicleProfileScreen from '../screens/transporter/VehicleProfileScreen';
 import TestScreen from '../screens/TestScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import TransportRequestScreen from '../screens/TransportRequestScreen';
+import ProfileSettingsScreen from '../screens/common/ProfileSettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -84,6 +85,7 @@ export default function AppNavigator() {
             <Stack.Screen name="TripHistory" component={TripHistoryScreen} />
             <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
             <Stack.Screen name="LogisticsTest" component={TestScreen} />
+            <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           </>
         ) : userRole === 'shipper' ? (
           // SHIPPER FLOW - Request transportation services for cargo
@@ -98,6 +100,7 @@ export default function AppNavigator() {
             <Stack.Screen name="RateTransporter" component={RateTransporterScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
             <Stack.Screen name="TransportRequest" component={TransportRequestScreen} />
+            <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />

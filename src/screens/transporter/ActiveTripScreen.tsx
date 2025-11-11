@@ -7,9 +7,10 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { showToast } from '../../services/toastService';
+import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
@@ -26,6 +27,7 @@ export default function ActiveTripScreen({ navigation }: any) {
   const [activeTrip, setActiveTrip] = useState<any>(null);
   const [tripInfo, setTripInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 
   // Find active trip for this driver
   useEffect(() => {
@@ -55,90 +57,49 @@ export default function ActiveTripScreen({ navigation }: any) {
     };
   }, [activeTrip]);
 
-  const handleCompleteDelivery = async () => {
-    
+  const handleCompleteDelivery = () => {
     if (!activeTrip) {
-      alert('No active trip found');
+      showToast.error('No active trip found');
       return;
     }
 
-    
-    // Try using browser confirm as fallback for web
-    const isWeb = typeof window !== 'undefined' && !window.cordova;
-    
-    if (isWeb) {
-      const confirmed = window.confirm('Mark this delivery as complete? 🎉 Earnings will be added to your account.');
-      
-      if (confirmed) {
-        try {
-          setIsLoading(true);
-          const tripId = activeTrip._id || activeTrip.id;
-          
-          const result = await orderService.completeDelivery(tripId);
-                    tripService.completeTrip(tripId);
-          // Refresh BOTH orders and trips so dashboard updates
-          await dispatch(fetchOrders());
-          const transporterId = user?._id || user?.id;
-          if (transporterId) {
-            await dispatch(fetchTransporterTrips(transporterId));
-          }
-          
-          alert('🎉 Success! Delivery completed. Earnings added to your account.');
-          navigation.goBack();
-        } catch (error: any) {
-          console.error('❌ Complete delivery error caught:', error);
-          const errorMessage = 
-            typeof error === 'string' ? error : 
-            error?.message || 
-            String(error) || 
-            'Failed to complete delivery';
-          
-          console.error('📤 Showing error message:', errorMessage);
-          alert('Error: ' + errorMessage);
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
+    setShowCompleteDialog(true);
+  };
+
+  const handleConfirmComplete = async () => {
+    setShowCompleteDialog(false);
+
+    try {
+      setIsLoading(true);
+      const tripId = activeTrip._id || activeTrip.id;
+
+      const result = await orderService.completeDelivery(tripId);
+      tripService.completeTrip(tripId);
+
+      // Refresh BOTH orders and trips so dashboard updates
+      await dispatch(fetchOrders());
+      const transporterId = user?._id || user?.id;
+      if (transporterId) {
+        await dispatch(fetchTransporterTrips(transporterId));
       }
-    } else {
-      // Native/mobile platform - use Alert.alert
-      Alert.alert('Complete Delivery', 'Mark this delivery as complete? 🎉 Earnings will be added to your account.', [
-        { text: 'Cancel', onPress: () => {}, style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              setIsLoading(true);
-              const tripId = activeTrip._id || activeTrip.id;
-              
-              const result = await orderService.completeDelivery(tripId);
-                            tripService.completeTrip(tripId);
-              // Refresh BOTH orders and trips so dashboard updates
-              await dispatch(fetchOrders());
-              const transporterId = user?._id || user?.id;
-              if (transporterId) {
-                await dispatch(fetchTransporterTrips(transporterId));
-              }
-              
-              Alert.alert('Success! 🎉', 'Delivery completed. Earnings added to your account.', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-              ]);
-            } catch (error: any) {
-              console.error('❌ Complete delivery error caught:', error);
-              const errorMessage = 
-                typeof error === 'string' ? error : 
-                error?.message || 
-                String(error) || 
-                'Failed to complete delivery';
-              
-              console.error('📤 Showing error message:', errorMessage);
-              Alert.alert('Error', errorMessage);
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]);
+
+      setIsLoading(false);
+      showToast.success('Delivery completed! Earnings added to your account.');
+
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
+    } catch (error: any) {
+      console.error('❌ Complete delivery error caught:', error);
+      const errorMessage =
+        typeof error === 'string' ? error :
+        error?.message ||
+        String(error) ||
+        'Failed to complete delivery';
+
+      console.error('📤 Showing error message:', errorMessage);
+      setIsLoading(false);
+      showToast.error(errorMessage);
     }
   };
 
@@ -146,7 +107,13 @@ export default function ActiveTripScreen({ navigation }: any) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            accessibilityHint="Return to previous screen"
+          >
             <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
           </TouchableOpacity>
           <Text style={[styles.title, { color: theme.card }]}>Active Trip</Text>
@@ -178,7 +145,13 @@ export default function ActiveTripScreen({ navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          accessibilityHint="Return to previous screen"
+        >
           <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.card }]}>🚚 Active Trip</Text>
@@ -299,7 +272,7 @@ export default function ActiveTripScreen({ navigation }: any) {
             <TouchableOpacity
               style={[
                 styles.completeButton,
-                { 
+                {
                   backgroundColor: theme.success,
                   cursor: isLoading ? 'not-allowed' : 'pointer'
                 }
@@ -307,6 +280,11 @@ export default function ActiveTripScreen({ navigation }: any) {
               onPress={handleCompleteDelivery}
               disabled={isLoading}
               activeOpacity={0.7}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={status === 'arrived' ? 'Complete delivery' : 'Mark arrived'}
+              accessibilityHint="Mark delivery status update"
+              accessibilityState={{ disabled: isLoading, busy: isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -321,6 +299,18 @@ export default function ActiveTripScreen({ navigation }: any) {
           </View>
         )}
       </ScrollView>
+
+      {/* Complete Delivery Confirmation Dialog */}
+      <ConfirmDialog
+        visible={showCompleteDialog}
+        title="Complete Delivery"
+        message="Mark this delivery as complete? Earnings will be added to your account."
+        cancelText="Cancel"
+        confirmText="Confirm"
+        onCancel={() => setShowCompleteDialog(false)}
+        onConfirm={handleConfirmComplete}
+        isDestructive={false}
+      />
     </View>
   );
 }

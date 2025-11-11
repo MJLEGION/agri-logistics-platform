@@ -51,7 +51,7 @@ export default function PremiumRoleSelectionScreen({ navigation }: any) {
       title: 'Shipper',
       description: 'I want to ship agricultural products',
       icon: 'leaf',
-      color: '#27AE60',
+      color: '#10797D',
       features: ['List cargo', 'Request transport', 'Track shipments', 'Pay transporters'],
     },
     {
@@ -75,7 +75,7 @@ export default function PremiumRoleSelectionScreen({ navigation }: any) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Modern Header with Green Gradient */}
       <LinearGradient
-        colors={['#27AE60', '#2ECC71', '#27AE60']}
+        colors={['#10797D', '#0D5F66', '#10797D']}
         style={styles.header}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}

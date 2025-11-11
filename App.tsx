@@ -10,6 +10,7 @@ import { OfflineBanner } from './src/components/OfflineBanner';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { initializeAllServices } from './src/services/authService';
 import SplashScreen from './src/screens/SplashScreen';
+import ToastProvider from './src/components/ToastProvider';
 
 function AppContent() {
   const [isReady, setIsReady] = useState(false);
@@ -44,8 +45,10 @@ function AppContent() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <OfflineBanner />
-      <AppNavigator />
+      <ToastProvider>
+        <OfflineBanner />
+        <AppNavigator />
+      </ToastProvider>
     </SafeAreaView>
   );
 }

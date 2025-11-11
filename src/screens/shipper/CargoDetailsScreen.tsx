@@ -46,14 +46,7 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
   };
 
   const calculateShippingFee = () => {
-    // Use pre-calculated shipping cost from cargo, or fallback to legacy calculation
-    if (cargoItem.shippingCost) {
-      return cargoItem.shippingCost;
-    }
-    // Fallback for old cargo items
-    const cargoValue = (cargoItem.quantity * (cargoItem.pricePerUnit || 0)) || 0;
-    const fee = Math.max(cargoValue * 0.1, 5000);
-    return Math.round(fee);
+    return cargoItem.shippingCost || 0;
   };
 
   const handlePaymentSuccess = async (transactionId: string, referenceId: string) => {
@@ -266,9 +259,9 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
 
             {/* Status Badge for Paid Cargo */}
             {cargoItem.status !== 'listed' && (
-              <View style={[styles.statusCard, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
-                <Ionicons name="checkmark-circle" size={20} color="#10B981" />
-                <Text style={[styles.statusCardText, { color: '#10B981' }]}>
+              <View style={[styles.statusCard, { backgroundColor: '#10797D20', borderColor: '#10797D' }]}>
+                <Ionicons name="checkmark-circle" size={20} color="#10797D" />
+                <Text style={[styles.statusCardText, { color: '#10797D' }]}>
                   {cargoItem.status === 'payment_completed' ? 'Payment Complete - Ready for Pickup' : 'Cargo Processing'}
                 </Text>
               </View>

@@ -6,7 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { Spacing, BorderRadius } from '../config/ModernDesignSystem';
+import { Spacing, BorderRadius } from '../config/designSystem';
 
 interface SkeletonProps {
   width?: number | string;
@@ -54,11 +54,14 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           width,
           height,
           borderRadius: radius,
-          backgroundColor: theme.gray200,
+          backgroundColor: theme.backgroundAlt,
           opacity,
         },
         style,
       ]}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden={true}
     />
   );
 };

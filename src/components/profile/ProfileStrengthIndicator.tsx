@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { User } from '../../types';
 
 interface ProfileStrengthIndicatorProps {
@@ -154,7 +154,7 @@ const ProfileStrengthIndicator: React.FC<ProfileStrengthIndicatorProps> = ({
   const completedSections = sections.filter((s) => s.isComplete).length;
 
   const getStrengthColor = (): [string, string] => {
-    if (strength >= 80) return ['#10B981', '#059669']; // Green
+    if (strength >= 80) return ['#10797D', '#0D5F66']; // Green
     if (strength >= 50) return ['#F59E0B', '#D97706']; // Yellow/Orange
     return ['#EF4444', '#DC2626']; // Red
   };
@@ -224,7 +224,7 @@ const ProfileStrengthIndicator: React.FC<ProfileStrengthIndicatorProps> = ({
                 <Ionicons
                   name={section.icon}
                   size={16}
-                  color={section.isComplete ? '#10B981' : theme.textSecondary}
+                  color={section.isComplete ? '#10797D' : theme.textSecondary}
                 />
                 <Text
                   style={[
@@ -240,7 +240,7 @@ const ProfileStrengthIndicator: React.FC<ProfileStrengthIndicatorProps> = ({
               <Ionicons
                 name={section.isComplete ? 'checkmark-circle' : 'ellipse-outline'}
                 size={18}
-                color={section.isComplete ? '#10B981' : theme.border}
+                color={section.isComplete ? '#10797D' : theme.border}
               />
             </View>
           ))}

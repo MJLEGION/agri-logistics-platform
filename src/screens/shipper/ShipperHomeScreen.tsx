@@ -225,7 +225,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
       >
         {/* Gradient Header */}
         <LinearGradient
-          colors={['#27AE60', '#2ECC71']}
+          colors={['#10797D', '#0D5F66']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -247,7 +247,15 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
                 </View>
               </View>
             </View>
-            <ThemeToggle />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ProfileSettings')}
+                style={[styles.iconButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+              >
+                <Ionicons name="settings" size={20} color="#FFF" />
+              </TouchableOpacity>
+              <ThemeToggle />
+            </View>
           </View>
         </LinearGradient>
 
@@ -270,8 +278,8 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               },
             ]}
           >
-            <View style={[styles.statIconBox, { backgroundColor: '#27AE60' + '20' }]}>
-              <Ionicons name="leaf" size={24} color="#27AE60" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="leaf" size={24} color="#10797D" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {myCargo.length}
@@ -326,8 +334,8 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               },
             ]}
           >
-            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="checkmark-circle" size={24} color="#10797D" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {myOrders.filter((o) => o.status === 'delivered').length}
@@ -375,7 +383,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
                 onPressOut={() => handlePressOut(action1Scale)}
               >
                 <LinearGradient
-                  colors={['#27AE60', '#2ECC71']}
+                  colors={['#10797D', '#0D5F66']}
                   style={styles.actionGradient}
                 >
                   <Ionicons name="add-circle" size={32} color="#FFF" />
@@ -605,6 +613,13 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginTop: 4,
     opacity: 0.9,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsContainer: {
     flexDirection: 'row',

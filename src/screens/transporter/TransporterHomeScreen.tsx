@@ -173,8 +173,8 @@ export default function TransporterHomeScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#10B981' + '20' }]}>
-              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
+              <Ionicons name="checkmark-circle" size={18} color="#10797D" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {completedToday.length}
@@ -244,7 +244,7 @@ export default function TransporterHomeScreen({ navigation }: any) {
               onPress={() => navigation.navigate('ActiveTrips')}
             >
               <LinearGradient
-                colors={['#10B981', '#059669']}
+                colors={['#10797D', '#0D5F66']}
                 style={styles.actionGradient}
               >
                 <Ionicons name="car-sport" size={24} color="#FFF" />
