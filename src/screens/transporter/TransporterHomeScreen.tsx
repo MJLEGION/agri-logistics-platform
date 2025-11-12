@@ -332,6 +332,25 @@ export default function TransporterHomeScreen({ navigation }: any) {
                 {totalCompletedTrips} completed
               </Text>
             </TouchableOpacity>
+
+            {/* Ratings & Feedback */}
+            <TouchableOpacity
+              style={[styles.actionCard, { backgroundColor: theme.card }]}
+              onPress={() => navigation.navigate('TransporterRatings')}
+            >
+              <LinearGradient
+                colors={['#F59E0B', '#D97706']}
+                style={styles.actionGradient}
+              >
+                <Ionicons name="star" size={24} color="#FFF" />
+              </LinearGradient>
+              <Text style={[styles.actionTitle, { color: theme.text }]}>
+                My Ratings
+              </Text>
+              <Text style={[styles.actionDesc, { color: theme.textSecondary }]}>
+                View feedback & reviews
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Recent Activity */}

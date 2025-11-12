@@ -49,14 +49,26 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   const fetchRatingStats = async () => {
     try {
       const userId = user?.id || user?._id;
-      if (userId) {
-        const stats = await backendRatingService.getTransporterStats(userId);
-        setRatingStats(stats);
+      if (!userId) {
+        console.warn('No user ID found for rating stats');
+        setRatingStats({ averageRating: 0, totalRatings: 0 });
+        return;
+      }
+      console.log('Fetching rating stats for user:', userId);
+      const stats = await backendRatingService.getTransporterStats(userId);
+      console.log('Rating stats response:', stats);
+      if (stats) {
+        setRatingStats({
+          averageRating: stats.averageRating || 0,
+          totalRatings: stats.totalRatings || 0,
+        });
         logger.debug('Rating stats fetched', stats);
+      } else {
+        setRatingStats({ averageRating: 0, totalRatings: 0 });
       }
     } catch (error) {
+      console.error('Error fetching rating stats:', error);
       logger.error('Failed to fetch rating stats', error);
-      // Set default stats if fetch fails
       setRatingStats({ averageRating: 0, totalRatings: 0 });
     }
   };
@@ -69,7 +81,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
       dispatch(fetchTransporterTrips(user.id || user._id));
     }
     getCurrentLocation();
-    fetchRatingStats();
+    // fetchRatingStats();
   }, [dispatch, user]);
 
   // Auto-refresh when screen comes into focus
@@ -109,12 +121,12 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
           logger.error('Failed to get location', err);
         }
 
-        try {
-          await fetchRatingStats();
-          logger.debug('Rating stats updated');
-        } catch (err) {
-          logger.error('Failed to fetch rating stats', err);
-        }
+        // try {
+        //   await fetchRatingStats();
+        //   logger.debug('Rating stats updated');
+        // } catch (err) {
+        //   logger.error('Failed to fetch rating stats', err);
+        // }
       };
 
       refreshData();
@@ -292,13 +304,41 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>Logistics Hub</Text>
                 <Text style={styles.userName}>{user?.name}</Text>
-                {ratingStats && ratingStats.totalRatings > 0 && (
-                  <View style={styles.ratingRow}>
+                {ratingStats && typeof ratingStats.totalRatings === 'number' && ratingStats.totalRatings > 0 && (
+                  <TouchableOpacity
+                    style={styles.ratingRow}
+                    onPress={() => {
+                      try {
+                        console.log('Navigating to TransporterRatings');
+                        (navigation as any).navigate('TransporterRatings');
+                      } catch (err) {
+                        console.error('Navigation error:', err);
+                      }
+                    }}
+                  >
                     <Ionicons name="star" size={14} color="#FFD700" />
                     <Text style={styles.ratingText}>
-                      {ratingStats.averageRating.toFixed(1)} ({ratingStats.totalRatings} {ratingStats.totalRatings === 1 ? 'rating' : 'ratings'})
+                      {(typeof ratingStats.averageRating === 'number' ? ratingStats.averageRating : 0).toFixed(1)} ({ratingStats.totalRatings} {ratingStats.totalRatings === 1 ? 'rating' : 'ratings'})
                     </Text>
-                  </View>
+                    <Ionicons name="chevron-forward" size={12} color="#FFF" />
+                  </TouchableOpacity>
+                )}
+                {(!ratingStats || ratingStats.totalRatings === 0) && (
+                  <TouchableOpacity
+                    style={styles.ratingRow}
+                    onPress={() => {
+                      try {
+                        console.log('Navigating to TransporterRatings (no ratings yet)');
+                        (navigation as any).navigate('TransporterRatings');
+                      } catch (err) {
+                        console.error('Navigation error:', err);
+                      }
+                    }}
+                  >
+                    <Ionicons name="star-outline" size={14} color="#FFD700" />
+                    <Text style={styles.ratingText}>View ratings & feedback</Text>
+                    <Ionicons name="chevron-forward" size={12} color="#FFF" />
+                  </TouchableOpacity>
                 )}
                 <View style={styles.statusRow}>
                   <View
@@ -695,6 +735,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
     gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   ratingText: {
     fontSize: 12,

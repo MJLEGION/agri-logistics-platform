@@ -69,6 +69,39 @@ export const createRating = async (ratingData: RatingData): Promise<Rating> => {
     logger.info('Rating created successfully');
     return ratingResult;
   } catch (error: any) {
+    logger.error('Failed to create rating via API', error);
+    
+    if (error?.response?.status === 404) {
+      logger.info('Rating API endpoint not available, saving to local storage');
+      const localRating: Rating = {
+        _id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ratedUserId: ratingData.ratedUserId,
+        ratingUserId: 'current_user',
+        tripId: ratingData.tripId,
+        rating: ratingData.rating,
+        comment: ratingData.comment,
+        cleanliness: ratingData.cleanliness || ratingData.rating,
+        professionalism: ratingData.professionalism || ratingData.rating,
+        timeliness: ratingData.timeliness || ratingData.rating,
+        communication: ratingData.communication || ratingData.rating,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        const existingRatings = await AsyncStorage.getItem('local_ratings');
+        const ratingsArray = existingRatings ? JSON.parse(existingRatings) : [];
+        ratingsArray.push(localRating);
+        await AsyncStorage.setItem('local_ratings', JSON.stringify(ratingsArray));
+        logger.info('Rating saved to local storage');
+        return localRating;
+      } catch (storageError) {
+        logger.error('Failed to save rating to local storage', storageError);
+        throw new Error('Failed to save rating. Please ensure local storage is available.');
+      }
+    }
+    
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create rating';
     logger.error('Failed to create rating', error);
     throw new Error(errorMessage);
@@ -88,8 +121,57 @@ export const getTransporterRatings = async (transporterId: string): Promise<Rati
     const ratingsArray = Array.isArray(ratingsData) ? ratingsData : [];
 
     logger.debug('Transporter ratings fetched', { count: ratingsArray.length });
+    
+    // If backend returns empty, also check local storage
+    if (ratingsArray.length === 0) {
+      logger.info('Backend returned no ratings, checking local storage');
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        const existingRatings = await AsyncStorage.getItem('local_ratings');
+        const localArray = existingRatings ? JSON.parse(existingRatings) : [];
+        
+        // Filter by ratedUserId
+        const filteredRatings = localArray.filter((r: any) => {
+          const ratedId = String(r.ratedUserId || '').trim();
+          const targetId = String(transporterId || '').trim();
+          return ratedId === targetId || ratedId.toLowerCase() === targetId.toLowerCase();
+        });
+        
+        if (filteredRatings.length > 0) {
+          logger.info('Found ratings in local storage', { count: filteredRatings.length });
+          return filteredRatings;
+        }
+      } catch (storageError) {
+        logger.error('Failed to check local storage', storageError);
+      }
+    }
+    
     return ratingsArray;
   } catch (error: any) {
+    logger.error('Failed to fetch transporter ratings from API', error);
+    
+    if (error?.response?.status === 404) {
+      logger.info('Ratings API endpoint not available, fetching from local storage', { transporterId });
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        const existingRatings = await AsyncStorage.getItem('local_ratings');
+        const ratingsArray = existingRatings ? JSON.parse(existingRatings) : [];
+        
+        // Filter by ratedUserId, handling both string and ID variations
+        const filteredRatings = ratingsArray.filter((r: any) => {
+          const ratedId = String(r.ratedUserId || '').trim();
+          const targetId = String(transporterId || '').trim();
+          return ratedId === targetId || ratedId.toLowerCase() === targetId.toLowerCase();
+        });
+        
+        logger.info('Ratings fetched from local storage', { count: filteredRatings.length, transporterId, found: filteredRatings.length > 0 });
+        return filteredRatings;
+      } catch (storageError) {
+        logger.error('Failed to fetch from local storage', storageError);
+        return [];
+      }
+    }
+    
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch ratings';
     logger.error('Failed to fetch transporter ratings', error);
     throw new Error(errorMessage);

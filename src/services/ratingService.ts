@@ -9,7 +9,8 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateId } from '@/utils/validators';
+
+const generateId = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 // Types
 interface Rating {

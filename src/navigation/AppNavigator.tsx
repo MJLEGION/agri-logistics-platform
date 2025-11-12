@@ -22,6 +22,7 @@ import RoutePlannerScreen from '../screens/transporter/RoutePlannerScreen';
 import EarningsDashboardScreen from '../screens/transporter/EarningsDashboardScreen';
 import TripHistoryScreen from '../screens/transporter/TripHistoryScreen';
 import VehicleProfileScreen from '../screens/transporter/VehicleProfileScreen';
+import TransporterRatingsScreen from '../screens/transporter/TransporterRatingsScreen';
 import TestScreen from '../screens/TestScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import TransportRequestScreen from '../screens/TransportRequestScreen';
@@ -84,6 +85,7 @@ export default function AppNavigator() {
             <Stack.Screen name="EarningsDashboard" component={EarningsDashboardScreen} />
             <Stack.Screen name="TripHistory" component={TripHistoryScreen} />
             <Stack.Screen name="VehicleProfile" component={VehicleProfileScreen} />
+            <Stack.Screen name="TransporterRatings" component={TransporterRatingsScreen} />
             <Stack.Screen name="LogisticsTest" component={TestScreen} />
             <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
           </>
