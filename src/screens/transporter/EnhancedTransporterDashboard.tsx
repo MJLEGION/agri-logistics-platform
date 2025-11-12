@@ -26,6 +26,7 @@ import { findBestMatches, calculateDailyEarningPotential } from '../../services/
 import { calculateDistance } from '../../services/routeOptimizationService';
 import { logger } from '../../utils/logger';
 import { showToast } from '../../services/toastService';
+import * as backendRatingService from '../../services/backendRatingService';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +43,23 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   const [bestMatches, setBestMatches] = useState<any[]>([]);
   const [dailyPotential, setDailyPotential] = useState<any>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [ratingStats, setRatingStats] = useState<any>(null);
+
+  // Fetch transporter rating stats
+  const fetchRatingStats = async () => {
+    try {
+      const userId = user?.id || user?._id;
+      if (userId) {
+        const stats = await backendRatingService.getTransporterStats(userId);
+        setRatingStats(stats);
+        logger.debug('Rating stats fetched', stats);
+      }
+    } catch (error) {
+      logger.error('Failed to fetch rating stats', error);
+      // Set default stats if fetch fails
+      setRatingStats({ averageRating: 0, totalRatings: 0 });
+    }
+  };
 
   // Fetch data when screen loads
   useEffect(() => {
@@ -51,6 +69,7 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
       dispatch(fetchTransporterTrips(user.id || user._id));
     }
     getCurrentLocation();
+    fetchRatingStats();
   }, [dispatch, user]);
 
   // Auto-refresh when screen comes into focus
@@ -89,6 +108,13 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
         } catch (err) {
           logger.error('Failed to get location', err);
         }
+
+        try {
+          await fetchRatingStats();
+          logger.debug('Rating stats updated');
+        } catch (err) {
+          logger.error('Failed to fetch rating stats', err);
+        }
       };
 
       refreshData();
@@ -121,21 +147,56 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
   // Calculate best matches when location, orders, or cargo change
   useEffect(() => {
-    if (currentLocation && orders.length > 0) {
+    if (currentLocation) {
       const availableOrders = orders.filter(
         order => (order.status === 'accepted' || order.status === 'pending') && !order.transporterId
       );
 
-      // Only use orders for matching for now (cargo doesn't have proper location structure)
-      if (availableOrders.length > 0) {
-        const matches = findBestMatches(currentLocation, availableOrders);
+      const availableCargo = cargo.filter(
+        c => c.status === 'listed'
+      );
+
+      // Transform cargo to match Load interface format
+      const transformedCargo = availableCargo
+        .filter(c => c.location && c.destination) // Only cargo with both pickup and destination
+        .map(c => ({
+          _id: c._id || c.id,
+          id: c.id || c._id,
+          pickupLocation: {
+            latitude: c.location.latitude,
+            longitude: c.location.longitude,
+            address: c.location.address || 'Pickup location',
+          },
+          deliveryLocation: {
+            latitude: c.destination!.latitude,
+            longitude: c.destination!.longitude,
+            address: c.destination!.address || 'Delivery location',
+          },
+          weight: c.quantity,
+          quantity: c.quantity,
+          cropId: { name: c.name },
+          status: c.status,
+          totalPrice: (c.pricePerUnit || 0) * c.quantity,
+          shippingCost: c.shippingCost || 0, // Transport fee calculated when cargo was created
+          urgency: undefined,
+        }));
+
+      // Combine both orders and transformed cargo
+      const allAvailableLoads = [...availableOrders, ...transformedCargo];
+
+      if (allAvailableLoads.length > 0) {
+        const matches = findBestMatches(currentLocation, allAvailableLoads);
         setBestMatches(matches.slice(0, 3)); // Top 3 matches
 
-        const potential = calculateDailyEarningPotential(currentLocation, availableOrders);
+        const potential = calculateDailyEarningPotential(currentLocation, allAvailableLoads);
         setDailyPotential(potential);
+      } else {
+        // No loads available
+        setBestMatches([]);
+        setDailyPotential(null);
       }
     }
-  }, [currentLocation, orders]);
+  }, [currentLocation, orders, cargo]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -231,6 +292,14 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <View style={styles.headerText}>
                 <Text style={styles.greeting}>Logistics Hub</Text>
                 <Text style={styles.userName}>{user?.name}</Text>
+                {ratingStats && ratingStats.totalRatings > 0 && (
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={14} color="#FFD700" />
+                    <Text style={styles.ratingText}>
+                      {ratingStats.averageRating.toFixed(1)} ({ratingStats.totalRatings} {ratingStats.totalRatings === 1 ? 'rating' : 'ratings'})
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.statusRow}>
                   <View
                     style={[
@@ -302,11 +371,17 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <Text style={[styles.potentialTitle, { color: theme.text }]}>
                 Today's Earning Potential
               </Text>
+              <View style={[styles.liveBadge, { backgroundColor: '#10797D' }]}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>LIVE</Text>
+              </View>
             </View>
+
+            {/* Main Stats */}
             <View style={styles.potentialStats}>
               <View style={styles.potentialItem}>
                 <Text style={[styles.potentialValue, { color: '#10797D' }]}>
-                  {dailyPotential.estimatedProfit.toLocaleString()} RWF
+                  {(dailyPotential.estimatedProfit / 1000).toFixed(0)}K
                 </Text>
                 <Text style={[styles.potentialLabel, { color: theme.textSecondary }]}>
                   Potential profit
@@ -315,101 +390,148 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
               <View style={styles.potentialDivider} />
               <View style={styles.potentialItem}>
                 <Text style={[styles.potentialValue, { color: theme.text }]}>
-                  {dailyPotential.possibleLoads}
+                  {availableLoads.length}
                 </Text>
                 <Text style={[styles.potentialLabel, { color: theme.textSecondary }]}>
-                  Possible loads
+                  Available loads
                 </Text>
               </View>
               <View style={styles.potentialDivider} />
               <View style={styles.potentialItem}>
                 <Text style={[styles.potentialValue, { color: theme.text }]}>
-                  {dailyPotential.averagePerHour.toLocaleString()}
+                  {(dailyPotential.averagePerHour / 1000).toFixed(1)}K
                 </Text>
                 <Text style={[styles.potentialLabel, { color: theme.textSecondary }]}>
                   RWF/hour
                 </Text>
               </View>
             </View>
+
+            {/* Load Breakdown */}
+            <View style={[styles.loadBreakdown, { borderTopColor: theme.border }]}>
+              <View style={styles.breakdownRow}>
+                <View style={styles.breakdownItem}>
+                  <View style={[styles.breakdownIcon, { backgroundColor: '#3B82F6' + '20' }]}>
+                    <Ionicons name="receipt" size={14} color="#3B82F6" />
+                  </View>
+                  <Text style={[styles.breakdownText, { color: theme.textSecondary }]}>
+                    {availableCargo.filter(c => c.status === 'listed').length} Cargo
+                  </Text>
+                </View>
+                <View style={styles.breakdownItem}>
+                  <View style={[styles.breakdownIcon, { backgroundColor: '#F59E0B' + '20' }]}>
+                    <Ionicons name="document-text" size={14} color="#F59E0B" />
+                  </View>
+                  <Text style={[styles.breakdownText, { color: theme.textSecondary }]}>
+                    {orders.filter(o => (o.status === 'accepted' || o.status === 'pending') && !o.transporterId).length} Orders
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.viewAllButton, { backgroundColor: theme.primary }]}
+                onPress={() => navigation.navigate('AvailableLoads')}
+              >
+                <Text style={styles.viewAllText}>View All Loads</Text>
+                <Ionicons name="arrow-forward" size={16} color="#FFF" />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        {/* Smart Load Matching */}
-        {bestMatches.length > 0 && isOnline && (
+        {/* Top Opportunities - Only show high-priority matches */}
+        {bestMatches.filter(m => m.priority === 'high').length > 0 && isOnline && (
           <View style={styles.content}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Best Matches For You
+                Top Opportunities Nearby
               </Text>
               <TouchableOpacity onPress={() => navigation.navigate('AvailableLoads')}>
-                <Text style={[styles.seeAllText, { color: theme.tertiary }]}>See All</Text>
+                <Text style={[styles.seeAllText, { color: theme.primary }]}>View All</Text>
               </TouchableOpacity>
             </View>
 
-            {bestMatches.map((match, index) => (
-              <TouchableOpacity
-                key={match.load._id || match.load.id}
-                style={[styles.matchCard, { backgroundColor: theme.card }]}
-                onPress={() => navigation.navigate('AvailableLoads')}
-              >
-                {/* Priority Badge */}
-                {match.priority === 'high' && (
-                  <View style={styles.priorityBadge}>
-                    <Ionicons name="star" size={10} color="#FFF" />
-                    <Text style={styles.priorityText}>TOP MATCH</Text>
-                  </View>
-                )}
+            {bestMatches.filter(m => m.priority === 'high').slice(0, 2).map((match, index) => {
+              const cargoName = match.load.cropId?.name || match.load.quantity + ' kg';
+              const pickupAddr = match.load.pickupLocation?.address || 'Pickup location';
+              const deliveryAddr = match.load.deliveryLocation?.address || 'Delivery location';
 
-                <View style={styles.matchHeader}>
-                  <View style={styles.matchTitleRow}>
-                    <Ionicons name="cube" size={16} color={theme.tertiary} />
-                    <Text style={[styles.matchTitle, { color: theme.text }]}>
-                      {match.load.cropId?.name || 'Cargo Load'}
-                    </Text>
+              return (
+                <TouchableOpacity
+                  key={match.load._id || match.load.id || index}
+                  style={[styles.matchCard, { backgroundColor: theme.card }]}
+                  onPress={() => navigation.navigate('AvailableLoads')}
+                >
+                  {/* Header with cargo name and earning */}
+                  <View style={styles.matchHeader}>
+                    <View style={styles.matchTitleRow}>
+                      <View style={[styles.cargoIcon, { backgroundColor: theme.primary + '20' }]}>
+                        <Ionicons name="leaf" size={18} color={theme.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.matchTitle, { color: theme.text }]}>
+                          {cargoName}
+                        </Text>
+                        <Text style={[styles.cargoWeight, { color: theme.textSecondary }]}>
+                          {match.load.quantity} kg
+                        </Text>
+                      </View>
+                    </View>
+                    <View>
+                      <Text style={[styles.earningsAmount, { color: theme.success, fontSize: 16 }]}>
+                        {(match.profit / 1000).toFixed(1)}K
+                      </Text>
+                      <Text style={[styles.earningsLabel, { color: theme.textSecondary, fontSize: 10 }]}>
+                        profit
+                      </Text>
+                    </View>
                   </View>
-                  <View style={[styles.scoreBox, { backgroundColor: theme.success + '15' }]}>
-                    <Text style={[styles.scoreText, { color: theme.success }]}>
-                      {match.score}
-                    </Text>
-                  </View>
-                </View>
 
-                <View style={styles.matchDetails}>
-                  <View style={styles.detailRow}>
-                    <Ionicons name="location" size={14} color={theme.textSecondary} />
-                    <Text style={[styles.detailText, { color: theme.textSecondary }]}>
-                      {match.distance.toFixed(1)}km away · {match.eta} min
-                    </Text>
+                  {/* Route information */}
+                  <View style={styles.routeInfo}>
+                    <View style={styles.routeStep}>
+                      <View style={[styles.routeDot, { backgroundColor: theme.primary }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.routeLabel, { color: theme.textSecondary }]}>
+                          Pickup
+                        </Text>
+                        <Text style={[styles.routeAddress, { color: theme.text }]} numberOfLines={1}>
+                          {pickupAddr}
+                        </Text>
+                      </View>
+                      <Text style={[styles.distanceBadge, { color: theme.primary }]}>
+                        {match.distance.toFixed(0)}km
+                      </Text>
+                    </View>
+                    <View style={[styles.routeLine, { backgroundColor: theme.border }]} />
+                    <View style={styles.routeStep}>
+                      <View style={[styles.routeDot, { backgroundColor: theme.success }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.routeLabel, { color: theme.textSecondary }]}>
+                          Delivery
+                        </Text>
+                        <Text style={[styles.routeAddress, { color: theme.text }]} numberOfLines={1}>
+                          {deliveryAddr}
+                        </Text>
+                      </View>
+                      <Text style={[styles.distanceBadge, { color: theme.success }]}>
+                        {match.routeDistance.toFixed(0)}km
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Ionicons name="navigate" size={14} color={theme.textSecondary} />
-                    <Text style={[styles.detailText, { color: theme.textSecondary }]}>
-                      {match.routeDistance.toFixed(1)}km route
-                    </Text>
-                  </View>
-                </View>
 
-                <View style={styles.earningsRow}>
-                  <View>
-                    <Text style={[styles.earningsLabel, { color: theme.textSecondary }]}>
-                      You'll earn
-                    </Text>
-                    <Text style={[styles.earningsAmount, { color: theme.success }]}>
-                      {match.profit.toLocaleString()} RWF
-                    </Text>
-                  </View>
-                  <View style={styles.reasonsContainer}>
+                  {/* Bottom tags */}
+                  <View style={styles.matchTags}>
                     {match.matchReasons.slice(0, 2).map((reason: string, i: number) => (
-                      <View key={i} style={[styles.reasonChip, { backgroundColor: theme.tertiary + '15' }]}>
-                        <Text style={[styles.reasonText, { color: theme.tertiary }]}>
+                      <View key={i} style={[styles.tagChip, { backgroundColor: theme.success + '15' }]}>
+                        <Text style={[styles.tagText, { color: theme.success }]}>
                           {reason}
                         </Text>
                       </View>
                     ))}
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -568,6 +690,17 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginTop: 4,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#FFF',
+    fontWeight: '600',
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -656,6 +789,26 @@ const styles = StyleSheet.create({
   potentialTitle: {
     fontSize: 16,
     fontWeight: '700',
+    flex: 1,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFF',
+  },
+  liveText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
   potentialStats: {
     flexDirection: 'row',
@@ -676,6 +829,46 @@ const styles = StyleSheet.create({
   potentialDivider: {
     width: 1,
     backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  loadBreakdown: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 12,
+  },
+  breakdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  breakdownIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  breakdownText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 6,
+  },
+  viewAllText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   content: {
     padding: 12,
@@ -700,100 +893,99 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   matchCard: {
-    padding: 12,
+    padding: 14,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
     maxWidth: 600,
     width: '100%',
     alignSelf: 'center',
-  },
-  priorityBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    flexDirection: 'row',
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
-    alignItems: 'center',
-    gap: 3,
-  },
-  priorityText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: '700',
   },
   matchHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 14,
   },
   matchTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
     flex: 1,
   },
-  matchTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  scoreBox: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  scoreText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  matchDetails: {
-    gap: 6,
-    marginBottom: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
+  cargoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
   },
-  detailText: {
-    fontSize: 11,
-    fontWeight: '500',
+  matchTitle: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  earningsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+  cargoWeight: {
+    fontSize: 12,
+    marginTop: 2,
   },
   earningsLabel: {
     fontSize: 10,
-    marginBottom: 2,
+    textAlign: 'right',
   },
   earningsAmount: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
   },
-  reasonsContainer: {
-    alignItems: 'flex-end',
-    gap: 3,
+  routeInfo: {
+    marginTop: 4,
+    marginBottom: 12,
   },
-  reasonChip: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+  routeStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 6,
+  },
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  routeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  routeAddress: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  distanceBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  routeLine: {
+    width: 2,
+    height: 16,
+    marginLeft: 4,
+  },
+  matchTags: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  tagChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
   },
-  reasonText: {
-    fontSize: 9,
+  tagText: {
+    fontSize: 10,
     fontWeight: '600',
   },
   actionsGrid: {

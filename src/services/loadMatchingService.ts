@@ -29,6 +29,7 @@ interface Load {
   cropId?: { name: string };
   status: string;
   totalPrice: number;
+  shippingCost?: number; // Actual transport fee calculated when cargo was created
   urgency?: 'low' | 'medium' | 'high' | 'urgent';
   preferredPickupTime?: Date;
 }
@@ -114,8 +115,14 @@ const calculateMatchScore = (
   }
 
   // 4. Calculate financials
+  // Use actual shippingCost if available (calculated at cargo creation with proper vehicle type & traffic)
+  // Otherwise fall back to generic distance-based calculation
+  const estimatedEarnings = load.shippingCost && load.shippingCost > 0
+    ? load.shippingCost  // Real transport fee
+    : calculateEarnings(routeDistance); // Fallback: only charge for delivery route, not pickup
+
+  // Fuel cost includes both pickup drive and delivery route
   const totalDistance = distanceToPickup + routeDistance;
-  const estimatedEarnings = calculateEarnings(totalDistance);
   const estimatedFuelCost = calculateFuelCost(totalDistance);
   const profit = estimatedEarnings - estimatedFuelCost;
 

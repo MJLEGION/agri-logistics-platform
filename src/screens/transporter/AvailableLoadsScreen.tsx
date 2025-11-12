@@ -23,6 +23,7 @@ import {
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
 import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
+import * as cargoService from '../../services/cargoService';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
 import { distanceService } from '../../services/distanceService';
@@ -259,20 +260,15 @@ export default function AvailableLoadsScreen({ navigation }: any) {
             throw new Error('User not logged in');
           }
 
-          // TODO: Backend needs proper endpoint for transporters to accept cargo
-          // Currently /crops/:id can only be updated by owner (shipper)
-          // Need endpoint like: PUT /crops/:id/assign-transporter
-
-          // For now, mock the acceptance
-          console.log('✅ Cargo acceptance (mock):', {
+          // Call backend API to assign transporter to cargo
+          console.log('✅ Accepting cargo:', {
             cargoId: actualId,
             cargoName: cargoItem.name,
             transporterId,
-            note: 'Backend integration pending - need /crops/:id/assign-transporter endpoint'
           });
 
-          // Simulate successful acceptance
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await cargoService.assignTransporterToCargo(actualId);
+          console.log('✅ Cargo accepted successfully');
 
         } else {
           // Handle regular trip acceptance
@@ -313,7 +309,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       await dispatch(fetchOrders() as any);
 
       const successMessage = isCargo
-        ? `Cargo "${item?.name}" accepted! (Mock - awaiting backend integration)`
+        ? `Cargo "${item?.name}" accepted successfully!`
         : 'Trip accepted! Check My Trips to mark complete!';
 
       showSuccess(successMessage);

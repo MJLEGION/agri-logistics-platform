@@ -18,6 +18,7 @@ import {
   getTripsByPeriod,
 } from '../../logistics/utils/tripCalculations';
 import { fetchAllTrips } from '../../logistics/store/tripsSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 import PaymentModal from '../../components/PaymentModal';
 import { showToast } from '../../services/toastService';
 
@@ -26,15 +27,17 @@ type TimePeriod = 'today' | 'week' | 'month' | 'year';
 export default function EarningsDashboardScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { trips } = useAppSelector((state) => state.trips);
+  const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('today');
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [minimumWithdrawal] = useState(5000); // Minimum withdrawal amount
 
-  // Fetch trips when screen loads
+  // Fetch trips and cargo when screen loads
   useEffect(() => {
     dispatch(fetchAllTrips() as any);
+    dispatch(fetchCargo() as any);
   }, [dispatch]);
 
   // Filter my completed trips
@@ -42,6 +45,15 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     () => getCompletedTripsForTransporter(trips, user?.id || user?._id || ''),
     [trips, user?.id, user?._id]
   );
+
+  // Filter my completed cargo
+  const transporterId = user?.id || user?._id || '';
+  const myCompletedCargo = useMemo(() => {
+    return Array.isArray(cargo) ? cargo.filter((cargoItem: any) => {
+      const cargoTransporterId = cargoItem.transporterId?._id || cargoItem.transporterId?.id || cargoItem.transporterId;
+      return cargoTransporterId === transporterId && cargoItem.status === 'delivered';
+    }) : [];
+  }, [cargo, transporterId]);
 
   // Get date range based on period
   const getDateRange = () => {
@@ -77,22 +89,42 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     });
   }, [myCompletedTrips, timePeriod]);
 
-  // Calculate statistics from trips
+  // Filter cargo by date range
+  const filteredCargo = useMemo(() => {
+    const { start, end } = getDateRange();
+    return myCompletedCargo.filter((cargoItem: any) => {
+      const cargoDate = new Date(cargoItem.updatedAt || Date.now());
+      return cargoDate >= start && cargoDate <= end;
+    });
+  }, [myCompletedCargo, timePeriod]);
+
+  // Calculate statistics from trips and cargo
   const stats = useMemo(() => {
     const totalTrips = filteredTrips.length;
-    const totalEarnings = calculateTotalEarnings(filteredTrips);
-    const averagePerTrip = totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0;
+    const totalCargo = filteredCargo.length;
+    const tripEarnings = calculateTotalEarnings(filteredTrips);
+    const cargoEarnings = filteredCargo.reduce((sum: number, cargoItem: any) => {
+      return sum + (cargoItem.shippingCost || 0);
+    }, 0);
+
+    const totalEarnings = tripEarnings + cargoEarnings;
+    const totalDeliveries = totalTrips + totalCargo;
+    const averagePerTrip = totalDeliveries > 0 ? Math.round(totalEarnings / totalDeliveries) : 0;
 
     return {
       totalTrips,
+      totalCargo,
+      totalDeliveries,
       totalDistance: 0, // Distance info can be added to Trip type if needed
       totalEarnings,
+      tripEarnings,
+      cargoEarnings,
       totalFuelCost: 0, // Can be calculated from trip.earnings.fuelCost if available
       netEarnings: totalEarnings,
       averagePerTrip,
       averageDistance: 0,
     };
-  }, [filteredTrips]);
+  }, [filteredTrips, filteredCargo]);
 
   const periodLabels = {
     today: 'Today',
@@ -192,7 +224,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
               {stats.netEarnings.toLocaleString()} RWF
             </Text>
             <Text style={styles.earningsSubtext}>
-              {stats.totalTrips} trips • {stats.totalDistance} km
+              {stats.totalDeliveries} deliveries ({stats.totalTrips} trips + {stats.totalCargo} cargo) • {stats.totalDistance} km
             </Text>
           </View>
           <View style={styles.mainCardIcon}>
@@ -230,10 +262,10 @@ export default function EarningsDashboardScreen({ navigation }: any) {
               <Ionicons name="car" size={24} color="#3B82F6" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
-              {stats.totalTrips}
+              {stats.totalDeliveries}
             </Text>
             <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
-              Trips
+              Deliveries
             </Text>
           </View>
 
@@ -283,10 +315,26 @@ export default function EarningsDashboardScreen({ navigation }: any) {
             <View style={styles.breakdownRow}>
               <View style={styles.breakdownItem}>
                 <Text style={[styles.breakdownLabel, { color: theme.textSecondary }]}>
-                  Gross Earnings
+                  Trip Earnings ({stats.totalTrips} trips)
                 </Text>
                 <Text style={[styles.breakdownValue, { color: '#10797D' }]}>
-                  +{stats.totalEarnings.toLocaleString()} RWF
+                  +{stats.tripEarnings.toLocaleString()} RWF
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.breakdownRow,
+                { borderTopWidth: 1, borderTopColor: theme.border },
+              ]}
+            >
+              <View style={styles.breakdownItem}>
+                <Text style={[styles.breakdownLabel, { color: theme.textSecondary }]}>
+                  Cargo Earnings ({stats.totalCargo} cargo)
+                </Text>
+                <Text style={[styles.breakdownValue, { color: '#10797D' }]}>
+                  +{stats.cargoEarnings.toLocaleString()} RWF
                 </Text>
               </View>
             </View>
@@ -366,18 +414,19 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Recent Trips */}
-        {filteredTrips.length > 0 && (
+        {/* Recent Deliveries (Trips + Cargo) */}
+        {(filteredTrips.length > 0 || filteredCargo.length > 0) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              🚛 Recent Trips ({filteredTrips.length})
+              🚛 Recent Deliveries ({filteredTrips.length + filteredCargo.length})
             </Text>
+            {/* Show Recent Trips */}
             {filteredTrips.slice(0, 5).map((trip) => {
               const earnings = trip.earnings?.totalRate || 0;
 
               return (
                 <TouchableOpacity
-                  key={trip._id || trip.tripId}
+                  key={`trip-${trip._id || trip.tripId}`}
                   style={[styles.tripCard, { backgroundColor: theme.card }]}
                   accessible={true}
                   accessibilityRole="button"
@@ -390,10 +439,42 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                     </View>
                     <View style={styles.tripInfo}>
                       <Text style={[styles.tripTitle, { color: theme.text }]}>
-                        {trip.shipment?.cropName || 'Delivery'}
+                        {trip.shipment?.cropName || 'Delivery'} (Trip)
                       </Text>
                       <Text style={[styles.tripDesc, { color: theme.textSecondary }]}>
                         {trip.shipment?.quantity} {trip.shipment?.unit} → {earnings.toLocaleString()} RWF
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.tripEarnings, { color: '#10797D' }]}>
+                    +{earnings.toLocaleString()}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            {/* Show Recent Cargo */}
+            {filteredCargo.slice(0, 5).map((cargoItem: any) => {
+              const earnings = cargoItem.shippingCost || 0;
+
+              return (
+                <TouchableOpacity
+                  key={`cargo-${cargoItem._id || cargoItem.id}`}
+                  style={[styles.tripCard, { backgroundColor: theme.card }]}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Cargo: ${cargoItem.name}, ${cargoItem.quantity} ${cargoItem.unit}`}
+                  accessibilityHint={`Earned ${earnings.toLocaleString()} RWF`}
+                >
+                  <View style={styles.tripLeft}>
+                    <View style={[styles.tripIcon, { backgroundColor: '#F59E0B' + '20' }]}>
+                      <Ionicons name="cube" size={20} color="#F59E0B" />
+                    </View>
+                    <View style={styles.tripInfo}>
+                      <Text style={[styles.tripTitle, { color: theme.text }]}>
+                        {cargoItem.name} (Cargo)
+                      </Text>
+                      <Text style={[styles.tripDesc, { color: theme.textSecondary }]}>
+                        {cargoItem.quantity} {cargoItem.unit} → {earnings.toLocaleString()} RWF
                       </Text>
                     </View>
                   </View>
@@ -407,14 +488,14 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         )}
 
         {/* Empty State */}
-        {filteredTrips.length === 0 && (
+        {filteredTrips.length === 0 && filteredCargo.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🎯</Text>
             <Text style={[styles.emptyText, { color: theme.text }]}>
               No earnings yet for {periodLabels[timePeriod].toLowerCase()}
             </Text>
             <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-              Complete trips to earn money
+              Complete trips and cargo deliveries to earn money
             </Text>
           </View>
         )}

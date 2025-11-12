@@ -55,6 +55,7 @@ const mapBackendCropToCargo = (crop: BackendCrop): Cargo => ({
   shippingCost: (crop as any).shippingCost,
   suggestedVehicle: (crop as any).suggestedVehicle,
   paymentDetails: (crop as any).paymentDetails,
+  transporterId: (crop as any).transporterId, // Include transporter ID for accepted cargo
   createdAt: crop.createdAt,
   updatedAt: crop.updatedAt,
 });
@@ -260,6 +261,56 @@ export const getCargoByFarmerId = async (farmerId: string): Promise<Cargo[]> => 
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
     logger.error('Failed to fetch cargo by farmer ID', error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Assign transporter to cargo - connects to real backend API
+ */
+export const assignTransporterToCargo = async (cargoId: string): Promise<Cargo> => {
+  try {
+    logger.info('Assigning transporter to cargo', { cargoId });
+
+    const response = await api.put<BackendCropResponse>(`/crops/${cargoId}/assign-transporter`, {});
+
+    const cropData = response.data.cargo || response.data.data || response.data;
+    if (!cropData || !cropData._id) {
+      throw new Error('Failed to assign transporter - no data returned');
+    }
+
+    logger.info('Transporter assigned successfully', { cargoId });
+
+    // Map backend crop to frontend cargo format
+    return mapBackendCropToCargo(cropData);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to assign transporter to cargo';
+    logger.error('Failed to assign transporter', error);
+    throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Update cargo status by transporter - connects to real backend API
+ */
+export const updateCargoStatus = async (cargoId: string, status: string): Promise<Cargo> => {
+  try {
+    logger.info('Updating cargo status', { cargoId, status });
+
+    const response = await api.put<BackendCropResponse>(`/crops/${cargoId}/update-status`, { status });
+
+    const cropData = response.data.cargo || response.data.data || response.data;
+    if (!cropData || !cropData._id) {
+      throw new Error('Failed to update cargo status - no data returned');
+    }
+
+    logger.info('Cargo status updated successfully', { cargoId, status });
+
+    // Map backend crop to frontend cargo format
+    return mapBackendCropToCargo(cropData);
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to update cargo status';
+    logger.error('Failed to update cargo status', error);
     throw new Error(errorMessage);
   }
 };

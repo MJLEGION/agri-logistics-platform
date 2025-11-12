@@ -21,7 +21,6 @@ import {
 } from '../../logistics/store/tripsSlice';
 import {
   getTripHistoryForTransporter,
-  sortTripsByDate,
 } from '../../logistics/utils/tripCalculations';
 import SearchBar from '../../components/SearchBar';
 import ListItem from '../../components/ListItem';
@@ -29,12 +28,14 @@ import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import Chip from '../../components/Chip';
 import Toast, { useToast } from '../../components/Toast';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 
 type TripStatus = 'all' | 'completed' | 'cancelled';
 
 export default function TripHistoryScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { trips, isLoading } = useAppSelector((state) => state.trips);
+  const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [filterStatus, setFilterStatus] = useState<TripStatus>('all');
@@ -43,20 +44,73 @@ export default function TripHistoryScreen({ navigation }: any) {
   const { toast, showSuccess, showError, hideToast } = useToast();
   const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
-  // Fetch trips when screen loads
+  // Fetch trips and cargo when screen loads
   useEffect(() => {
     dispatch(fetchTrips() as any);
+    dispatch(fetchCargo() as any);
   }, [dispatch]);
 
-  // TEMPORARY: Log all trips for debugging
-      // Get trip history for user
+  // Get trip history and completed cargo for user
   const myTrips = useMemo(() => {
     const userId = user?.id || user?._id || '';
-    const filtered = getTripHistoryForTransporter(trips, userId);
 
-    // TEMPORARY: Show ALL trips for debugging
-        return trips; // Show all trips temporarily
-  }, [trips, user?.id, user?._id]);
+    // Get trips for this transporter
+    const userTrips = getTripHistoryForTransporter(trips, userId).map(trip => ({
+      ...trip,
+      type: 'trip',
+    }));
+
+    // Get completed cargo for this transporter
+    const userCargo = Array.isArray(cargo)
+      ? cargo
+          .filter((cargoItem: any) => {
+            const cargoTransporterId = cargoItem.transporterId?._id || cargoItem.transporterId?.id || cargoItem.transporterId;
+            // Show all cargo that has been assigned to this transporter (not just delivered)
+            const historicalStatuses = ['matched', 'picked_up', 'in_transit', 'delivered', 'cancelled'];
+            return (
+              cargoTransporterId === userId &&
+              historicalStatuses.includes(cargoItem.status)
+            );
+          })
+          .map((cargoItem: any) => ({
+            _id: cargoItem._id || cargoItem.id,
+            type: 'cargo',
+            status: cargoItem.status === 'matched' ? 'accepted' :
+                   cargoItem.status === 'picked_up' ? 'in_transit' :
+                   cargoItem.status === 'in_transit' ? 'in_transit' :
+                   cargoItem.status === 'delivered' ? 'completed' :
+                   cargoItem.status === 'cancelled' ? 'cancelled' : cargoItem.status,
+            shipment: {
+              cropName: cargoItem.name,
+              quantity: cargoItem.quantity,
+              unit: cargoItem.unit,
+            },
+            pickup: {
+              address: cargoItem.location?.address || 'Pickup location',
+              latitude: cargoItem.location?.latitude,
+              longitude: cargoItem.location?.longitude,
+            },
+            delivery: {
+              address: cargoItem.destination?.address || 'Delivery location',
+              latitude: cargoItem.destination?.latitude,
+              longitude: cargoItem.destination?.longitude,
+            },
+            earnings: {
+              totalRate: cargoItem.shippingCost || 0,
+            },
+            createdAt: cargoItem.createdAt,
+            completedAt: cargoItem.status === 'delivered' ? cargoItem.updatedAt : null,
+            updatedAt: cargoItem.updatedAt,
+          }))
+      : [];
+
+    // Combine trips and cargo, sort by date
+    return [...userTrips, ...userCargo].sort((a, b) => {
+      const dateA = a.completedAt || a.updatedAt || a.createdAt || new Date().toISOString();
+      const dateB = b.completedAt || b.updatedAt || b.createdAt || new Date().toISOString();
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }, [trips, cargo, user?.id, user?._id]);
 
   // Apply status filter and search
   const filteredTrips = useMemo(() => {
@@ -93,7 +147,11 @@ export default function TripHistoryScreen({ navigation }: any) {
     const trips = [...filteredTrips];
     switch (sortBy) {
       case 'recent':
-        return sortTripsByDate(trips);
+        return trips.sort((a, b) => {
+          const dateA = a.completedAt || a.updatedAt || a.createdAt || new Date().toISOString();
+          const dateB = b.completedAt || b.updatedAt || b.createdAt || new Date().toISOString();
+          return new Date(dateB).getTime() - new Date(dateA).getTime();
+        });
       case 'earnings':
         return trips.sort(
           (a, b) =>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import Badge from '../../components/Badge';
 import Toast from '../../components/Toast';
 import * as backendRatingService from '../../services/backendRatingService';
 import { logger } from '../../utils/logger';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 
 interface OrderToRate {
   id: string;
@@ -34,6 +35,7 @@ interface OrderToRate {
 
 const RateTransporterScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
+  const dispatch = useAppDispatch();
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -41,12 +43,20 @@ const RateTransporterScreen = ({ navigation }: any) => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
-  // Get orders from Redux store
+  // Get orders and cargo from Redux store
   const orders = useAppSelector((state: any) => state.orders?.orders || []);
+  const cargo = useAppSelector((state: any) => state.cargo?.cargo || []);
+  const { user } = useAppSelector((state: any) => state.auth);
 
-  // Filter completed/delivered orders that haven't been rated yet
+  // Fetch cargo when screen loads
+  useEffect(() => {
+    dispatch(fetchCargo() as any);
+  }, [dispatch]);
+
+  // Filter completed/delivered orders and cargo that haven't been rated yet
   const completedOrders = useMemo(() => {
-    return orders
+    // Filter completed orders
+    const completedOrdersList = orders
       .filter(
         (order: any) =>
           (order.status === 'completed' || order.status === 'delivered') &&
@@ -54,7 +64,7 @@ const RateTransporterScreen = ({ navigation }: any) => {
       )
       .map((order: any) => ({
         id: order.id,
-        cargoId: order.cargoId || `CARGO_${order.id}`,
+        cargoId: order.cargoId || `ORDER_${order.id}`,
         status: order.status,
         transporterName: order.transporter?.name || 'Unknown',
         transporterId: order.transporter?.id || '',
@@ -62,9 +72,45 @@ const RateTransporterScreen = ({ navigation }: any) => {
         weight: order.totalWeight || order.cargoWeight || 'N/A',
         isVerified: order.transporter?.verified || false,
         createdAt: order.completedAt || order.createdAt,
-      }))
+        type: 'order',
+      }));
+
+    // Filter completed cargo (owned by current user and delivered)
+    const userId = user?.id || user?._id || '';
+    const completedCargoList = Array.isArray(cargo)
+      ? cargo
+          .filter((cargoItem: any) => {
+            const cargoOwnerId = cargoItem.shipperId?._id || cargoItem.shipperId?.id || cargoItem.shipperId;
+            const transporterId = cargoItem.transporterId?._id || cargoItem.transporterId?.id || cargoItem.transporterId;
+            return (
+              cargoOwnerId === userId &&
+              cargoItem.status === 'delivered' &&
+              transporterId
+            );
+          })
+          .map((cargoItem: any) => ({
+            id: cargoItem._id || cargoItem.id,
+            cargoId: `CARGO_${cargoItem._id || cargoItem.id}`,
+            status: cargoItem.status,
+            transporterName: cargoItem.transporterId?.name || 'Transporter',
+            transporterId:
+              cargoItem.transporterId?._id ||
+              cargoItem.transporterId?.id ||
+              cargoItem.transporterId ||
+              '',
+            location: cargoItem.destination?.address || cargoItem.location?.address || '',
+            weight: `${cargoItem.quantity} ${cargoItem.unit}`,
+            isVerified: cargoItem.transporterId?.verified || false,
+            createdAt: cargoItem.updatedAt || cargoItem.createdAt,
+            type: 'cargo',
+          }))
+      : [];
+
+    // Combine and sort by date
+    return [...completedOrdersList, ...completedCargoList]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 10);
-  }, [orders]);
+  }, [orders, cargo, user]);
 
   const selectedOrder = selectedOrderId
     ? completedOrders.find((o) => o.id === selectedOrderId)

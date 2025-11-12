@@ -1,10 +1,10 @@
 // src/screens/shipper/ShipperActiveOrdersScreen.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Animated, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Card } from '../../components/common/Card';
-import { useAppSelector } from '../../store';
+import { useAppSelector, useAppDispatch } from '../../store';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import SearchBar from '../../components/SearchBar';
 import ListItem from '../../components/ListItem';
@@ -14,9 +14,11 @@ import RateTransporterModal from '../../components/RateTransporterModal';
 import Toast, { useToast } from '../../components/Toast';
 import * as backendRatingService from '../../services/backendRatingService';
 import { logger } from '../../utils/logger';
+import { fetchCargo } from '../../store/slices/cargoSlice';
 
 export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const { orders } = useAppSelector((state) => state.orders);
   const { cargo } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
@@ -26,27 +28,72 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { toast, showSuccess, showError, hideToast } = useToast();
   const animations = useScreenAnimations(6); // ✨ Pizzazz animations
 
-  // Filter orders to show only those belonging to current shipper
+  // Fetch cargo when screen loads
+  useEffect(() => {
+    dispatch(fetchCargo() as any);
+  }, [dispatch]);
+
+  // Filter orders and cargo to show only those belonging to current shipper
   const shipperOrders = useMemo(() => {
     if (!user?._id && !user?.id) return [];
 
     const userId = user._id || user.id;
-    // Show orders where the shipper/farmer is the current user
-    return orders.filter(order => {
-      const orderShipperId = order.shipperId || order.farmerId;
-      return orderShipperId === userId;
-    });
-  }, [orders, user]);
+
+    // Get orders where the shipper/farmer is the current user
+    const userOrders = orders
+      .filter(order => {
+        const orderShipperId = order.shipperId || order.farmerId;
+        return orderShipperId === userId;
+      })
+      .map(order => ({
+        ...order,
+        type: 'order',
+        cargoName: getCargoName(order.cargoId),
+      }));
+
+    // Get cargo that belongs to current user and has been accepted (matched, picked_up, in_transit, delivered)
+    const userCargo = Array.isArray(cargo)
+      ? cargo
+          .filter((cargoItem: any) => {
+            const cargoOwnerId = cargoItem.shipperId?._id || cargoItem.shipperId?.id || cargoItem.shipperId;
+            const hasTransporter = cargoItem.transporterId;
+            const activeStatuses = ['matched', 'picked_up', 'in_transit', 'delivered'];
+            return (
+              cargoOwnerId === userId &&
+              hasTransporter &&
+              activeStatuses.includes(cargoItem.status)
+            );
+          })
+          .map((cargoItem: any) => ({
+            _id: cargoItem._id || cargoItem.id,
+            id: cargoItem._id || cargoItem.id,
+            type: 'cargo',
+            cargoId: cargoItem._id || cargoItem.id,
+            cargoName: cargoItem.name,
+            status: cargoItem.status,
+            quantity: `${cargoItem.quantity} ${cargoItem.unit}`,
+            deliveryLocation: cargoItem.destination || { address: cargoItem.location?.address },
+            transporterId: cargoItem.transporterId,
+            createdAt: cargoItem.createdAt,
+            updatedAt: cargoItem.updatedAt,
+          }))
+      : [];
+
+    // Combine and sort by date
+    return [...userOrders, ...userCargo].sort(
+      (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+    );
+  }, [orders, cargo, user]);
 
   // Filter orders based on search query
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return shipperOrders;
 
     const query = searchQuery.toLowerCase();
-    return shipperOrders.filter(order => {
-      const cargoName = getCargoName(order.cargoId).toLowerCase();
-      const status = order.status.toLowerCase();
-      const deliveryLocation = order.deliveryLocation?.address?.toLowerCase() || '';
+    return shipperOrders.filter(item => {
+      const cargoName = (item.cargoName || '').toLowerCase();
+      const status = (item.status || '').toLowerCase();
+      const deliveryLocation = item.deliveryLocation?.address?.toLowerCase() || '';
 
       return cargoName.includes(query) ||
              status.includes(query) ||
@@ -58,8 +105,12 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
     switch (status) {
       case 'pending': return theme.warning;
       case 'accepted': return theme.success;
+      case 'matched': return theme.success; // Cargo accepted
       case 'in_progress': return theme.info;
+      case 'picked_up': return theme.info; // Cargo picked up
+      case 'in_transit': return theme.info; // Cargo in transit
       case 'completed': return theme.textSecondary;
+      case 'delivered': return theme.textSecondary; // Cargo delivered
       case 'cancelled': return theme.error;
       default: return theme.textSecondary;
     }
@@ -69,8 +120,12 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
     switch (status) {
       case 'pending': return 'warning';
       case 'accepted': return 'success';
+      case 'matched': return 'success'; // Cargo accepted
       case 'in_progress': return 'primary';
+      case 'picked_up': return 'primary'; // Cargo picked up
+      case 'in_transit': return 'primary'; // Cargo in transit
       case 'completed': return 'gray';
+      case 'delivered': return 'gray'; // Cargo delivered
       case 'cancelled': return 'danger';
       default: return 'gray';
     }
@@ -176,11 +231,11 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
               <View>
                 <ListItem
                   icon="cube"
-                  title={getCargoName(item.cargoId)}
-                  subtitle={`${item.quantity} • ${item.deliveryLocation?.address || 'Location'} ${item.transporterId ? '• 🚚 Assigned' : ''}`}
+                  title={item.cargoName || 'Unknown Cargo'}
+                  subtitle={`${item.quantity || 'N/A'} • ${item.deliveryLocation?.address || 'Location'} ${item.transporterId ? '• 🚚 Assigned' : ''}`}
                   rightElement={
                     <Badge
-                      label={item.status.toUpperCase()}
+                      label={item.status.toUpperCase().replace('_', ' ')}
                       variant={getStatusVariant(item.status)}
                       size="sm"
                     />

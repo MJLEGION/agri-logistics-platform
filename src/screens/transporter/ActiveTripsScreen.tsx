@@ -11,6 +11,8 @@ import {
   completeTrip,
 } from '../../logistics/store/tripsSlice';
 import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
+import { fetchCargo } from '../../store/slices/cargoSlice';
+import * as cargoService from '../../services/cargoService';
 import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
 import { distanceService } from '../../services/distanceService';
 import { calculateRemainingETA, formatDuration, formatArrivalTime } from '../../services/etaService';
@@ -27,6 +29,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { trips, isLoading: tripsLoading } = useAppSelector((state) => state.trips);
   const { orders, isLoading: ordersLoading } = useAppSelector((state) => state.orders);
+  const { cargo, isLoading: cargoLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -50,9 +53,49 @@ export default function ActiveTripsScreen({ navigation }: any) {
       (order.status === 'accepted' || order.status === 'in_progress')
   ) : [];
 
-  // Combine trips and orders
-  const allActiveItems = [...activeTrips, ...activeOrders];
-  const isLoading = tripsLoading || ordersLoading;
+  // Get active cargo (transporterId matches current user, status is matched, picked_up, or in_transit)
+  const activeCargo = Array.isArray(cargo) ? cargo
+    .filter(
+      (cargoItem: any) => {
+        const cargoTransporterId = cargoItem.transporterId?._id || cargoItem.transporterId?.id || cargoItem.transporterId;
+        return (
+          cargoTransporterId === transporterId &&
+          (cargoItem.status === 'matched' || cargoItem.status === 'picked_up' || cargoItem.status === 'in_transit')
+        );
+      }
+    )
+    .map((cargoItem: any) => ({
+      // Transform cargo to match trip structure for rendering
+      _id: cargoItem._id || cargoItem.id,
+      id: cargoItem._id || cargoItem.id,
+      status: cargoItem.status,
+      isCargo: true, // Flag to identify cargo items
+      shipment: {
+        cropName: cargoItem.name,
+        quantity: cargoItem.quantity,
+        unit: cargoItem.unit || 'kg',
+      },
+      earnings: {
+        totalRate: cargoItem.shippingCost || 0,
+      },
+      pickup: {
+        address: cargoItem.location?.address || 'Pickup location',
+        latitude: cargoItem.location?.latitude,
+        longitude: cargoItem.location?.longitude,
+      },
+      delivery: {
+        address: cargoItem.destination?.address || 'Delivery location',
+        latitude: cargoItem.destination?.latitude,
+        longitude: cargoItem.destination?.longitude,
+      },
+      cargoId: cargoItem._id || cargoItem.id, // Add cargoId for completion handling
+      originalCargo: cargoItem, // Keep reference to original cargo
+    }))
+  : [];
+
+  // Combine trips, orders, and cargo
+  const allActiveItems = [...activeTrips, ...activeOrders, ...activeCargo];
+  const isLoading = tripsLoading || ordersLoading || cargoLoading;
 
   // 📍 Real-time GPS Tracking
   const {
@@ -68,16 +111,18 @@ export default function ActiveTripsScreen({ navigation }: any) {
     logger.debug('ActiveTripsScreen state updated', {
       activeTrips: activeTrips.length,
       activeOrders: activeOrders.length,
+      activeCargo: activeCargo.length,
       totalActive: allActiveItems.length,
       isLoading,
       completingTripId
     });
-  }, [activeTrips, activeOrders, allActiveItems, isLoading, completingTripId]);
+  }, [activeTrips, activeOrders, activeCargo, allActiveItems, isLoading, completingTripId]);
 
   useFocusEffect(
     React.useCallback(() => {
       dispatch(fetchAllTrips() as any);
       dispatch(fetchOrders() as any);
+      dispatch(fetchCargo() as any);
     }, [dispatch])
   );
 
@@ -86,6 +131,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
     try {
       await dispatch(fetchAllTrips() as any);
       await dispatch(fetchOrders() as any);
+      await dispatch(fetchCargo() as any);
     } finally {
       setIsRefreshing(false);
     }
@@ -97,14 +143,19 @@ export default function ActiveTripsScreen({ navigation }: any) {
 
   const handleCompleteTrip = async (item: any) => {
     const itemId = item._id || item.id || item.tripId;
-    const isOrder = !!item.cargoId;
+    const isCargo = !!item.isCargo;
+    const isOrder = !!item.cargoId && !isCargo;
 
-    logger.info('Completing trip/order', { itemId, type: isOrder ? 'ORDER' : 'TRIP' });
+    logger.info('Completing trip/order/cargo', { itemId, type: isCargo ? 'CARGO' : isOrder ? 'ORDER' : 'TRIP' });
 
     try {
       setCompletingTripId(itemId);
 
-      if (isOrder) {
+      if (isCargo) {
+        logger.debug('Completing cargo', { cargoId: itemId });
+        await cargoService.updateCargoStatus(itemId, 'delivered');
+        logger.info('Cargo completed successfully', { cargoId: itemId });
+      } else if (isOrder) {
         logger.debug('Completing order', { orderId: itemId });
         await dispatch(
           updateOrder({ id: itemId, data: { status: 'completed' } }) as any
@@ -122,6 +173,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
       setCompletingTripId(null);
       dispatch(fetchAllTrips() as any);
       dispatch(fetchOrders() as any);
+      dispatch(fetchCargo() as any);
     } catch (error: any) {
       setCompletingTripId(null);
       logger.error('Failed to complete delivery', error);
@@ -135,7 +187,10 @@ export default function ActiveTripsScreen({ navigation }: any) {
     switch (status) {
       case 'in_transit': return theme.info;
       case 'accepted': return theme.warning;
+      case 'matched': return theme.warning; // Cargo accepted status
+      case 'picked_up': return theme.info;
       case 'completed': return theme.success;
+      case 'delivered': return theme.success;
       default: return theme.textSecondary;
     }
   };
@@ -144,7 +199,10 @@ export default function ActiveTripsScreen({ navigation }: any) {
     switch (status) {
       case 'in_transit': return 'In Transit';
       case 'accepted': return 'Accepted';
+      case 'matched': return 'Accepted'; // Cargo accepted status
+      case 'picked_up': return 'Picked Up';
       case 'completed': return 'Completed';
+      case 'delivered': return 'Delivered';
       default: return status;
     }
   };
