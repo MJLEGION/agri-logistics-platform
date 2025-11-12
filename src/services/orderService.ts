@@ -182,15 +182,15 @@ export const createOrder = async (orderData: any): Promise<Order> => {
 
     const response = await api.post<BackendOrderResponse>('/orders', backendOrderData);
 
-    const createdOrderData = response.data.data || response.data;
-    if (!createdOrderData || !createdOrderData._id) {
+    const orderData = response.data.data || response.data;
+    if (!orderData || !orderData._id) {
       throw new Error('Failed to create order - no data returned');
     }
 
-    logger.info('Order created successfully', { id: createdOrderData._id });
+    logger.info('Order created successfully', { id: orderData._id });
 
     // Map backend order to frontend format
-    return mapBackendOrderToFrontend(createdOrderData);
+    return mapBackendOrderToFrontend(orderData);
   } catch (error: any) {
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create order';
     logger.error('Failed to create order', error);

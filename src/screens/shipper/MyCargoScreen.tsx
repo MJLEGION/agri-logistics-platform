@@ -185,13 +185,7 @@ export default function MyCargoScreen({ navigation }: any) {
             const pickupLat = item.location?.latitude || -1.9536;
             const pickupLon = item.location?.longitude || 30.0605;
 
-            // Use actual destination if available, otherwise use a default
-            // If no destination, use Kigali city center as default
-            const deliveryLat = item.destination?.latitude || -1.9536;
-            const deliveryLon = item.destination?.longitude || 30.0605;
-
-            // Check if destination is actually set (not just default values or missing)
-            // A valid destination must have coordinates AND an address
+            // Check if destination was set during creation
             const hasDestination = !!(
               item.destination?.latitude &&
               item.destination?.longitude &&
@@ -199,26 +193,42 @@ export default function MyCargoScreen({ navigation }: any) {
               item.destination?.address.trim() !== ''
             );
 
-            const distance = distanceService.calculateDistance(
-              pickupLat,
-              pickupLon,
-              deliveryLat,
-              deliveryLon
-            );
+            // Calculate distance - ONLY if destination exists or stored distance is available
+            let distance: number = 0;
+            if (item.distance && item.distance > 0) {
+              // Use stored distance from cargo creation
+              distance = item.distance;
+            } else if (hasDestination) {
+              // Calculate from destination coordinates
+              const deliveryLat = item.destination!.latitude;
+              const deliveryLon = item.destination!.longitude;
+              distance = distanceService.calculateDistance(
+                pickupLat,
+                pickupLon,
+                deliveryLat,
+                deliveryLon
+              );
+            }
+            // If no destination and no stored distance, distance remains 0
 
-            // Suggest vehicle based on weight
+            // Suggest vehicle based on weight or use stored vehicle
             const cargoWeight = item.quantity || 0;
-            const suggestedVehicleId = suggestVehicleType(cargoWeight);
+            const suggestedVehicleId = item.suggestedVehicle || suggestVehicleType(cargoWeight);
             const vehicleType = getVehicleType(suggestedVehicleId);
 
             // Get current traffic conditions
             const trafficFactor = getTrafficFactor();
             const trafficDesc = getTrafficDescription(trafficFactor);
 
-            // Use pre-calculated shippingCost if available, otherwise calculate with current traffic
+            // Calculate transport fee:
+            // 1. Use saved shippingCost if available (from creation time)
+            // 2. Otherwise calculate ONLY if distance > 0 (destination was set)
+            // 3. If no destination, transportFee = 0 (not calculated)
             const transportFee = item.shippingCost !== undefined && item.shippingCost > 0
               ? item.shippingCost
-              : calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
+              : distance > 0
+              ? calculateShippingCost(distance, suggestedVehicleId, trafficFactor)
+              : 0;
 
             // Production logging disabled for performance
             // console.log('%c📦 MyCargoScreen - Cargo card data:', 'color: #2196F3; font-weight: bold', {
@@ -281,10 +291,10 @@ export default function MyCargoScreen({ navigation }: any) {
 
                     {/* Pricing Section */}
                     <View style={[styles.pricingSection, { backgroundColor: theme.success + '08' }]}>
-                      {!hasDestination && (
+                      {!hasDestination && transportFee === 0 && (
                         <View style={[styles.warningBanner, { backgroundColor: theme.warning + '15', borderColor: theme.warning }]}>
                           <Text style={[styles.warningText, { color: theme.warning }]}>
-                            ⚠️ No destination set - using estimated distance
+                            ⚠️ No destination set - transport fee not calculated
                           </Text>
                         </View>
                       )}
@@ -300,17 +310,25 @@ export default function MyCargoScreen({ navigation }: any) {
                         <View style={styles.pricingDivider} />
                         <View style={styles.pricingItem}>
                           <Text style={[styles.pricingLabel, { color: theme.textSecondary }]}>
-                            🚚 Transport Fee {!item.destination && '(Est.)'}
+                            🚚 Transport Fee
                           </Text>
-                          <Text style={[styles.pricingValue, { color: theme.success }]}>
-                            {transportFee.toLocaleString()} RWF
-                          </Text>
-                          <Text style={[styles.pricingSubtext, { color: theme.textSecondary }]}>
-                            {item.distance ?? distance} km × {vehicleType?.baseRatePerKm} RWF/km
-                          </Text>
-                          {!(item.shippingCost !== undefined && item.shippingCost > 0) && trafficFactor > 1.0 && (
-                            <Text style={[styles.trafficBadge, { color: trafficFactor > 1.3 ? '#EF4444' : trafficFactor > 1.1 ? '#F59E0B' : theme.success }]}>
-                              {trafficDesc} (×{trafficFactor})
+                          {transportFee > 0 ? (
+                            <>
+                              <Text style={[styles.pricingValue, { color: theme.success }]}>
+                                {transportFee.toLocaleString()} RWF
+                              </Text>
+                              <Text style={[styles.pricingSubtext, { color: theme.textSecondary }]}>
+                                {distance} km × {vehicleType?.baseRatePerKm} RWF/km
+                              </Text>
+                              {!(item.shippingCost !== undefined && item.shippingCost > 0) && trafficFactor > 1.0 && (
+                                <Text style={[styles.trafficBadge, { color: trafficFactor > 1.3 ? '#EF4444' : trafficFactor > 1.1 ? '#F59E0B' : theme.success }]}>
+                                  {trafficDesc} (×{trafficFactor})
+                                </Text>
+                              )}
+                            </>
+                          ) : (
+                            <Text style={[styles.pricingValue, { color: theme.textSecondary }]}>
+                              N/A
                             </Text>
                           )}
                         </View>

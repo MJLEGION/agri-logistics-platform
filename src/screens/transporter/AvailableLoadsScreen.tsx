@@ -75,27 +75,59 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     const pickupLat = cargoItem.location?.latitude || -1.9536;
     const pickupLon = cargoItem.location?.longitude || 30.0605;
 
-    // Use actual destination if available, otherwise use Kigali city center
-    const deliveryLat = cargoItem.destination?.latitude || -1.9536;
-    const deliveryLon = cargoItem.destination?.longitude || 30.0605;
-    const deliveryAddress = cargoItem.destination?.address || 'Kigali City Center';
-
-    const distance = distanceService.calculateDistance(
-      pickupLat,
-      pickupLon,
-      deliveryLat,
-      deliveryLon
+    // Check if destination is set
+    const hasDestination = !!(
+      cargoItem.destination?.latitude &&
+      cargoItem.destination?.longitude &&
+      cargoItem.destination?.address &&
+      cargoItem.destination?.address.trim() !== ''
     );
+
+    // Calculate distance - ONLY if destination exists or stored distance is available
+    let distance: number = 0;
+    let deliveryLat: number;
+    let deliveryLon: number;
+    let deliveryAddress: string;
+
+    if (cargoItem.distance && cargoItem.distance > 0) {
+      // Use stored distance from cargo creation
+      distance = cargoItem.distance;
+      deliveryLat = cargoItem.destination?.latitude || -1.9536;
+      deliveryLon = cargoItem.destination?.longitude || 30.0605;
+      deliveryAddress = cargoItem.destination?.address || 'Delivery Location';
+    } else if (hasDestination) {
+      // Calculate from actual destination
+      deliveryLat = cargoItem.destination!.latitude;
+      deliveryLon = cargoItem.destination!.longitude;
+      deliveryAddress = cargoItem.destination!.address;
+      distance = distanceService.calculateDistance(
+        pickupLat,
+        pickupLon,
+        deliveryLat,
+        deliveryLon
+      );
+    } else {
+      // No destination set - distance remains 0
+      deliveryLat = -1.9536;
+      deliveryLon = 30.0605;
+      deliveryAddress = 'No destination set';
+    }
 
     // Get cargo weight and suggest appropriate vehicle
     const cargoWeight = cargoItem.quantity || 0;
-    const suggestedVehicleId = suggestVehicleType(cargoWeight);
+    const suggestedVehicleId = cargoItem.suggestedVehicle || suggestVehicleType(cargoWeight);
     const vehicleType = getVehicleType(suggestedVehicleId);
 
-    // Calculate transport fee using vehicle-specific rates with current traffic
-    // Motorcycle: 700 RWF/km, Van: 1000 RWF/km, Truck: 1400 RWF/km
+    // Calculate transport fee:
+    // 1. Use saved shippingCost if available
+    // 2. Otherwise calculate ONLY if distance > 0
+    // 3. If no destination, transportFee = 0 (not calculated)
     const trafficFactor = getTrafficFactor();
-    const transportFee = calculateShippingCost(distance, suggestedVehicleId, trafficFactor);
+    const transportFee = cargoItem.shippingCost && cargoItem.shippingCost > 0
+      ? cargoItem.shippingCost
+      : distance > 0
+      ? calculateShippingCost(distance, suggestedVehicleId, trafficFactor)
+      : 0;
 
     return {
       _id: cargoItem._id || cargoItem.id,
