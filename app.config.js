@@ -28,13 +28,7 @@ export default {
       bundler: "metro"
     },
     extra: {
-      apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://agri-logistics-backend.vercel.app/api",
-      eas: {
-        projectId: "your-project-id"
-      }
-    },
-    plugins: [
-      "expo-router"
-    ]
+      apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://agri-logistics-backend.vercel.app/api"
+    }
   }
 };
