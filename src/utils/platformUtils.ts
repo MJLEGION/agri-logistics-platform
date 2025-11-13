@@ -42,12 +42,13 @@ export const isFeatureSupported = (feature: 'maps' | 'camera' | 'location' | 'no
  * Get platform-specific API URL
  */
 export const getApiUrl = (): string => {
-  // Hardcode for production web deployment
-  if (isWeb && !__DEV__) {
-    return 'https://agri-logistics-backend.vercel.app/api';
-  }
-
+  // For web platform, always use production backend
+  // (localhost URLs won't work when deployed on Vercel)
   if (isWeb) {
+    // Check if we're on the deployed domain
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      return 'https://agri-logistics-backend.vercel.app/api';
+    }
     return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
   }
 
