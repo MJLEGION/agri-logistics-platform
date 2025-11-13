@@ -42,12 +42,17 @@ export const isFeatureSupported = (feature: 'maps' | 'camera' | 'location' | 'no
  * Get platform-specific API URL
  */
 export const getApiUrl = (): string => {
+  // Hardcode for production web deployment
+  if (isWeb && !__DEV__) {
+    return 'https://agri-logistics-backend.vercel.app/api';
+  }
+
   if (isWeb) {
     return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
   }
-  
-  return process.env.EXPO_PUBLIC_API_URL_MOBILE || 
-         process.env.EXPO_PUBLIC_API_URL || 
+
+  return process.env.EXPO_PUBLIC_API_URL_MOBILE ||
+         process.env.EXPO_PUBLIC_API_URL ||
          'http://192.168.1.64:5000/api';
 };
 
