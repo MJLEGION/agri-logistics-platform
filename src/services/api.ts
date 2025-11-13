@@ -27,7 +27,10 @@ interface AuthResponse {
   user?: any;
 }
 
-const API_URL = getApiUrl();
+// Force production URL for web platform
+const API_URL = Platform.OS === 'web'
+  ? 'https://agri-logistics-backend.vercel.app/api'
+  : getApiUrl();
 
 // Log the API URL for debugging
 log(`API URL (${Platform.OS}):`, API_URL);
