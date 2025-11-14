@@ -129,19 +129,16 @@ export default function LandingScreen({ navigation }: any) {
 
           {/* Nav Menu Items */}
           <View style={styles.navMenu}>
-            <TouchableOpacity style={styles.navMenuItem}>
-              <Text style={styles.navMenuText}>Product</Text>
-              <Ionicons name="chevron-down" size={14} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navMenuItem}>
+            <TouchableOpacity
+              style={styles.navMenuItem}
+              onPress={() => navigation.navigate('About')}
+            >
               <Text style={styles.navMenuText}>About</Text>
-              <Ionicons name="chevron-down" size={14} color="#666" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navMenuItem}>
-              <Text style={styles.navMenuText}>Resources</Text>
-              <Ionicons name="chevron-down" size={14} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navMenuItem}>
+            <TouchableOpacity
+              style={styles.navMenuItem}
+              onPress={() => navigation.navigate('Pricing')}
+            >
               <Text style={styles.navMenuText}>Pricing</Text>
             </TouchableOpacity>
           </View>
@@ -157,6 +154,7 @@ export default function LandingScreen({ navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.navTalkButton}
+              onPress={() => navigation.navigate('RoleSelection')}
               activeOpacity={0.7}
             >
               <Text style={[styles.navButtonText, { color: '#2d3748' }]}>Get started free</Text>

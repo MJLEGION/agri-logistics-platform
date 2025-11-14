@@ -58,7 +58,7 @@ export const getApiUrl = (): string => {
  * Get platform-specific timeout
  */
 export const getApiTimeout = (): number => {
-  return isWeb ? 10000 : 30000; // Shorter timeout for web
+  return isWeb ? 30000 : 30000; // 30 seconds for both to handle Railway cold starts
 };
 
 /**
