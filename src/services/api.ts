@@ -29,7 +29,7 @@ interface AuthResponse {
 
 // Force production URL for web platform
 const API_URL = Platform.OS === 'web'
-  ? 'https://agri-logistics-backend.vercel.app/api'
+  ? 'https://agri-logistics-backend-production.up.railway.app/api'
   : getApiUrl();
 
 // Log the API URL for debugging

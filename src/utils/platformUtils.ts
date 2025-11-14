@@ -45,7 +45,7 @@ export const getApiUrl = (): string => {
   // For web, ALWAYS use production backend
   // Local development should use mobile app or run backend locally
   if (isWeb) {
-    const productionUrl = 'https://agri-logistics-backend.vercel.app/api';
+    const productionUrl = 'https://agri-logistics-backend-production.up.railway.app/api';
     return productionUrl;
   }
 
