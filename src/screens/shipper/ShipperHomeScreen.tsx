@@ -21,7 +21,7 @@ import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Card from '../../components/Card';
-import Avatar from '../../components/Avatar';
+import { EnhancedAvatar } from '../../components/visual';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
