@@ -13,6 +13,7 @@ import {
   PanResponder,
   Modal,
   Pressable,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,12 +35,12 @@ const { width, height } = Dimensions.get('window');
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
   shipper: {
-    phone: '0788000001',
+    phone: '0788111111',
     password: 'password123',
     name: 'Test Shipper (John Farmer)',
   },
   transporter: {
-    phone: '0789000003',
+    phone: '0789222222',
     password: 'password123',
     name: 'Test Transporter (Mike)',
   },
@@ -332,9 +333,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             </TouchableOpacity>
 
             <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="log-in-outline" size={48} color="#FFFFFF" />
-              </View>
+              <Image
+                source={require('../../../assets/images/logos/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
               <Text style={styles.headerTitle}>Welcome Back</Text>
               <Text style={styles.headerSubtitle}>Sign in to your account</Text>
             </Animated.View>
@@ -642,14 +645,11 @@ const styles = StyleSheet.create({
   headerContent: {
     alignItems: 'center',
   },
-  iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  logoImage: {
+    width: 120,
+    height: 120,
     marginBottom: 16,
+    borderRadius: 60,
   },
   headerTitle: {
     fontSize: 32,

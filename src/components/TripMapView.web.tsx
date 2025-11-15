@@ -126,16 +126,16 @@ export default function TripMapView({
 
       // Add markers
       L.marker([validPickup.latitude, validPickup.longitude], { icon: GreenIcon })
-        .bindPopup(`<b>📦 Pickup</b><br/><small>${validPickup.address}</small>`)
+        .bindPopup(`<b>Pickup</b><br/><small>${validPickup.address}</small>`)
         .addTo(map);
 
       L.marker([validDelivery.latitude, validDelivery.longitude], { icon: RedIcon })
-        .bindPopup(`<b>🎯 Delivery</b><br/><small>${validDelivery.address}</small>`)
+        .bindPopup(`<b>Delivery</b><br/><small>${validDelivery.address}</small>`)
         .addTo(map);
 
       if (validCurrent && isTracking) {
         L.marker([validCurrent.latitude, validCurrent.longitude], { icon: BlueIcon })
-          .bindPopup('<b>📍 Current Location</b>')
+          .bindPopup('<b>Current Location</b>')
           .addTo(map);
       }
 

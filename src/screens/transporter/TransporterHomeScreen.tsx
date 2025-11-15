@@ -1,6 +1,6 @@
 // src/screens/transporter/TransporterHomeScreen.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Animated, PanResponder, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, RefreshControl, Animated, PanResponder, Pressable, ImageBackground, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,25 +44,25 @@ export default function TransporterHomeScreen({ navigation }: any) {
       const refreshData = async () => {
         try {
           await dispatch(fetchAllOrders());
-                  } catch (err) {
-          console.error('❌ Orders fetch error:', err);
+        } catch (err) {
+          console.error('Orders fetch error:', err);
         }
         
         try {
           await dispatch(fetchCargo());
-                  } catch (err) {
-          console.error('❌ Cargo fetch error:', err);
+        } catch (err) {
+          console.error('Cargo fetch error:', err);
         }
         
         const userId = user?.id || user?._id;
         if (userId) {
           try {
             await dispatch(fetchTransporterTrips(userId));
-                      } catch (err) {
-            console.error('❌ Trips fetch error:', err);
+          } catch (err) {
+            console.error('Trips fetch error:', err);
           }
         } else {
-          console.warn('⚠️ No user ID available');
+          console.warn('No user ID available');
         }
       };
       
@@ -130,31 +130,39 @@ export default function TransporterHomeScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Gradient Header */}
+        {/* Hero Header with Overlay */}
         <LinearGradient
-          colors={['#F77F00', '#FCBF49']}
+          colors={['rgba(247, 127, 0, 0.85)', 'rgba(252, 191, 73, 0.75)']}
+          style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.header}
         >
+          <View style={styles.headerOverlay} />
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <Avatar
-                name={user?.name || 'User'}
-                size="lg"
-                icon="car-sport"
-                style={{ marginRight: 16 }}
+              <Image
+                source={require('../../../assets/images/logos/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
               />
               <View style={styles.headerText}>
-                <Text style={styles.greeting}>Welcome back!</Text>
-                <Text style={styles.userName}>{user?.name}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text style={styles.greeting}>Welcome, {user?.name?.split(' ')[0]}!</Text>
+                <Text style={styles.subtitle}>Start earning today</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
                   <Text style={styles.role}>Transporter</Text>
                   <Badge label="Active" variant="success" size="sm" />
                 </View>
               </View>
             </View>
-            <ThemeToggle />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('ProfileSettings')}
+                style={styles.headerIconButton}
+              >
+                <Ionicons name="settings-outline" size={20} color="#FFF" />
+              </TouchableOpacity>
+              <ThemeToggle />
+            </View>
           </View>
         </LinearGradient>
 
@@ -400,171 +408,200 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    zIndex: 1,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 12,
   },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImage: {
+    width: 80,
+    height: 80,
     marginRight: 16,
+    borderRadius: 40,
   },
   headerText: {
     flex: 1,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 18,
     color: '#FFF',
-    opacity: 0.9,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  userName: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFF',
-    marginTop: 4,
+  subtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 2,
+    fontWeight: '500',
   },
   role: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#FFF',
-    marginTop: 4,
-    opacity: 0.9,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    marginTop: -20,
-    justifyContent: 'center',
-    alignSelf: 'center',
-    maxWidth: 400,
-    width: '100%',
-  },
-  statCard: {
-    flex: 1,
-    maxWidth: 110,
-    padding: 8,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 1,
-  },
-  statLabel: {
-    fontSize: 9,
-    textAlign: 'center',
     fontWeight: '600',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  // CTA Section
-  ctaSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  ctaContent: {
-    flex: 1,
-  },
-  ctaTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  ctaSubtitle: {
-    fontSize: 11,
-    color: '#fff',
-    opacity: 0.9,
-  },
-
-  content: {
-    padding: 12,
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 12,
-    marginTop: 6,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-    justifyContent: 'center',
-    alignSelf: 'center',
-    maxWidth: 450,
-    width: '100%',
-  },
-  actionCard: {
-    width: '30%',
-    minWidth: 90,
-    maxWidth: 110,
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  actionGradient: {
+  headerIconButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 20,
+    gap: 12,
+    marginTop: -24,
+  },
+  statCard: {
+    flex: 1,
+    padding: 20,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  statIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  ctaSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  ctaContent: {
+    flex: 1,
+  },
+  ctaTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 2,
+    letterSpacing: 0.2,
+  },
+  ctaSubtitle: {
+    fontSize: 13,
+    color: '#fff',
+    opacity: 0.85,
+  },
+
+  content: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 18,
+    marginTop: 12,
+    letterSpacing: -0.4,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+    marginBottom: 28,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    maxWidth: 500,
+    width: '100%',
+  },
+  actionCard: {
+    width: '31%',
+    minWidth: 95,
+    maxWidth: 120,
+    padding: 16,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  actionGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   actionTitle: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
   actionDesc: {
-    fontSize: 9,
+    fontSize: 11,
     textAlign: 'center',
+    letterSpacing: 0.1,
   },
   recentSection: {
     marginBottom: 16,

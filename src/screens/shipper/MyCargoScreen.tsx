@@ -27,7 +27,6 @@ export default function MyCargoScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
 
-  // ✨ Pizzazz Animations
   const animations = useScreenAnimations(6);
 
   // State for confirmation dialog
@@ -83,7 +82,7 @@ export default function MyCargoScreen({ navigation }: any) {
 
     logger.info('Deleting cargo', { cargoId: pendingDeleteId });
     const cargoItem = myListings.find(c => c._id === pendingDeleteId || c.id === pendingDeleteId);
-    console.log('🎯 MyCargoScreen: Cargo to delete:', {
+    console.log('MyCargoScreen: Cargo to delete:', {
       id: pendingDeleteId,
       shipperId: cargoItem?.shipperId,
       userId: user?._id || user?.id,
@@ -294,14 +293,14 @@ export default function MyCargoScreen({ navigation }: any) {
                       {!hasDestination && transportFee === 0 && (
                         <View style={[styles.warningBanner, { backgroundColor: theme.warning + '15', borderColor: theme.warning }]}>
                           <Text style={[styles.warningText, { color: theme.warning }]}>
-                            ⚠️ No destination set - transport fee not calculated
+                            No destination set - transport fee not calculated
                           </Text>
                         </View>
                       )}
                       <View style={styles.pricingRow}>
                         <View style={styles.pricingItem}>
                           <Text style={[styles.pricingLabel, { color: theme.textSecondary }]}>
-                            💰 Cargo Value
+                            Cargo Value
                           </Text>
                           <Text style={[styles.pricingValue, { color: theme.text }]}>
                             {((item.pricePerUnit || 0) * item.quantity).toLocaleString()} RWF

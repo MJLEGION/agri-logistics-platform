@@ -185,7 +185,7 @@ export const MomoPaymentModal: React.FC<MomoPaymentModalProps> = ({
         showToast.error(`Payment Error: ${result.message}`);
       }
     } catch (error: any) {
-      console.error('❌ Payment error:', error);
+      console.error('Payment error:', error);
       setStep('input');
       setLoading(false);
       onError(error.message || 'Payment failed');

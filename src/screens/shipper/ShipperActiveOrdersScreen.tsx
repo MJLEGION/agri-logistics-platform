@@ -26,7 +26,7 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const { toast, showSuccess, showError, hideToast } = useToast();
-  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
+  const animations = useScreenAnimations(6);
 
   // Fetch cargo when screen loads
   useEffect(() => {

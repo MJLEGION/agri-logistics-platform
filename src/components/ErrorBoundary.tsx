@@ -28,7 +28,7 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('❌ Error Boundary caught an error:', error, errorInfo);
+    console.error('Error Boundary caught an error:', error, errorInfo);
     this.setState({
       error,
       errorInfo,
@@ -64,7 +64,7 @@ function ErrorFallback({ error, onReset }: ErrorFallbackProps) {
     <View style={styles.container}>
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <View style={styles.iconContainer}>
-          <Text style={styles.emoji}>⚠️</Text>
+          <Text style={styles.emoji}>!</Text>
         </View>
         <Text style={styles.title}>Something went wrong</Text>
         <Text style={styles.message}>

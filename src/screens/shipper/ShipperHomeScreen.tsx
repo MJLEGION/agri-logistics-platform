@@ -11,6 +11,8 @@ import {
   Animated,
   PanResponder,
   Pressable,
+  ImageBackground,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +24,7 @@ import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Card from '../../components/Card';
 import { EnhancedAvatar } from '../../components/visual';
+import Avatar from '../../components/Avatar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
@@ -162,7 +165,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
   
   const myCargo = useMemo(() => {
         if (!Array.isArray(cargo)) {
-      console.error('❌ cargo is not an array:', cargo);
+      console.error('cargo is not an array:', cargo);
       return [];
     }
     return cargo.filter((c) => {
@@ -173,7 +176,7 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
 
   const myOrders = useMemo(() => {
         if (!Array.isArray(orders)) {
-      console.error('❌ orders is not an array:', orders);
+      console.error('orders is not an array:', orders);
       return [];
     }
     return orders.filter((order) => {
@@ -223,36 +226,36 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Gradient Header */}
+        {/* Hero Header with Overlay */}
         <LinearGradient
-          colors={['#10797D', '#0D5F66']}
+          colors={['rgba(16, 121, 125, 0.85)', 'rgba(13, 95, 102, 0.9)']}
           style={styles.header}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
+          <View style={styles.headerOverlay} />
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <Avatar
-                name={user?.name || 'User'}
-                size="lg"
-                icon="leaf"
-                style={{ marginRight: 16 }}
+              <Image
+                source={require('../../../assets/images/logos/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
               />
               <View style={styles.headerText}>
-                <Text style={styles.greeting}>Welcome back!</Text>
-                <Text style={styles.userName}>{user?.name}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text style={styles.greeting}>Welcome, {user?.name?.split(' ')[0]}!</Text>
+                <Text style={styles.subtitle}>Manage your shipments</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
                   <Text style={styles.role}>Shipper</Text>
                   <Badge label="Active" variant="success" size="sm" />
                 </View>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <TouchableOpacity
                 onPress={() => navigation.navigate('ProfileSettings')}
-                style={[styles.iconButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+                style={styles.headerIconButton}
               >
-                <Ionicons name="settings" size={20} color="#FFF" />
+                <Ionicons name="settings-outline" size={20} color="#FFF" />
               </TouchableOpacity>
               <ThemeToggle />
             </View>
@@ -568,144 +571,167 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 50,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    padding: 24,
+    paddingTop: 60,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    zIndex: 1,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 12,
   },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  logoImage: {
+    width: 80,
+    height: 80,
     marginRight: 16,
+    borderRadius: 40,
   },
   headerText: {
     flex: 1,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 18,
     color: '#FFF',
-    opacity: 0.9,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  userName: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFF',
-    marginTop: 4,
+  subtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 2,
+    fontWeight: '500',
   },
   role: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#FFF',
-    marginTop: 4,
-    opacity: 0.9,
+    fontWeight: '600',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   statsContainer: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
     gap: 12,
-    marginTop: -20,
+    marginTop: -24,
   },
   statCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 16,
+    padding: 20,
+    borderRadius: 24,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 140,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   statIconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
   content: {
-    padding: 16,
+    padding: 20,
     maxWidth: 600,
     marginHorizontal: 'auto',
     width: '100%',
     alignItems: 'stretch',
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: 18,
+    marginTop: 12,
+    letterSpacing: -0.4,
   },
   actionsGrid: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 24,
+    gap: 14,
+    marginBottom: 28,
   },
   actionCard: {
     flex: 1,
     aspectRatio: 1,
-    padding: 16,
-    borderRadius: 12,
+    padding: 18,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   actionGradient: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   actionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     marginBottom: 4,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
   actionDesc: {
     fontSize: 12,
     textAlign: 'center',
+    letterSpacing: 0.1,
   },
   recentSection: {
     marginBottom: 24,

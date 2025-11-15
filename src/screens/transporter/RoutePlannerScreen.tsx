@@ -31,7 +31,7 @@ export default function RoutePlannerScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { orders } = useAppSelector(state => state.orders);
   const { user } = useAppSelector(state => state.auth);
-  const animations = useScreenAnimations(6); // ✨ Pizzazz animations
+  const animations = useScreenAnimations(6);
 
   const [currentLocation, setCurrentLocation] = useState<any>(null);
   const [selectedLoads, setSelectedLoads] = useState<any[]>([]);

@@ -125,17 +125,17 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
       {mapUrl ? (
         <View style={styles.mapPlaceholder}>
           <Text style={styles.mapInfoText}>
-            📍 Transporter Location (Blue): {transporterLocation?.latitude.toFixed(4)},{' '}
+            Transporter Location (Blue): {transporterLocation?.latitude.toFixed(4)},{' '}
             {transporterLocation?.longitude.toFixed(4)}
           </Text>
           {pickupLocation && (
             <Text style={styles.mapInfoText}>
-              📦 Pickup (Green): {pickupLocation.latitude.toFixed(4)}, {pickupLocation.longitude.toFixed(4)}
+              Pickup (Green): {pickupLocation.latitude.toFixed(4)}, {pickupLocation.longitude.toFixed(4)}
             </Text>
           )}
           {deliveryLocation && (
             <Text style={styles.mapInfoText}>
-              🏁 Delivery (Red): {deliveryLocation.latitude.toFixed(4)}, {deliveryLocation.longitude.toFixed(4)}
+              Delivery (Red): {deliveryLocation.latitude.toFixed(4)}, {deliveryLocation.longitude.toFixed(4)}
             </Text>
           )}
           <View style={styles.mapImage}>

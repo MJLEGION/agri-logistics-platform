@@ -486,7 +486,7 @@ export default function ListCargoScreen({ navigation }: any) {
           />
 
           {/* Origin Location */}
-          <Text style={[styles.label, { color: theme.text }]}>📍 Origin Location</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Origin Location</Text>
           <TouchableOpacity 
             style={[styles.input, { 
               backgroundColor: theme.card,
@@ -550,7 +550,7 @@ export default function ListCargoScreen({ navigation }: any) {
           </Modal>
 
           {/* Destination Location */}
-          <Text style={[styles.label, { color: theme.text }]}>📍 Destination Location *</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Destination Location *</Text>
           <TouchableOpacity 
             style={[styles.input, { 
               backgroundColor: theme.card,
@@ -762,12 +762,12 @@ export default function ListCargoScreen({ navigation }: any) {
             <>
               <View style={[styles.pricingCard, { backgroundColor: theme.primary + '10', borderColor: theme.primary }]}>
                 <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: theme.text }]}>📍 Distance:</Text>
+                  <Text style={[styles.pricingLabel, { color: theme.text }]}>Distance:</Text>
                   <Text style={[styles.pricingValue, { color: theme.primary }]}>{distance.toFixed(1)} km</Text>
                 </View>
 
                 <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: theme.text }]}>🚗 Vehicle Rate:</Text>
+                  <Text style={[styles.pricingLabel, { color: theme.text }]}>Vehicle Rate:</Text>
                   <Text style={[styles.pricingValue, { color: theme.primary }]}>
                     {vehicleType.baseRatePerKm.toLocaleString()} RWF/km
                   </Text>
@@ -775,7 +775,7 @@ export default function ListCargoScreen({ navigation }: any) {
 
                 <View style={styles.pricingRow}>
                   <Text style={[styles.pricingLabel, { color: theme.text }]}>
-                    🚦 Traffic: {getTrafficDescription(trafficFactor)}
+                    Traffic: {getTrafficDescription(trafficFactor)}
                   </Text>
                   <Text style={[styles.pricingValue, { color: theme.warning }]}>
                     +{Math.round((trafficFactor - 1) * 100)}%
@@ -786,7 +786,7 @@ export default function ListCargoScreen({ navigation }: any) {
 
                 <View style={styles.pricingRow}>
                   <Text style={[styles.pricingLabel, { color: theme.text, fontWeight: '700' }]}>
-                    💰 Estimated Shipping:
+                    Estimated Shipping:
                   </Text>
                   <Text style={[styles.pricingValue, { color: theme.success, fontSize: 18, fontWeight: '700' }]}>
                     {shippingCost.toLocaleString()} RWF
@@ -794,7 +794,7 @@ export default function ListCargoScreen({ navigation }: any) {
                 </View>
 
                 <View style={styles.pricingRow}>
-                  <Text style={[styles.pricingLabel, { color: theme.text }]}>⏱️ ETA:</Text>
+                  <Text style={[styles.pricingLabel, { color: theme.text }]}>ETA:</Text>
                   <Text style={[styles.pricingValue, { color: theme.tertiary }]}>
                     ~{eta} minutes
                   </Text>
@@ -824,7 +824,7 @@ export default function ListCargoScreen({ navigation }: any) {
       {submissionSuccess && (
         <View style={[styles.successOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
           <View style={[styles.successCard, { backgroundColor: theme.card }]}>
-            <Text style={styles.successIcon}>✅</Text>
+            <Text style={styles.successIcon}>✓</Text>
             <Text style={[styles.successTitle, { color: theme.success }]}>Success!</Text>
             <Text style={[styles.successMessage, { color: theme.text }]}>
               Your cargo has been listed and is ready for transporters to accept.

@@ -199,7 +199,7 @@ export default function AddressManager({ userId, onAddressSelect }: AddressManag
                 </View>
 
                 <Text style={[styles.addressText, { color: theme.text }]}>
-                  📍 {address.address}
+                  {address.address}
                 </Text>
                 <Text style={[styles.coordinates, { color: theme.textSecondary }]}>
                   {address.latitude.toFixed(4)}, {address.longitude.toFixed(4)}

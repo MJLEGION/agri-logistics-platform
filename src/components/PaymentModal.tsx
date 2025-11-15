@@ -100,7 +100,7 @@ export default function PaymentModal({
         setIsProcessing(false);
       }
     } catch (error) {
-      console.error('❌ Payment error:', error);
+      console.error('Payment error:', error);
       setPaymentStatus('failed');
       showToast.error('Payment initiation failed. Please try again.');
       setIsProcessing(false);
@@ -150,7 +150,7 @@ export default function PaymentModal({
           showToast.warning('Payment is taking longer than expected. Please check your phone and try again.');
         }
       } catch (error) {
-        console.error('❌ Status check error:', error);
+        console.error('Status check error:', error);
         // Continue polling on error
       }
     }, 5000); // Poll every 5 seconds
@@ -337,7 +337,7 @@ export default function PaymentModal({
 
             {paymentStatus === 'success' && (
               <View style={styles.statusContainer}>
-                <Text style={styles.successIcon}>✅</Text>
+                <Text style={styles.successIcon}>✓</Text>
                 <Text style={[styles.statusText, { color: '#10797D' }]}>
                   Payment Successful!
                 </Text>
@@ -349,7 +349,7 @@ export default function PaymentModal({
 
             {paymentStatus === 'failed' && (
               <View style={styles.statusContainer}>
-                <Text style={styles.failureIcon}>❌</Text>
+                <Text style={styles.failureIcon}>✕</Text>
                 <Text style={[styles.statusText, { color: theme.error }]}>
                   Payment Failed
                 </Text>

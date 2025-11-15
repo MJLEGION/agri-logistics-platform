@@ -22,7 +22,7 @@ function AppContent() {
       try {
         // Initialize all mock services
         await initializeAllServices();
-        console.log('✅ Services initialized');
+        console.log('Services initialized');
         setIsInitialized(true);
 
         // Show splash screen for minimum 4 seconds (2 seconds longer)

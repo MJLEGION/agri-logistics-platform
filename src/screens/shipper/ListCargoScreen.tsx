@@ -136,7 +136,7 @@ export default function ListCargoScreen({ navigation }: any) {
   const { isLoading } = useAppSelector((state) => state.cargo);
   const { addresses } = useAppSelector((state) => state.address);
   const { theme } = useTheme();
-  const animations = useScreenAnimations(4); // ✨ Pizzazz animations
+  const animations = useScreenAnimations(4);
   
   const [cargoName, setCargoName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -249,7 +249,7 @@ export default function ListCargoScreen({ navigation }: any) {
         showToast.error(errorMessage);
       }
     } catch (error: any) {
-      console.error('❌ ListCargoScreen: Error creating cargo:', error);
+      console.error('ListCargoScreen: Error creating cargo:', error);
 
       const errorMessage = typeof error === 'string'
         ? error

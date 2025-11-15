@@ -12,6 +12,7 @@ import {
   PanResponder,
   Modal,
   BlurView,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -276,7 +277,11 @@ export default function RoleSelectionScreen({ navigation }: any) {
           </View>
 
           <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
-            <Ionicons name="leaf" size={56} color="#FFFFFF" style={styles.headerIcon} />
+            <Image
+              source={require('../../../assets/images/logos/logo.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.headerTitle}>Choose Your Role</Text>
             <Text style={styles.headerSubtitle}>
               Select how you want to use Agri-Logistics
@@ -516,8 +521,11 @@ const styles = StyleSheet.create({
   headerContent: {
     alignItems: 'center',
   },
-  headerIcon: {
+  logoImage: {
+    width: 120,
+    height: 120,
     marginBottom: 16,
+    borderRadius: 60,
   },
   headerTitle: {
     fontSize: 32,

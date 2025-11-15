@@ -259,7 +259,7 @@ export default function RegisterScreen({ route, navigation }: any) {
         navigation.replace('ProfileCompletion');
       }, 1500);
     } catch (err: any) {
-      console.error('❌ Registration failed:', err);
+      console.error('Registration failed:', err);
       const errorMessage = err || 'Could not register. Please check your connection and try again.';
       showError(errorMessage);
     }

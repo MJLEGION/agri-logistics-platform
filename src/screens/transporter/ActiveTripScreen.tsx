@@ -90,7 +90,7 @@ export default function ActiveTripScreen({ navigation }: any) {
         navigation.goBack();
       }, 500);
     } catch (error: any) {
-      console.error('❌ Complete delivery error caught:', error);
+      console.error('Complete delivery error caught:', error);
       const errorMessage =
         typeof error === 'string' ? error :
         error?.message ||
@@ -119,7 +119,7 @@ export default function ActiveTripScreen({ navigation }: any) {
           <Text style={[styles.title, { color: theme.card }]}>Active Trip</Text>
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🚗</Text>
+          <Text style={styles.emptyIcon}>-</Text>
           <Text style={[styles.emptyText, { color: theme.text }]}>No Active Trips</Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             Accept a load to get started
@@ -183,14 +183,14 @@ export default function ActiveTripScreen({ navigation }: any) {
         >
           <Text style={styles.statusIcon}>
             {status === 'completed'
-              ? '✅'
+              ? '✓'
               : status === 'arrived'
-                ? '🎯'
-                : '🚗'}
+                ? '●'
+                : '→'}
           </Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.statusText}>
-              {status === 'in_progress' ? '🚗 Coming' : status === 'arrived' ? '🎯 Arrived' : '✅ Completed'}
+              {status === 'in_progress' ? 'Coming' : status === 'arrived' ? 'Arrived' : 'Completed'}
             </Text>
             <Text style={styles.statusSubtext}>
               {status === 'in_progress'
@@ -204,7 +204,7 @@ export default function ActiveTripScreen({ navigation }: any) {
 
         {/* Trip Info */}
         <View style={[styles.section, { backgroundColor: theme.card }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>🎁 Load Details</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Load Details</Text>
           <View style={styles.infoRow}>
             <Text style={[styles.label, { color: theme.textSecondary }]}>Crop:</Text>
             <Text style={[styles.value, { color: theme.text }]}>
@@ -291,7 +291,7 @@ export default function ActiveTripScreen({ navigation }: any) {
               ) : (
                 <>
                   <Text style={styles.completeButtonText}>
-                    {status === 'arrived' ? '✅ Complete Delivery' : '📌 I Arrived'}
+                    {status === 'arrived' ? 'Complete Delivery' : 'I Arrived'}
                   </Text>
                 </>
               )}

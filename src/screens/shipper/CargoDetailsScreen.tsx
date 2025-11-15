@@ -23,7 +23,6 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const { toast, showSuccess, showError, hideToast } = useToast();
   
-  // ✨ Pizzazz Animations
   const animations = useScreenAnimations(5);
   
   const cargoItem = cargo.find(c => c._id === cargoId || c.id === cargoId);
@@ -164,7 +163,7 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
           <Divider spacing="sm" />
 
           <Card>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Origin Location</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Origin Location</Text>
             <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.location.address}</Text>
             <Text style={[styles.coordinates, { color: theme.textSecondary }]}>
               {cargoItem.location.latitude.toFixed(4)}, {cargoItem.location.longitude.toFixed(4)}
@@ -175,7 +174,7 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
             <>
               <Divider spacing="sm" />
               <Card>
-                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Destination Location</Text>
+                <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Destination Location</Text>
                 <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.destination.address}</Text>
                 <Text style={[styles.coordinates, { color: theme.textSecondary }]}>
                   {cargoItem.destination.latitude.toFixed(4)}, {cargoItem.destination.longitude.toFixed(4)}
@@ -190,12 +189,12 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
               <Card>
                 <View style={styles.infoRow}>
                   <View style={styles.infoPart}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>📍 Distance</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Distance</Text>
                     <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.distance.toFixed(1)} km</Text>
                   </View>
                   {cargoItem.eta && (
                     <View style={styles.infoPart}>
-                      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>⏱️ Estimated Time</Text>
+                      <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Estimated Time</Text>
                       <Text style={[styles.detailText, { color: theme.text }]}>{cargoItem.eta} minutes</Text>
                     </View>
                   )}

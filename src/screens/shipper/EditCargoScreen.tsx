@@ -19,7 +19,7 @@ export default function EditCargoScreen({ route, navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
   const { addresses } = useAppSelector((state) => state.address);
   const { theme } = useTheme();
-  const animations = useScreenAnimations(4); // ✨ Pizzazz animations
+  const animations = useScreenAnimations(4);
   
   const cargoItem = cargo.find(c => c._id === cargoId || c.id === cargoId);
 
