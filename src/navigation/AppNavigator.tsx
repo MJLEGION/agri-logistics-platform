@@ -6,15 +6,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, useAppDispatch } from '../store';
 import { clearOrders } from '../store/slices/ordersSlice';
 import AuthNavigator from './AuthNavigator';
-import ShipperHomeScreen from '../screens/shipper/ShipperHomeScreen';
+import ShipperHomeScreen from '../screens/shipper/ShipperHomeScreenNew';
 import ListCargoScreen from '../screens/shipper/ListCargoScreen.enhanced';
 import MyCargoScreen from '../screens/shipper/MyCargoScreen';
 import CargoDetailsScreen from '../screens/shipper/CargoDetailsScreen';
 import EditCargoScreen from '../screens/shipper/EditCargoScreen';
 import ShipperActiveOrdersScreen from '../screens/shipper/ShipperActiveOrdersScreen';
 import RateTransporterScreen from '../screens/shipper/RateTransporterScreen';
-import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreen';
-import EnhancedTransporterDashboard from '../screens/transporter/EnhancedTransporterDashboard';
+import ShipperTrackingDashboard from '../screens/shipper/ShipperTrackingDashboard';
+import TransporterHomeScreen from '../screens/transporter/TransporterHomeScreenNew';
+import EnhancedTransporterDashboard from '../screens/transporter/TransporterHomeScreenNew';
 import AvailableLoadsScreen from '../screens/transporter/AvailableLoadsScreen';
 import ActiveTripsScreen from '../screens/transporter/ActiveTripsScreen';
 import TripTrackingScreen from '../screens/transporter/TripTrackingScreen';
@@ -99,6 +100,7 @@ export default function AppNavigator() {
             <Stack.Screen name="CargoDetails" component={CargoDetailsScreen} />
             <Stack.Screen name="EditCargo" component={EditCargoScreen} />
             <Stack.Screen name="ShipperActiveOrders" component={ShipperActiveOrdersScreen} />
+            <Stack.Screen name="ShipperTrackingDashboard" component={ShipperTrackingDashboard} />
             <Stack.Screen name="RateTransporter" component={RateTransporterScreen} />
             <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
             <Stack.Screen name="TransportRequest" component={TransportRequestScreen} />

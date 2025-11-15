@@ -162,7 +162,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
       <ScrollView>
         {/* Header */}
         <LinearGradient
-          colors={['#F59E0B', '#D97706']}
+          colors={['#10797D', '#0D5F66']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -188,7 +188,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                 styles.periodButton,
                 timePeriod === period && styles.periodButtonActive,
                 timePeriod === period && {
-                  backgroundColor: '#F59E0B',
+                  backgroundColor: '#10797D',
                 },
               ]}
               onPress={() => setTimePeriod(period)}
@@ -237,7 +237,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           style={[
             styles.payoutButton,
             {
-              backgroundColor: stats.netEarnings >= minimumWithdrawal ? '#F59E0B' : '#ccc',
+              backgroundColor: stats.netEarnings >= minimumWithdrawal ? '#10797D' : '#ccc',
               opacity: stats.netEarnings >= minimumWithdrawal ? 1 : 0.6,
             },
           ]}
@@ -258,8 +258,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         {/* Statistics Grid */}
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#3B82F6' + '20' }]}>
-              <Ionicons name="car" size={24} color="#3B82F6" />
+            <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
+              <Ionicons name="car" size={24} color="#6B7280" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {stats.totalDeliveries}
@@ -270,8 +270,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#10797D' + '20' }]}>
-              <Ionicons name="map" size={24} color="#10797D" />
+            <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
+              <Ionicons name="map" size={24} color="#6B7280" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {stats.totalDistance}
@@ -282,8 +282,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
-              <Ionicons name="cash" size={24} color="#F59E0B" />
+            <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
+              <Ionicons name="cash" size={24} color="#6B7280" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {stats.averagePerTrip.toLocaleString()}
@@ -294,8 +294,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           </View>
 
           <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#EC4899' + '20' }]}>
-              <Ionicons name="flame" size={24} color="#EC4899" />
+            <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
+              <Ionicons name="flame" size={24} color="#6B7280" />
             </View>
             <Text style={[styles.statNumber, { color: theme.text }]}>
               {stats.totalFuelCost.toLocaleString()}
@@ -434,8 +434,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                   accessibilityHint={`Earned ${earnings.toLocaleString()} RWF`}
                 >
                   <View style={styles.tripLeft}>
-                    <View style={[styles.tripIcon, { backgroundColor: '#3B82F6' + '20' }]}>
-                      <Ionicons name="car-sport" size={20} color="#3B82F6" />
+                    <View style={[styles.tripIcon, { backgroundColor: '#E5E7EB' }]}>
+                      <Ionicons name="car-sport" size={20} color="#6B7280" />
                     </View>
                     <View style={styles.tripInfo}>
                       <Text style={[styles.tripTitle, { color: theme.text }]}>
@@ -466,8 +466,8 @@ export default function EarningsDashboardScreen({ navigation }: any) {
                   accessibilityHint={`Earned ${earnings.toLocaleString()} RWF`}
                 >
                   <View style={styles.tripLeft}>
-                    <View style={[styles.tripIcon, { backgroundColor: '#F59E0B' + '20' }]}>
-                      <Ionicons name="cube" size={20} color="#F59E0B" />
+                    <View style={[styles.tripIcon, { backgroundColor: '#E5E7EB' }]}>
+                      <Ionicons name="cube" size={20} color="#6B7280" />
                     </View>
                     <View style={styles.tripInfo}>
                       <Text style={[styles.tripTitle, { color: theme.text }]}>
@@ -505,20 +505,20 @@ export default function EarningsDashboardScreen({ navigation }: any) {
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             💡 Tips to Increase Earnings
           </Text>
-          <View style={[styles.tipCard, { backgroundColor: '#10797D' + '10', borderColor: '#10797D' }]}>
-            <Ionicons name="bulb" size={20} color="#10797D" />
+          <View style={[styles.tipCard, { backgroundColor: theme.card, borderColor: '#E5E7EB' }]}>
+            <Ionicons name="bulb" size={20} color="#6B7280" />
             <Text style={[styles.tipText, { color: theme.text }]}>
               Accept longer trips for higher earnings
             </Text>
           </View>
-          <View style={[styles.tipCard, { backgroundColor: '#F59E0B' + '10', borderColor: '#F59E0B' }]}>
-            <Ionicons name="bulb" size={20} color="#F59E0B" />
+          <View style={[styles.tipCard, { backgroundColor: theme.card, borderColor: '#E5E7EB' }]}>
+            <Ionicons name="bulb" size={20} color="#6B7280" />
             <Text style={[styles.tipText, { color: theme.text }]}>
               Complete trips on time to earn bonuses
             </Text>
           </View>
-          <View style={[styles.tipCard, { backgroundColor: '#3B82F6' + '10', borderColor: '#3B82F6' }]}>
-            <Ionicons name="bulb" size={20} color="#3B82F6" />
+          <View style={[styles.tipCard, { backgroundColor: theme.card, borderColor: '#E5E7EB' }]}>
+            <Ionicons name="bulb" size={20} color="#6B7280" />
             <Text style={[styles.tipText, { color: theme.text }]}>
               Maintain your vehicle to reduce fuel costs
             </Text>

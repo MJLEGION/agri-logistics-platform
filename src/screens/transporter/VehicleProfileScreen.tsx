@@ -132,7 +132,7 @@ export default function VehicleProfileScreen({ navigation }: any) {
       <ScrollView>
         {/* Header */}
         <LinearGradient
-          colors={['#8B5CF6', '#7C3AED']}
+          colors={['#10797D', '#0D5F66']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.header}
@@ -146,7 +146,7 @@ export default function VehicleProfileScreen({ navigation }: any) {
         {/* Vehicle Summary Card */}
         <View style={[styles.summaryCard, { backgroundColor: theme.card }]}>
           <View style={styles.vehicleIconBox}>
-            <Ionicons name={getVehicleIcon()} size={48} color="#8B5CF6" />
+            <Ionicons name={getVehicleIcon()} size={48} color="#6B7280" />
           </View>
           <View style={styles.vehicleInfo}>
             <Text style={[styles.vehiclePlate, { color: theme.text }]}>
@@ -164,8 +164,8 @@ export default function VehicleProfileScreen({ navigation }: any) {
         {/* Quick Stats */}
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { backgroundColor: theme.card }]}>
-            <View style={[styles.statIconBox, { backgroundColor: '#F59E0B' + '20' }]}>
-              <Ionicons name="speedometer" size={24} color="#F59E0B" />
+            <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
+              <Ionicons name="speedometer" size={24} color="#6B7280" />
             </View>
             <Text style={[styles.statValue, { color: theme.text }]}>
               {currentInfo.mileage.toLocaleString()}
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#8B5CF6' + '20',
+    backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   editButtonText: {
-    color: '#8B5CF6',
+    color: '#10797D',
     fontSize: 14,
     fontWeight: '600',
   },

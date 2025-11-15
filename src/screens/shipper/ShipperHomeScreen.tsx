@@ -218,6 +218,10 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
     },
   ], [theme, navigation]);
 
+  const handleOpenTrackingDashboard = () => {
+    navigation.navigate('ShipperTrackingDashboard');
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
@@ -488,6 +492,35 @@ export default function ShipperHomeScreen({ navigation }: ShipperHomeScreenProps
               </Pressable>
             </Animated.View>
           </View>
+
+          {/* Tracking Dashboard - Featured Action */}
+          <TouchableOpacity
+            style={[styles.trackingActionCard, { backgroundColor: theme.card }]}
+            onPress={handleOpenTrackingDashboard}
+            activeOpacity={0.7}
+          >
+            <LinearGradient
+              colors={['#10B981', '#059669']}
+              style={styles.trackingGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.trackingCardContent}>
+                <View style={styles.trackingIconBox}>
+                  <Ionicons name="map" size={32} color="#FFF" />
+                </View>
+                <View style={styles.trackingInfo}>
+                  <Text style={styles.trackingTitle}>
+                    Track Shipments
+                  </Text>
+                  <Text style={styles.trackingSubtitle}>
+                    Monitor your cargo in real-time
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#FFF" style={{ marginLeft: 'auto' }} />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
           {/* Rate Transporters - Next to Quick Actions */}
           <TouchableOpacity
@@ -955,5 +988,47 @@ const styles = StyleSheet.create({
   },
   ratingSubtitle: {
     fontSize: 11,
+  },
+  trackingActionCard: {
+    borderRadius: 16,
+    marginHorizontal: 0,
+    marginBottom: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  trackingGradient: {
+    padding: 16,
+  },
+  trackingCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  trackingIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: 16,
+  },
+  trackingInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  trackingTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  trackingSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
 });

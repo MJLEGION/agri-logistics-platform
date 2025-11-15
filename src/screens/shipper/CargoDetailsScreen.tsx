@@ -219,14 +219,14 @@ export default function CargoDetailsScreen({ route, navigation }: any) {
             {/* Payment Fee Display - Animated */}
             {cargoItem.status === 'listed' && (
               <Animated.View style={animations.getFloatingCardStyle(1)}>
-                <View style={[styles.feeCard, { backgroundColor: '#F59E0B20', borderColor: '#F59E0B' }]}>
+                <View style={[styles.feeCard, { backgroundColor: '#10797D20', borderColor: '#10797D' }]}>
                   <View>
-                    <Text style={[styles.feeLabel, { color: '#F59E0B' }]}>Shipping Fee</Text>
-                    <Text style={[styles.feeAmount, { color: '#F59E0B' }]}>
+                    <Text style={[styles.feeLabel, { color: '#10797D' }]}>Shipping Fee</Text>
+                    <Text style={[styles.feeAmount, { color: '#10797D' }]}>
                       {calculateShippingFee().toLocaleString()} RWF
                     </Text>
                   </View>
-                  <Ionicons name="wallet" size={32} color="#F59E0B" />
+                  <Ionicons name="wallet" size={32} color="#6B7280" />
                 </View>
               </Animated.View>
             )}
