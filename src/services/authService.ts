@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LoginCredentials, RegisterData, User } from '../types';
 import { STORAGE_TOKEN_KEY, STORAGE_REFRESH_TOKEN_KEY, ERROR_REGISTRATION_FAILED, ERROR_LOGIN_FAILED } from '../constants';
 import { logger } from '../utils/logger';
+import mockAuthService from './mockAuthService';
 
 /**
  * Backend Auth Response Type
@@ -228,5 +229,16 @@ export const refreshToken = async (refreshToken: string): Promise<AuthResponse> 
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to refresh token';
     logger.error('Token refresh failed', error);
     throw new Error(errorMessage);
+  }
+};
+
+/**
+ * Initialize all services (mock data for offline support)
+ */
+export const initializeAllServices = async (): Promise<void> => {
+  try {
+    await mockAuthService.initializeMockUsers();
+  } catch (error: any) {
+    logger.error('Error initializing services', error);
   }
 };
