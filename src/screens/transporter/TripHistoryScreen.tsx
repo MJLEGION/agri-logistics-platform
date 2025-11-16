@@ -12,7 +12,6 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
@@ -29,6 +28,7 @@ import EmptyState from '../../components/EmptyState';
 import Chip from '../../components/Chip';
 import Toast, { useToast } from '../../components/Toast';
 import { fetchCargo } from '../../store/slices/cargoSlice';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 type TripStatus = 'all' | 'completed' | 'cancelled';
 
@@ -333,22 +333,25 @@ export default function TripHistoryScreen({ navigation }: any) {
     );
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#06B6D4', '#0891B2']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>⏱️ Trip History</Text>
-      </LinearGradient>
+  const sidebarNav = [
+    { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
+    { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
+  ];
 
-      <ScrollView style={styles.content}>
+  return (
+    <DashboardLayout
+      title="Trip History"
+      sidebarColor="#0F172A"
+      accentColor="#3B82F6"
+      backgroundImage={require('../../../assets/images/backimages/transporter.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="transporter"
+      navigation={navigation}
+      contentPadding={false}
+    >
+      <View style={styles.content}>
         {/* Search Bar */}
         {myTrips.length > 0 && (
           <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
@@ -442,7 +445,7 @@ export default function TripHistoryScreen({ navigation }: any) {
             renderEmpty()
           )}
         </View>
-      </ScrollView>
+      </View>
 
       {/* Toast Notifications */}
       <Toast
@@ -451,7 +454,7 @@ export default function TripHistoryScreen({ navigation }: any) {
         type={toast.type}
         onHide={hideToast}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 

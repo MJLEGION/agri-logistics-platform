@@ -10,6 +10,10 @@ import {
   RefreshControl,
   Platform,
   Image,
+  FlatList,
+  Linking,
+  TextInput,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,9 +23,37 @@ import { fetchCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import SearchBar from '../../components/SearchBar';
+import TrackingMapView from '../shipper/TrackingMapView';
 
 const { width, height } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
+
+interface TripItem {
+  id: string;
+  name: string;
+  status: 'matched' | 'picked_up' | 'in_transit' | 'delivered';
+  destination: {
+    address: string;
+    coordinates?: { latitude: number; longitude: number };
+  };
+  inTransit?: {
+    address: string;
+    coordinates?: { latitude: number; longitude: number };
+  };
+  pickup: {
+    address: string;
+    coordinates?: { latitude: number; longitude: number };
+  };
+  shipper: {
+    name: string;
+    phone?: string;
+    avatar?: string;
+  };
+  price: number;
+  weight: string;
+  distance: string;
+  image?: string;
+}
 
 export default function TransporterHomeScreenNew({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -29,405 +61,503 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedMenu, setSelectedMenu] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedItem, setSelectedItem] = useState<TripItem | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, [dispatch]);
-
-  const loadData = () => {
     dispatch(fetchCargo());
-  };
+  }, [dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    await new Promise(r => setTimeout(r, 1000));
+    dispatch(fetchCargo());
     setRefreshing(false);
   };
 
-  // Calculate stats
   const userId = user?._id || user?.id;
 
-  const availableLoads = useMemo(() => {
-    if (!Array.isArray(cargo)) return [];
-    return cargo.filter(
-      (c) => c.status === 'listed' && c.transporterId === null
-    );
-  }, [cargo]);
+  const tripItems = useMemo<TripItem[]>(() => {
+    if (!userId) return [];
 
-  const myTrips = useMemo(() => {
-    if (!Array.isArray(cargo)) return [];
-    return cargo.filter((c) => {
-      const transporterId = typeof c.transporterId === 'string' ? c.transporterId : c.transporterId?._id;
-      return transporterId === userId;
-    });
+    const userTrips = Array.isArray(cargo)
+      ? cargo.filter((item: any) => {
+          const transporterId = typeof item.transporterId === 'string' ? item.transporterId : item.transporterId?._id;
+          const activeStatuses = ['matched', 'picked_up', 'in_transit', 'delivered'];
+          return transporterId === userId && activeStatuses.includes(item.status);
+        })
+      : [];
+
+    return userTrips.map((item: any) => ({
+      id: item._id || item.id,
+      name: item.name || 'Trip',
+      status: item.status === 'picked_up' ? 'picked_up' : item.status === 'delivered' ? 'delivered' : item.status === 'in_transit' ? 'in_transit' : 'matched',
+      destination: {
+        address: item.destination?.address || 'Unknown',
+        coordinates: item.destination?.coordinates,
+      },
+      inTransit: {
+        address: item.currentLocation?.address || item.destination?.address || 'In Transit',
+        coordinates: item.currentLocation?.coordinates,
+      },
+      pickup: {
+        address: item.pickup?.address || 'Pickup Location',
+        coordinates: item.pickup?.coordinates,
+      },
+      shipper: {
+        name: item.shipperId?.name || 'Shipper',
+        phone: item.shipperId?.phone,
+        avatar: item.shipperId?.avatar,
+      },
+      price: item.price || 0,
+      weight: item.weight || '0 kg',
+      distance: item.estimatedDistance || '0 km',
+      image: item.image,
+    }));
   }, [cargo, userId]);
 
-  const activeTrips = useMemo(() => {
-    return myTrips.filter(
-      (trip) => trip.status === 'matched' || trip.status === 'picked_up' || trip.status === 'in_transit'
+  const filteredItems = useMemo(() => {
+    if (!searchQuery) return tripItems;
+    return tripItems.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.destination.address.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [myTrips]);
+  }, [tripItems, searchQuery]);
 
-  const completedTrips = useMemo(() => {
-    return myTrips.filter((trip) => trip.status === 'delivered');
-  }, [myTrips]);
+  const activeTrips = useMemo(() => {
+    return filteredItems.filter(t => t.status === 'matched' || t.status === 'picked_up' || t.status === 'in_transit');
+  }, [filteredItems]);
 
-  const totalEarnings = useMemo(() => {
-    return completedTrips.reduce((sum, trip) => sum + (trip.price || 0), 0);
-  }, [completedTrips]);
+  const deliveredTrips = useMemo(() => {
+    return filteredItems.filter(t => t.status === 'delivered');
+  }, [filteredItems]);
 
-  const menuItems = [
-    {
-      id: 'home',
-      icon: 'home',
-      label: 'Home',
-      onPress: () => setSelectedMenu('home'),
-    },
-    {
-      id: 'available-loads',
-      icon: 'briefcase',
-      label: 'Available Loads',
-      badge: availableLoads.length,
-      onPress: () => navigation.navigate('AvailableLoads'),
-    },
-    {
-      id: 'active-trips',
-      icon: 'navigate',
-      label: 'Active Trips',
-      badge: activeTrips.length,
-      onPress: () => navigation.navigate('ActiveTrips'),
-    },
-    {
-      id: 'trip-history',
-      icon: 'time',
-      label: 'Trip History',
-      onPress: () => navigation.navigate('TripHistory'),
-    },
-    {
-      id: 'earnings',
-      icon: 'cash',
-      label: 'Earnings',
-      onPress: () => navigation.navigate('EarningsDashboard'),
-    },
-    {
-      id: 'vehicle',
-      icon: 'car',
-      label: 'Vehicle Profile',
-      onPress: () => navigation.navigate('VehicleProfile'),
-    },
-    {
-      id: 'ratings',
-      icon: 'star',
-      label: 'My Ratings',
-      onPress: () => navigation.navigate('TransporterRatings'),
-    },
-  ];
+  const inProgressTrips = useMemo(() => {
+    return filteredItems.filter(t => t.status === 'in_transit');
+  }, [filteredItems]);
 
-  const renderMenuItem = (item: any) => {
-    const isSelected = selectedMenu === item.id;
+  const handleSelectItem = (item: TripItem) => {
+    setSelectedItem(item);
+  };
+
+  const toggleExpanded = (id: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'delivered':
+        return '#10B981';
+      case 'in_transit':
+        return '#F59E0B';
+      case 'picked_up':
+        return '#06B6D4';
+      default:
+        return '#9CA3AF';
+    }
+  };
+
+  const renderTripItem = ({ item }: { item: TripItem }) => {
+    const isSelected = selectedItem?.id === item.id;
+    const isExpanded = expandedItems.has(item.id);
+
     return (
       <TouchableOpacity
-        key={item.id}
         style={[
-          styles.menuItem,
-          isSelected && { backgroundColor: theme.primary + '15' },
+          styles.trackingItem,
+          {
+            backgroundColor: isSelected ? theme.primary + '15' : theme.card,
+            borderLeftWidth: isSelected ? 4 : 0,
+            borderLeftColor: isSelected ? theme.primary : 'transparent',
+          },
         ]}
-        onPress={item.onPress}
+        onPress={() => handleSelectItem(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.menuItemLeft}>
-          <Ionicons
-            name={item.icon}
-            size={22}
-            color={isSelected ? theme.primary : theme.textSecondary}
+        {item.image && (
+          <Image
+            source={{ uri: item.image }}
+            style={styles.itemImage}
           />
-          <Text
-            style={[
-              styles.menuItemText,
-              {
-                color: isSelected ? theme.primary : theme.text,
-                fontWeight: isSelected ? '600' : '400',
-              },
-            ]}
-          >
-            {item.label}
-          </Text>
-        </View>
-        {item.badge !== undefined && item.badge > 0 && (
-          <View style={[styles.badge, { backgroundColor: theme.primary }]}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
-          </View>
         )}
+        <View style={styles.itemContent}>
+          <View style={styles.itemHeader}>
+            <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+              <Text style={styles.statusText}>
+                {item.status === 'delivered' ? 'Delivered' : item.status === 'in_transit' ? 'In Transit' : item.status === 'picked_up' ? 'Picked Up' : 'Matched'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.itemLocation}>
+            <Ionicons name="location" size={14} color={theme.textSecondary} />
+            <Text style={[styles.locationText, { color: theme.textSecondary }]}>
+              {item.destination.address}
+            </Text>
+          </View>
+
+          {isExpanded && (
+            <View style={styles.expandedContent}>
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Shipper</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>{item.shipper.name}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Price</Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>RWF {item.price}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <TouchableOpacity onPress={() => toggleExpanded(item.id)}>
+          <Ionicons
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={theme.textSecondary}
+          />
+        </TouchableOpacity>
       </TouchableOpacity>
     );
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Sidebar */}
-      <View style={[styles.sidebar, { backgroundColor: theme.card }]}>
-        {/* Logo and User Info */}
+      {/* Dark Sidebar - Transporter (Blue Theme) */}
+      <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
         <View style={styles.sidebarHeader}>
           <Image
             source={require('../../../assets/images/logos/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={[styles.welcomeText, { color: theme.text }]}>
-            Welcome, {user?.name?.split(' ')[0]}!
-          </Text>
-          <Text style={[styles.roleText, { color: theme.textSecondary }]}>
-            Transporter
-          </Text>
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>Transporter</Text>
+          </View>
         </View>
 
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search..."
-            variant="filled"
-          />
-        </View>
-
-        {/* Menu Items */}
-        <ScrollView
-          style={styles.menuList}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={[styles.menuTitle, { color: theme.textSecondary }]}>
-            QUICK ACTIONS
-          </Text>
-          {menuItems.map(renderMenuItem)}
-
-          {/* Logout */}
-          <View style={styles.menuDivider} />
+        <View style={styles.sidebarNav}>
           <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => dispatch(logout())}
-            activeOpacity={0.7}
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('AvailableLoads')}
           >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name="log-out-outline" size={22} color={theme.error} />
-              <Text style={[styles.menuItemText, { color: theme.error }]}>
-                Logout
-              </Text>
-            </View>
+            <Ionicons name="briefcase-outline" size={28} color="#93C5FD" />
           </TouchableOpacity>
-        </ScrollView>
 
-        {/* Theme Toggle at Bottom */}
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('ActiveTrips')}
+          >
+            <Ionicons name="navigate-outline" size={28} color="#93C5FD" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('EarningsDashboard')}
+          >
+            <Ionicons name="cash-outline" size={28} color="#93C5FD" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('TripHistory')}
+          >
+            <Ionicons name="time-outline" size={28} color="#93C5FD" />
+          </TouchableOpacity>
+
+          <View style={styles.sidebarDivider} />
+
+          <TouchableOpacity
+            style={[styles.sidebarIconBtn, styles.sidebarPrimaryBtn]}
+            onPress={() => navigation.navigate('AvailableLoads')}
+          >
+            <Ionicons name="add-circle" size={28} color="#FFF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('ProfileSettings')}
+          >
+            <Ionicons name="settings-outline" size={28} color="#93C5FD" />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.sidebarFooter}>
           <ThemeToggle />
+          <TouchableOpacity
+            style={styles.logoutIcon}
+            onPress={() => dispatch(logout())}
+          >
+            <Ionicons name="log-out" size={24} color="#EF4444" />
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* Top Bar */}
-        <View style={[styles.topBar, { backgroundColor: theme.card }]}>
-          <Text style={[styles.topBarTitle, { color: theme.text }]}>
-            Manage your deliveries
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('ProfileSettings')}>
-            <Ionicons name="settings-outline" size={24} color={theme.text} />
-          </TouchableOpacity>
+      <ImageBackground
+        source={require('../../../assets/images/backimages/transporter.jpg')}
+        style={styles.mainContent}
+        imageStyle={styles.backgroundImage}
+      >
+        <View style={[styles.backgroundOverlay, { backgroundColor: theme.background + 'E6' }]} />
+        
+        {/* Left Panel - Trips List */}
+        <View style={[styles.leftPanel, { backgroundColor: theme.card }]}>
+          {/* Welcome Banner */}
+          <View style={[styles.welcomeBanner, { backgroundColor: '#3B82F6' + '20' }]}>
+            <View>
+              <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+                Welcome back!
+              </Text>
+              <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
+                You have {filteredItems.length} active trip{filteredItems.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+            <View style={styles.welcomeIcon}>
+              <Ionicons name="checkmark-circle" size={40} color="#3B82F6" />
+            </View>
+          </View>
+
+          {/* Quick Stats */}
+          <View style={styles.quickStats}>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: theme.text }]}>
+                {inProgressTrips.length}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>In Transit</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: theme.text }]}>
+                {deliveredTrips.length}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Delivered</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={[styles.statValue, { color: theme.text }]}>
+                {activeTrips.filter(t => t.status === 'matched').length}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Matched</Text>
+            </View>
+          </View>
+
+          <View style={styles.panelHeader}>
+            <Text style={[styles.panelTitle, { color: theme.text }]}>
+              Active Trips ({filteredItems.length})
+            </Text>
+          </View>
+
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={18} color={theme.textSecondary} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Search trip..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          {filteredItems.length > 0 ? (
+            <FlatList
+              data={filteredItems}
+              renderItem={renderTripItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            />
+          ) : (
+            <ScrollView
+              style={styles.emptyContainer}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+              contentContainerStyle={styles.emptyContent}
+            >
+              <View style={styles.emptyState}>
+                <View style={[styles.emptyIconBox, { backgroundColor: '#3B82F6' + '20' }]}>
+                  <Ionicons name="navigate-outline" size={56} color="#3B82F6" />
+                </View>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                  No Active Trips
+                </Text>
+                <Text style={[styles.emptyDescription, { color: theme.textSecondary }]}>
+                  You don't have any trips in progress. Find available loads to get started.
+                </Text>
+                <TouchableOpacity
+                  style={[styles.emptyAction, { backgroundColor: '#3B82F6' }]}
+                  onPress={() => navigation.navigate('AvailableLoads')}
+                >
+                  <Ionicons name="briefcase" size={20} color="#FFF" />
+                  <Text style={styles.emptyActionText}>Find Available Loads</Text>
+                </TouchableOpacity>
+
+                <View style={styles.emptyTips}>
+                  <Text style={[styles.tipsTitle, { color: theme.text }]}>Quick Tips:</Text>
+                  <View style={styles.tipItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#3B82F6" />
+                    <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+                      Track your trips in real-time
+                    </Text>
+                  </View>
+                  <View style={styles.tipItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#3B82F6" />
+                    <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+                      Connect with trusted shippers
+                    </Text>
+                  </View>
+                  <View style={styles.tipItem}>
+                    <Ionicons name="checkmark-circle" size={16} color="#3B82F6" />
+                    <Text style={[styles.tipText, { color: theme.textSecondary }]}>
+                      Earn money on every delivery
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
+          )}
         </View>
 
-        {/* Content Area */}
-        <ScrollView
-          style={styles.contentScroll}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          {/* Stats Cards */}
-          <View style={styles.statsGrid}>
-            {/* Available Loads */}
-            <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-              <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
-                <Ionicons name="briefcase" size={28} color="#6B7280" />
+        {/* Center - Map */}
+        {isWeb && (
+          <View style={styles.mapContainer}>
+            {selectedItem ? (
+              <TrackingMapView
+                shippingCenter={selectedItem.pickup}
+                destination={selectedItem.destination}
+                itemName={selectedItem.name}
+                mapRegion={undefined}
+                routeCoordinates={[]}
+              />
+            ) : (
+              <View style={styles.mapPlaceholder}>
+                <Ionicons name="map" size={64} color={theme.textSecondary} />
+                <Text style={[styles.mapPlaceholderText, { color: theme.textSecondary }]}>
+                  Select a trip to view on map
+                </Text>
               </View>
-              <Text style={[styles.statNumber, { color: theme.text }]}>{availableLoads.length}</Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Available Loads</Text>
-            </View>
-
-            {/* Active Trips */}
-            <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-              <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
-                <Ionicons name="navigate" size={28} color="#6B7280" />
-              </View>
-              <Text style={[styles.statNumber, { color: theme.text }]}>{activeTrips.length}</Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Active Trips</Text>
-            </View>
-
-            {/* Total Earnings */}
-            <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-              <View style={[styles.statIconBox, { backgroundColor: '#E5E7EB' }]}>
-                <Ionicons name="cash" size={28} color="#6B7280" />
-              </View>
-              <Text style={[styles.statNumber, { color: theme.text }]}>RWF {totalEarnings.toLocaleString()}</Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total Earnings</Text>
-            </View>
+            )}
           </View>
+        )}
 
-          {/* Featured Actions */}
-          <View style={styles.featuredSection}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Featured
-            </Text>
+        {/* Right Panel - Detail Item */}
+        {selectedItem && (
+          <View style={[styles.rightPanel, { backgroundColor: theme.card }]}>
+            <View style={styles.detailHeader}>
+              <Text style={[styles.detailTitle, { color: theme.text }]}>
+                Trip Details
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedItem(null)}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
+            </View>
 
-            {/* Available Loads Card */}
-            <TouchableOpacity
-              style={styles.featuredCard}
-              onPress={() => navigation.navigate('AvailableLoads')}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={['#10797D', '#0D5F66']}
-                style={styles.featuredGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.featuredContent}>
-                  <View style={styles.featuredIconBox}>
-                    <Ionicons name="briefcase" size={40} color="#FFF" />
-                  </View>
-                  <View style={styles.featuredInfo}>
-                    <Text style={styles.featuredTitle}>Available Loads</Text>
-                    <Text style={styles.featuredSubtitle}>
-                      {availableLoads.length} loads waiting for pickup
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {selectedItem.image && (
+                <Image
+                  source={{ uri: selectedItem.image }}
+                  style={styles.detailImage}
+                />
+              )}
+
+              <View style={styles.detailCard}>
+                <Text style={[styles.detailItemName, { color: theme.text }]}>
+                  {selectedItem.name}
+                </Text>
+
+                <View style={[styles.detailBadge, { backgroundColor: getStatusColor(selectedItem.status) }]}>
+                  <Text style={styles.detailBadgeText}>
+                    {selectedItem.status === 'delivered' ? 'Delivered' : selectedItem.status === 'in_transit' ? 'In Transit' : selectedItem.status === 'picked_up' ? 'Picked Up' : 'Matched'}
+                  </Text>
+                </View>
+
+                <View style={styles.detailSection}>
+                  <Text style={[styles.detailSectionTitle, { color: theme.text }]}>
+                    Destination
+                  </Text>
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location" size={18} color="#3B82F6" />
+                    <Text style={[styles.locationAddress, { color: theme.textSecondary }]}>
+                      {selectedItem.destination.address}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={28} color="#FFF" />
                 </View>
-              </LinearGradient>
-            </TouchableOpacity>
 
-            {/* Earnings Dashboard Card */}
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('EarningsDashboard')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionCardContent}>
-                <View style={[styles.actionIconBox, { backgroundColor: '#E5E7EB' }]}>
-                  <Ionicons name="cash" size={28} color="#6B7280" />
-                </View>
-                <View style={styles.actionInfo}>
-                  <Text style={[styles.actionTitle, { color: theme.text }]}>
-                    Earnings Dashboard
+                <View style={styles.detailSection}>
+                  <Text style={[styles.detailSectionTitle, { color: theme.text }]}>
+                    Shipper
                   </Text>
-                  <Text style={[styles.actionSubtitle, { color: theme.textSecondary }]}>
-                    View your earnings and statistics
+                  <Text style={[styles.detailValue, { color: theme.text }]}>
+                    {selectedItem.shipper.name}
                   </Text>
+                  {selectedItem.shipper.phone && (
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(`tel:${selectedItem.shipper.phone}`)}
+                      style={styles.phoneButton}
+                    >
+                      <Ionicons name="call" size={16} color="#3B82F6" />
+                      <Text style={[styles.phoneText, { color: '#3B82F6' }]}>
+                        {selectedItem.shipper.phone}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <Ionicons name="chevron-forward" size={24} color={theme.textSecondary} />
-              </View>
-            </TouchableOpacity>
 
-            {/* Vehicle Profile Card */}
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: theme.card }]}
-              onPress={() => navigation.navigate('VehicleProfile')}
-              activeOpacity={0.7}
-            >
-              <View style={styles.actionCardContent}>
-                <View style={[styles.actionIconBox, { backgroundColor: '#E5E7EB' }]}>
-                  <Ionicons name="car" size={28} color="#6B7280" />
+                <View style={styles.detailGrid}>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: theme.textSecondary }]}>
+                      Price
+                    </Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]}>
+                      RWF {selectedItem.price}
+                    </Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: theme.textSecondary }]}>
+                      Weight
+                    </Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]}>
+                      {selectedItem.weight}
+                    </Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: theme.textSecondary }]}>
+                      Distance
+                    </Text>
+                    <Text style={[styles.gridValue, { color: theme.text }]}>
+                      {selectedItem.distance}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.actionInfo}>
-                  <Text style={[styles.actionTitle, { color: theme.text }]}>
-                    Vehicle Profile
-                  </Text>
-                  <Text style={[styles.actionSubtitle, { color: theme.textSecondary }]}>
-                    Manage your vehicle information
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={24} color={theme.textSecondary} />
+
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3B82F6' }]}>
+                  <Ionicons name="information-circle" size={20} color="#FFF" />
+                  <Text style={styles.actionButtonText}>View More Details</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </ScrollView>
           </View>
-
-          {/* Recent Activity */}
-          {activeTrips.length > 0 && (
-            <View style={styles.activitySection}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Active Trips
-              </Text>
-              {activeTrips.slice(0, 3).map((trip) => (
-                <View
-                  key={trip._id || trip.id}
-                  style={[styles.activityCard, { backgroundColor: theme.card }]}
-                >
-                  <View style={styles.activityLeft}>
-                    <View style={[styles.activityIcon, { backgroundColor: theme.primary + '20' }]}>
-                      <Ionicons name="navigate" size={24} color={theme.primary} />
-                    </View>
-                    <View style={styles.activityInfo}>
-                      <Text style={[styles.activityTitle, { color: theme.text }]}>
-                        {trip.name || 'Trip'}
-                      </Text>
-                      <Text style={[styles.activitySubtitle, { color: theme.textSecondary }]}>
-                        {trip.destination?.address || 'Destination'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View
-                    style={[
-                      styles.activityBadge,
-                      { backgroundColor: theme.primary },
-                    ]}
-                  >
-                    <Text style={styles.activityBadgeText}>
-                      {trip.status === 'matched' ? 'MATCHED' : trip.status === 'picked_up' ? 'PICKED UP' : 'IN TRANSIT'}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Completed Trips Summary */}
-          {completedTrips.length > 0 && (
-            <View style={styles.activitySection}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Performance
-              </Text>
-              <View style={[styles.performanceCard, { backgroundColor: theme.card }]}>
-                <View style={styles.performanceRow}>
-                  <View style={styles.performanceStat}>
-                    <Text style={[styles.performanceNumber, { color: theme.text }]}>
-                      {completedTrips.length}
-                    </Text>
-                    <Text style={[styles.performanceLabel, { color: theme.textSecondary }]}>
-                      Completed Trips
-                    </Text>
-                  </View>
-                  <View style={styles.performanceStat}>
-                    <Text style={[styles.performanceNumber, { color: theme.text }]}>
-                      RWF {totalEarnings.toLocaleString()}
-                    </Text>
-                    <Text style={[styles.performanceLabel, { color: theme.textSecondary }]}>
-                      Total Earned
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
-        </ScrollView>
-      </View>
+        )}
+      </ImageBackground>
     </View>
   );
 }
 
-const SIDEBAR_WIDTH = isWeb ? 280 : width * 0.75;
+const SIDEBAR_WIDTH = 80;
+const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
+const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
 
 const styles = StyleSheet.create({
   container: {
@@ -436,301 +566,415 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRightWidth: 1,
-    borderRightColor: 'rgba(0,0,0,0.05)',
+    borderRightColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sidebarHeader: {
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 12,
-    borderRadius: 30,
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  roleText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  searchContainer: {
-    padding: 16,
-    paddingBottom: 12,
-  },
-  menuList: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  menuTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginTop: 8,
-    marginBottom: 8,
-    marginLeft: 12,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    width: 50,
+    height: 50,
     borderRadius: 12,
-    marginBottom: 4,
   },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  sidebarNav: {
     flex: 1,
-  },
-  menuItemText: {
-    fontSize: 15,
-    flex: 1,
-  },
-  badge: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingVertical: 12,
+    gap: 20,
   },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    marginVertical: 16,
-  },
-  sidebarFooter: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-  },
-  mainContent: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  topBarTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  contentScroll: {
-    flex: 1,
-  },
-  statsGrid: {
-    flexDirection: isWeb ? 'row' : 'column',
-    gap: 16,
-    padding: 20,
-  },
-  statCard: {
-    flex: isWeb ? 1 : undefined,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    minHeight: 180,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  statNumber: {
-    fontSize: 36,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  statLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  featuredSection: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 16,
-  },
-  featuredCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  featuredGradient: {
-    padding: 20,
-  },
-  featuredContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  featuredIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  featuredInfo: {
-    flex: 1,
-  },
-  featuredTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  featuredSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  actionCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  actionCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  actionIconBox: {
+  sidebarIconBtn: {
     width: 56,
     height: 56,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  actionInfo: {
-    flex: 1,
+  sidebarPrimaryBtn: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 16,
   },
-  actionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
+  roleBadge: {
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#3B82F6',
+    borderRadius: 6,
   },
-  actionSubtitle: {
-    fontSize: 13,
+  roleBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.5,
   },
-  activitySection: {
-    padding: 20,
-    paddingTop: 0,
+  sidebarDivider: {
+    width: 40,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 8,
   },
-  activityCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  activityLeft: {
-    flexDirection: 'row',
+  sidebarFooter: {
     alignItems: 'center',
     gap: 12,
-    flex: 1,
   },
-  activityIcon: {
+  logoutIcon: {
     width: 48,
     height: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  activityInfo: {
+  mainContent: {
     flex: 1,
-  },
-  activityTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  activitySubtitle: {
-    fontSize: 13,
-  },
-  activityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  activityBadgeText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  performanceCard: {
-    padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  performanceRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
   },
-  performanceStat: {
+  backgroundImage: {
+    opacity: 0.35,
+  },
+  backgroundOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
+  },
+  leftPanel: {
+    width: LEFT_PANEL_WIDTH,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(0,0,0,0.1)',
+    paddingTop: 0,
+  },
+  welcomeBanner: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: 12,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 16,
   },
-  performanceNumber: {
-    fontSize: 28,
-    fontWeight: '800',
+  welcomeTitle: {
+    fontSize: 16,
+    fontWeight: '700',
     marginBottom: 4,
   },
-  performanceLabel: {
+  welcomeSubtitle: {
     fontSize: 13,
+  },
+  welcomeIcon: {
+    opacity: 0.2,
+  },
+  quickStats: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  statBox: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  panelHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  panelTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    margin: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
     fontWeight: '500',
+  },
+  trackingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginHorizontal: 8,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderLeftWidth: 0,
+  },
+  itemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+  },
+  itemContent: {
+    flex: 1,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  itemLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  locationText: {
+    fontSize: 12,
+    flex: 1,
+  },
+  expandedContent: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  detailLabel: {
+    fontSize: 12,
+  },
+  detailValue: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+  },
+  emptyContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+  },
+  emptyIconBox: {
+    width: 100,
+    height: 100,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    fontSize: 14,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginBottom: 32,
+  },
+  emptyActionText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  emptyTips: {
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+  tipsTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  tipItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  tipText: {
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
+  },
+  mapContainer: {
+    flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(0,0,0,0.1)',
+  },
+  mapPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mapPlaceholderText: {
+    fontSize: 14,
+    marginTop: 12,
+    fontWeight: '500',
+  },
+  rightPanel: {
+    width: RIGHT_PANEL_WIDTH,
+    paddingTop: 16,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.1)',
+  },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  detailTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  detailImage: {
+    width: '100%',
+    height: 180,
+    resizeMode: 'cover',
+    marginBottom: 16,
+  },
+  detailCard: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  detailItemName: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  detailBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  detailBadgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  detailSection: {
+    marginBottom: 20,
+  },
+  detailSectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  locationAddress: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  phoneButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+  phoneText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  detailGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  gridItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  gridLabel: {
+    fontSize: 11,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  gridValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  actionButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

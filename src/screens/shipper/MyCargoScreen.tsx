@@ -18,8 +18,8 @@ import { showToast } from '../../services/toastService';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import Divider from '../../components/Divider';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
-import { LinearGradient } from 'expo-linear-gradient';
 import { logger } from '../../utils/logger';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -117,6 +117,12 @@ export default function MyCargoScreen({ navigation }: any) {
     setPendingDeleteName('');
   };
 
+  const sidebarNav = [
+    { icon: 'cube-outline', label: 'My Cargo', screen: 'MyCargo' },
+    { icon: 'list-outline', label: 'Active Orders', screen: 'ShipperActiveOrders' },
+    { icon: 'add-circle-outline', label: 'List Cargo', screen: 'ListCargo' },
+  ];
+
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -131,19 +137,16 @@ export default function MyCargoScreen({ navigation }: any) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          accessibilityHint="Navigate to previous screen"
-        >
-          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>My Cargo ({myListings.length})</Text>
-      </View>
+    <DashboardLayout
+      title={`My Cargo (${myListings.length})`}
+      sidebarColor="#0F172A"
+      accentColor="#10B981"
+      backgroundImage={require('../../../assets/images/backimages/shipper.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="shipper"
+      navigation={navigation}
+      contentPadding={false}
+    >
 
       {myListings.length > 0 && (
         <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
@@ -393,7 +396,7 @@ export default function MyCargoScreen({ navigation }: any) {
         onConfirm={handleConfirmDelete}
         isDestructive={true}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 

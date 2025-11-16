@@ -24,6 +24,7 @@ import EmptyState from '../../components/EmptyState';
 import Toast, { useToast } from '../../components/Toast';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { logger } from '../../utils/logger';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 export default function ActiveTripsScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -215,38 +216,32 @@ export default function ActiveTripsScreen({ navigation }: any) {
     );
   }
 
+  const sidebarNav = [
+    { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
+    { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
+  ];
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            disabled={isRefreshing}
-            style={styles.refreshButton}
-          >
-            <FontAwesome
-              name="refresh"
-              size={20}
-              color={theme.card}
-              style={{ opacity: isRefreshing ? 0.5 : 1 }}
-            />
-          </TouchableOpacity>
+    <DashboardLayout
+      title="Active Trips"
+      sidebarColor="#0F172A"
+      accentColor="#3B82F6"
+      backgroundImage={require('../../../assets/images/backimages/transporter.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="transporter"
+      navigation={navigation}
+      contentPadding={false}
+    >
+      {isTracking && currentLocation && (
+        <View style={[styles.trackingBanner, { backgroundColor: '#3B82F6' }]}>
+          <View style={styles.trackingPulse} />
+          <Text style={styles.trackingText}>
+            Live Tracking • {currentLocation.speed?.toFixed(0) || 0} km/h
+          </Text>
         </View>
-        <View style={styles.headerBottom}>
-          <Text style={[styles.title, { color: theme.card }]}>Active Trips</Text>
-          {isTracking && currentLocation && (
-            <View style={styles.trackingIndicator}>
-              <View style={[styles.trackingPulse, { backgroundColor: '#4CAF50' }]} />
-              <Text style={[styles.trackingText, { color: theme.card }]}>
-                Live Tracking • {currentLocation.speed?.toFixed(0) || 0} km/h
-              </Text>
-            </View>
-          )}
-        </View>
-      </View>
+      )}
 
       {allActiveItems.length === 0 ? (
         <EmptyState
@@ -293,7 +288,6 @@ export default function ActiveTripsScreen({ navigation }: any) {
                 </Text>
               </View>
 
-              {/* Live ETA Info */}
               {currentLocation && trip.delivery && (
                 (() => {
                   const deliveryLat = trip.delivery.latitude || -1.9706;
@@ -385,14 +379,13 @@ export default function ActiveTripsScreen({ navigation }: any) {
         />
       )}
 
-      {/* Toast Notifications */}
       <Toast
         visible={toast.visible}
         message={toast.message}
         type={toast.type}
         onHide={hideToast}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 
@@ -400,26 +393,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-  },
-  headerTop: {
+  trackingBanner: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 12,
   },
-  backButton: {
-    fontSize: 16,
+  trackingPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
   },
-  refreshButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  trackingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFF',
   },
   emptyState: {
     flex: 1,
@@ -524,26 +518,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // GPS Tracking Header
-  headerBottom: {
-    alignItems: 'center',
-  },
-  trackingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 6,
-  },
-  trackingPulse: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  trackingText: {
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.9,
-  },
+
 
   // Live ETA Box
   liveETABox: {

@@ -36,6 +36,7 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import Toast, { useToast } from '../../components/Toast';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 const { width } = Dimensions.get('window');
 
@@ -338,26 +339,31 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     );
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.tertiary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={theme.card} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[styles.title, { color: theme.card }]}>Available Trips</Text>
-          {isTracking && currentLocation && (
-            <View style={styles.gpsIndicator}>
-              <View style={[styles.gpsPulse, { backgroundColor: '#4CAF50' }]} />
-              <Text style={[styles.gpsText, { color: theme.card }]}>GPS Active</Text>
-            </View>
-          )}
-        </View>
-        <Badge label={String(allAvailableLoads.length)} variant="gray" size="sm" />
-      </View>
+  const sidebarNav = [
+    { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
+    { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
+  ];
 
-      {/* Search Bar */}
+  return (
+    <DashboardLayout
+      title="Available Loads"
+      sidebarColor="#0F172A"
+      accentColor="#3B82F6"
+      backgroundImage={require('../../../assets/images/backimages/transporter.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="transporter"
+      navigation={navigation}
+      contentPadding={false}
+    >
+      {isTracking && currentLocation && (
+        <View style={[styles.gpsIndicator, { backgroundColor: '#3B82F6' }]}>
+          <View style={styles.gpsPulse} />
+          <Text style={styles.gpsText}>GPS Active • {currentLocation.speed?.toFixed(0) || 0} km/h</Text>
+        </View>
+      )}
+
       <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
         <SearchBar
           value={searchQuery}
@@ -543,7 +549,6 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         />
       )}
 
-      {/* Toast Notifications */}
       <Toast
         visible={toast.visible}
         message={toast.message}
@@ -551,7 +556,6 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         onHide={hideToast}
       />
 
-      {/* Accept Trip Confirmation Dialog */}
       <ConfirmDialog
         visible={showAcceptDialog}
         title={pendingAcceptItem?.isCargo ? 'Accept Cargo?' : 'Accept Trip?'}
@@ -565,7 +569,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
         onConfirm={handleConfirmAccept}
         isDestructive={false}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 
@@ -573,17 +577,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  gpsIndicator: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 12,
+    gap: 12,
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+    borderRadius: 12,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
+  gpsPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  gpsText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFF',
   },
   loadsCountBadge: {
     backgroundColor: '#fff',
@@ -636,23 +650,28 @@ const styles = StyleSheet.create({
 
   // Loads List
   loadsList: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
   },
   row: {
-    justifyContent: 'space-evenly',
-    marginBottom: 6,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   cardWrapper: {
-    width: '45%',
+    width: '48%',
   },
 
   // Load Card - inDrive Style
   loadCard: {
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    padding: 4,
-    marginBottom: 4,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   // Card Top: Name & Earnings
@@ -660,145 +679,131 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 5,
+    marginBottom: 12,
   },
   cropSection: {
     flex: 1,
-    marginRight: 4,
+    marginRight: 8,
   },
   cropName: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 2,
+    marginBottom: 8,
   },
   quantityDistance: {
     flexDirection: 'row',
-    gap: 3,
+    gap: 6,
+    flexWrap: 'wrap',
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 4,
-    gap: 2,
+    borderRadius: 6,
+    gap: 4,
   },
   badgeText: {
-    fontSize: 9,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
 
   // Earnings Box
   earningsBox: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
     alignItems: 'center',
+    minWidth: 80,
   },
   earningsLabel: {
-    fontSize: 8,
-    fontWeight: '500',
-    marginBottom: 1,
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 3,
   },
   earningsAmount: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
   },
   earningsRate: {
-    fontSize: 7,
-    fontWeight: '500',
-    marginTop: 1,
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
 
   // Route Section - inDrive style with dots and line
   routeSection: {
-    marginBottom: 5,
-    paddingVertical: 4,
+    marginBottom: 12,
+    paddingVertical: 8,
   },
   routeItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
-    marginBottom: 5,
+    gap: 10,
+    marginBottom: 12,
   },
   routeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 4,
   },
   routeLabel: {
-    fontSize: 8,
-    fontWeight: '500',
-    marginBottom: 1,
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   routeText: {
-    fontSize: 10,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
   },
   routeLine: {
     width: 2,
-    height: 12,
-    marginLeft: 2,
-    marginVertical: 1,
+    height: 16,
+    marginLeft: 3,
+    marginVertical: 2,
   },
 
   // Accept Button
   acceptBtn: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   acceptBtnText: {
     color: '#fff',
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
   },
 
-  // GPS Tracking Header
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  gpsIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  gpsPulse: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  gpsText: {
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.9,
-  },
 
   // Live GPS Box
   liveGPSBox: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    padding: 14,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
   },
   liveGPSRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   liveGPSIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -806,12 +811,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   liveGPSLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   liveGPSETA: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

@@ -21,6 +21,7 @@ import { fetchAllTrips } from '../../logistics/store/tripsSlice';
 import { fetchCargo } from '../../store/slices/cargoSlice';
 import PaymentModal from '../../components/PaymentModal';
 import { showToast } from '../../services/toastService';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 type TimePeriod = 'today' | 'week' | 'month' | 'year';
 
@@ -157,27 +158,24 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     }
   };
 
+  const sidebarNav = [
+    { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
+    { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
+  ];
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
-        {/* Header */}
-        <LinearGradient
-          colors={['#10797D', '#0D5F66']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.header}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            accessibilityHint="Navigate to previous screen"
-          >
-            <Text style={styles.backButton}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>💰 Earnings Dashboard</Text>
-        </LinearGradient>
+    <DashboardLayout
+      title="Earnings"
+      sidebarColor="#0F172A"
+      accentColor="#3B82F6"
+      backgroundImage={require('../../../assets/images/backimages/transporter.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="transporter"
+      navigation={navigation}
+      contentPadding={true}
+    >
 
         {/* Time Period Selector */}
         <View style={styles.periodSelector}>
@@ -524,9 +522,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
             </Text>
           </View>
         </View>
-      </ScrollView>
 
-      {/* Payout Modal */}
       <PaymentModal
         visible={showPayoutModal}
         amount={stats.netEarnings}
@@ -537,28 +533,13 @@ export default function EarningsDashboardScreen({ navigation }: any) {
         onSuccess={handlePayoutSuccess}
         onCancel={() => setShowPayoutModal(false)}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    padding: 20,
-    paddingTop: 50,
-    paddingBottom: 30,
-  },
-  backButton: {
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   periodSelector: {
     flexDirection: 'row',

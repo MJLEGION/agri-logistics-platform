@@ -15,6 +15,7 @@ import Toast, { useToast } from '../../components/Toast';
 import * as backendRatingService from '../../services/backendRatingService';
 import { logger } from '../../utils/logger';
 import { fetchCargo } from '../../store/slices/cargoSlice';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -183,14 +184,23 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
     }
   };
 
+  const sidebarNav = [
+    { icon: 'cube-outline', label: 'My Cargo', screen: 'MyCargo' },
+    { icon: 'list-outline', label: 'Active Orders', screen: 'ShipperActiveOrders' },
+    { icon: 'add-circle-outline', label: 'List Cargo', screen: 'ListCargo' },
+  ];
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.card }]}>Active Orders</Text>
-      </View>
+    <DashboardLayout
+      title="Active Orders"
+      sidebarColor="#0F172A"
+      accentColor="#10B981"
+      backgroundImage={require('../../../assets/images/backimages/shipper.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="shipper"
+      navigation={navigation}
+      contentPadding={false}
+    >
 
       {/* Search Bar */}
       {shipperOrders.length > 0 && (
@@ -282,7 +292,7 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
         type={toast.type}
         onHide={hideToast}
       />
-    </View>
+    </DashboardLayout>
   );
 }
 
