@@ -220,6 +220,7 @@ export default function ActiveTripsScreen({ navigation }: any) {
     { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
     { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
     { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'star-outline', label: 'Ratings', screen: 'TransporterRatings' },
     { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
   ];
 

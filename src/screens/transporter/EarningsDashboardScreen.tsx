@@ -162,6 +162,7 @@ export default function EarningsDashboardScreen({ navigation }: any) {
     { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
     { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
     { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'star-outline', label: 'Ratings', screen: 'TransporterRatings' },
     { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
   ];
 

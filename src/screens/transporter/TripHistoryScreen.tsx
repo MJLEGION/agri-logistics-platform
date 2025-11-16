@@ -337,6 +337,7 @@ export default function TripHistoryScreen({ navigation }: any) {
     { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
     { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
     { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'star-outline', label: 'Ratings', screen: 'TransporterRatings' },
     { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
   ];
 
