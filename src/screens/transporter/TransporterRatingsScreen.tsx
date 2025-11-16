@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppSelector } from '../../store';
 import * as backendRatingService from '../../services/backendRatingService';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 interface Rating {
   _id: string;
@@ -214,37 +215,26 @@ export default function TransporterRatingsScreen() {
     );
   }
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <LinearGradient
-        colors={['#F77F00', '#FCBF49']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            if (navigation.canGoBack?.()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('Home');
-            }
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Ratings & Feedback</Text>
-        <View style={{ width: 24 }} />
-      </LinearGradient>
+  const sidebarNav = [
+    { icon: 'briefcase-outline', label: 'Available Loads', screen: 'AvailableLoads' },
+    { icon: 'navigate-outline', label: 'Active Trips', screen: 'ActiveTrips' },
+    { icon: 'cash-outline', label: 'Earnings', screen: 'EarningsDashboard' },
+    { icon: 'star-outline', label: 'Ratings', screen: 'TransporterRatings' },
+    { icon: 'time-outline', label: 'History', screen: 'TripHistory' },
+  ];
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+  return (
+    <DashboardLayout
+      title="My Ratings & Feedback"
+      sidebarColor="#0F172A"
+      accentColor="#3B82F6"
+      backgroundImage={require('../../../assets/images/backimages/transporter.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="transporter"
+      navigation={navigation}
+      contentPadding={true}
+    >
+      <View>
         {error && (
           <View style={[styles.errorContainer, { backgroundColor: theme.error }]}>
             <Text style={styles.errorText}>{error}</Text>
@@ -337,8 +327,8 @@ export default function TransporterRatingsScreen() {
             </Text>
           </View>
         )}
-      </ScrollView>
-    </View>
+      </View>
+    </DashboardLayout>
   );
 }
 
