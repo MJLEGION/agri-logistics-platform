@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authService from '../../services/authService';
 import { RegisterData, LoginCredentials, User } from '../../types';
 import { clearCargo } from './cargoSlice';
@@ -19,6 +20,10 @@ export const register = createAsyncThunk<any, RegisterData, { rejectValue: strin
       // Clear all old user data before registering
       dispatch(clearCargo());
       dispatch(clearOrders());
+      // Clear all AsyncStorage to remove any cached data
+      const keys = await AsyncStorage.getAllKeys();
+      const dataKeys = keys.filter(key => !key.includes('persist:'));
+      await AsyncStorage.multiRemove(dataKeys);
       return await authService.register(userData);
     } catch (error: any) {
       return rejectWithValue(error.message || error.response?.data?.message || 'Registration failed');
@@ -33,6 +38,10 @@ export const login = createAsyncThunk<any, LoginCredentials, { rejectValue: stri
       // Clear all old user data before logging in
       dispatch(clearCargo());
       dispatch(clearOrders());
+      // Clear all AsyncStorage to remove any cached data
+      const keys = await AsyncStorage.getAllKeys();
+      const dataKeys = keys.filter(key => !key.includes('persist:'));
+      await AsyncStorage.multiRemove(dataKeys);
       return await authService.login(credentials);
     } catch (error: any) {
       return rejectWithValue(error.message || error.response?.data?.message || 'Login failed');
@@ -47,6 +56,10 @@ export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
       // Clear all user data before logging out
       dispatch(clearCargo());
       dispatch(clearOrders());
+      // Clear all AsyncStorage to remove any cached data
+      const keys = await AsyncStorage.getAllKeys();
+      const dataKeys = keys.filter(key => !key.includes('persist:'));
+      await AsyncStorage.multiRemove(dataKeys);
       await authService.logout();
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Logout failed');

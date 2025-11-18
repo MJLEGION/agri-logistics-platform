@@ -16,6 +16,31 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { useAppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 
+// Tooltip component for web hover
+const TooltipWrapper = ({ children, tooltip, isWeb }: { children: React.ReactNode; tooltip: string; isWeb: boolean }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  if (!isWeb) {
+    return <>{children}</>;
+  }
+
+  return (
+    <View
+      style={{ position: 'relative' }}
+      // @ts-ignore - web-only props
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      {children}
+      {showTooltip && (
+        <View style={tooltipStyles.tooltipContainer}>
+          <Text style={tooltipStyles.tooltipText}>{tooltip}</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
 const { width, height } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 const isMobile = width < 768;
@@ -135,37 +160,40 @@ export default function DashboardLayout({
 
             <View style={styles.sidebarNav}>
               {sidebarNav.map((nav, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.sidebarIconBtn, isMobile && styles.sidebarIconBtnMobile]}
-                  onPress={() => {
-                    handleNavigation(nav);
-                    if (isMobile) setSidebarCollapsed(true);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={nav.icon as any}
-                    size={isMobile ? 24 : 28}
-                    color="#93C5FD"
-                  />
-                  {isMobile && (
-                    <Text style={styles.navLabel}>{nav.label}</Text>
-                  )}
-                </TouchableOpacity>
+                <TooltipWrapper key={idx} tooltip={nav.label} isWeb={isWeb && !isMobile}>
+                  <TouchableOpacity
+                    style={[styles.sidebarIconBtn, isMobile && styles.sidebarIconBtnMobile]}
+                    onPress={() => {
+                      handleNavigation(nav);
+                      if (isMobile) setSidebarCollapsed(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={nav.icon as any}
+                      size={isMobile ? 24 : 28}
+                      color="#93C5FD"
+                    />
+                    {isMobile && (
+                      <Text style={styles.navLabel}>{nav.label}</Text>
+                    )}
+                  </TouchableOpacity>
+                </TooltipWrapper>
               ))}
             </View>
 
             {!isMobile && (
               <View style={styles.sidebarFooter}>
                 <ThemeToggle />
-                <TouchableOpacity
-                  style={styles.logoutIcon}
-                  onPress={() => dispatch(logout())}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="log-out" size={24} color="#EF4444" />
-                </TouchableOpacity>
+                <TooltipWrapper tooltip="Logout" isWeb={isWeb}>
+                  <TouchableOpacity
+                    style={styles.logoutIcon}
+                    onPress={() => dispatch(logout())}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="log-out" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                </TooltipWrapper>
               </View>
             )}
           </View>
@@ -345,5 +373,31 @@ const styles = StyleSheet.create({
   contentPaddingMobile: {
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+});
+
+const tooltipStyles = StyleSheet.create({
+  tooltipContainer: {
+    position: 'absolute',
+    left: SIDEBAR_WIDTH + 8,
+    top: '50%',
+    transform: [{ translateY: -20 }],
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+    minWidth: 100,
+  },
+  tooltipText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500',
+    whiteSpace: 'nowrap' as any,
   },
 });
