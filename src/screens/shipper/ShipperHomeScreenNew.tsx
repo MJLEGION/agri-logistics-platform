@@ -241,44 +241,42 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('MyCargo')}
           >
-            <Ionicons name="cube-outline" size={28} color="#9CA3AF" />
+            <Ionicons name="cube-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>My Cargo</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('ShipperActiveOrders')}
           >
-            <Ionicons name="home-outline" size={28} color="#9CA3AF" />
+            <Ionicons name="list-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Active Orders</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('RateTransporter')}
           >
-            <Ionicons name="notifications-outline" size={28} color="#9CA3AF" />
+            <Ionicons name="star-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Ratings</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('ListCargo')}
           >
-            <Ionicons name="archive-outline" size={28} color="#9CA3AF" />
+            <Ionicons name="add-circle-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>List Cargo</Text>
           </TouchableOpacity>
 
           <View style={styles.sidebarDivider} />
 
           <TouchableOpacity
-            style={[styles.sidebarIconBtn, styles.sidebarPrimaryBtn]}
-            onPress={() => navigation.navigate('ListCargo')}
-          >
-            <Ionicons name="add-circle" size={28} color="#FFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('ProfileSettings')}
           >
-            <Ionicons name="settings-outline" size={28} color="#9CA3AF" />
+            <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Settings</Text>
           </TouchableOpacity>
         </View>
 
@@ -288,7 +286,8 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             style={styles.logoutIcon}
             onPress={() => dispatch(logout())}
           >
-            <Ionicons name="log-out" size={24} color="#EF4444" />
+            <Ionicons name="log-out" size={20} color="#EF4444" />
+            <Text style={styles.logoutLabel}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -544,7 +543,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
   );
 }
 
-const SIDEBAR_WIDTH = 80;
+const SIDEBAR_WIDTH = 100;
 const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
 const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
 
@@ -581,12 +580,21 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   sidebarIconBtn: {
-    width: 56,
-    height: 56,
+    width: '100%',
+    minHeight: 64,
     borderRadius: 12,
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    paddingVertical: 8,
+    gap: 4,
+  },
+  navLabel: {
+    color: '#93C5FD',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   sidebarPrimaryBtn: {
     backgroundColor: '#10B981',
@@ -603,11 +611,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   logoutIcon: {
-    width: 48,
-    height: 48,
+    width: '100%',
+    minHeight: 56,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'column',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  logoutLabel: {
+    color: '#EF4444',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   mainContent: {
     flex: 1,
