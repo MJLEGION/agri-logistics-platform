@@ -10,6 +10,8 @@ import {
   ScrollView,
   RefreshControl,
   Dimensions,
+  Image,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -286,7 +288,83 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Sidebar */}
+      <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
+        <View style={styles.sidebarHeader}>
+          <Image
+            source={require('../../../assets/images/logos/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
+        <View style={styles.sidebarNav}>
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('AvailableLoads')}
+          >
+            <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Available Loads</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('ActiveTrips')}
+          >
+            <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Active Trips</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('EarningsDashboard')}
+          >
+            <Ionicons name="cash-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Earnings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('TransporterRatings')}
+          >
+            <Ionicons name="star-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Ratings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('TripHistory')}
+          >
+            <Ionicons name="time-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>History</Text>
+          </TouchableOpacity>
+
+          <View style={styles.sidebarDivider} />
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('ProfileSettings')}
+          >
+            <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Settings</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sidebarFooter}>
+          <ThemeToggle />
+          <TouchableOpacity
+            style={styles.logoutIcon}
+            onPress={() => dispatch(logout())}
+          >
+            <Ionicons name="log-out" size={20} color="#EF4444" />
+            <Text style={styles.logoutLabel}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Main Content */}
       <ScrollView
+        style={styles.mainContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
@@ -681,8 +759,87 @@ export default function EnhancedTransporterDashboard({ navigation }: any) {
   );
 }
 
+const SIDEBAR_WIDTH = 100;
+
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  sidebar: {
+    width: SIDEBAR_WIDTH,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: '100%',
+  },
+  sidebarHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+  },
+  sidebarNav: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 20,
+    width: '100%',
+  },
+  sidebarIconBtn: {
+    width: '100%',
+    minHeight: 64,
+    borderRadius: 12,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingVertical: 8,
+    gap: 4,
+  },
+  navLabel: {
+    color: '#93C5FD',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  sidebarDivider: {
+    width: '80%',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 8,
+  },
+  sidebarFooter: {
+    alignItems: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  logoutIcon: {
+    width: '100%',
+    minHeight: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  logoutLabel: {
+    color: '#EF4444',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  mainContent: {
     flex: 1,
   },
   header: {
