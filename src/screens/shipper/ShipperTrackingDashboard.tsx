@@ -23,6 +23,8 @@ import TrackingMapView from './TrackingMapView';
 
 const { width, height } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
+const isMobile = width < 768;
+const isSmallMobile = width < 375;
 
 interface TrackingItem {
   id: string;
@@ -525,12 +527,12 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    flexDirection: isWeb ? 'row' : 'column',
+    flexDirection: isWeb && !isMobile ? 'row' : 'column',
   },
   leftPanel: {
-    width: isWeb ? 400 : '100%',
-    height: isWeb ? '100%' : height * 0.5,
-    borderRightWidth: isWeb ? 1 : 0,
+    width: isWeb && !isMobile ? (width > 1024 ? 400 : 320) : '100%',
+    height: isWeb && !isMobile ? '100%' : (height * 0.4),
+    borderRightWidth: isWeb && !isMobile ? 1 : 0,
     borderRightColor: 'rgba(0,0,0,0.05)',
   },
   searchSection: {
@@ -545,9 +547,9 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   trackingItemCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: isMobile ? 8 : 12,
+    padding: isMobile ? 12 : 16,
+    marginBottom: isMobile ? 8 : 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -648,15 +650,15 @@ const styles = StyleSheet.create({
   },
   rightPanel: {
     flex: 1,
-    gap: 16,
-    padding: isWeb ? 16 : 0,
+    gap: isMobile ? 12 : 16,
+    padding: isWeb && !isMobile ? 16 : isMobile ? 8 : 0,
   },
   mapContainer: {
     flex: 1,
-    borderRadius: isWeb ? 12 : 0,
+    borderRadius: isWeb && !isMobile ? 12 : 0,
     overflow: 'hidden',
     position: 'relative',
-    minHeight: 300,
+    minHeight: isMobile ? 250 : 300,
   },
   map: {
     width: '100%',
@@ -696,8 +698,8 @@ const styles = StyleSheet.create({
     color: '#1F2937',
   },
   detailPanel: {
-    borderRadius: isWeb ? 12 : 0,
-    padding: 16,
+    borderRadius: isWeb && !isMobile ? 12 : 0,
+    padding: isMobile ? 12 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -746,7 +748,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   subscribePanel: {
-    borderRadius: isWeb ? 12 : 0,
+    borderRadius: isWeb && !isMobile ? 12 : 0,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -755,23 +757,23 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   subscribeGradient: {
-    padding: 20,
+    padding: isMobile ? 16 : 20,
   },
   subscribeContent: {
     alignItems: 'center',
   },
   subscribeTitle: {
-    fontSize: 24,
+    fontSize: isMobile ? 20 : 24,
     fontWeight: '700',
     color: '#FFF',
     marginBottom: 8,
   },
   subscribeSubtitle: {
-    fontSize: 13,
+    fontSize: isMobile ? 12 : 13,
     color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 18,
+    marginBottom: isMobile ? 12 : 16,
+    lineHeight: isMobile ? 16 : 18,
   },
   subscribeButton: {
     backgroundColor: '#FFF',

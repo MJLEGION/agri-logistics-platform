@@ -1,6 +1,6 @@
 // src/screens/shipper/MyCargoScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Animated, Pressable, PanResponder } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Animated, Pressable, PanResponder, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -20,6 +20,14 @@ import Divider from '../../components/Divider';
 import { useScreenAnimations } from '../../hooks/useScreenAnimations';
 import { logger } from '../../utils/logger';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
+
+const { width } = Dimensions.get('window');
+const getNumColumns = () => {
+  if (width < 375) return 1; // Small mobile - single column
+  if (width < 768) return 2; // Regular mobile - 2 columns
+  return 2; // Tablets and above - 2 columns
+};
+const NUM_COLUMNS = getNumColumns();
 
 export default function MyCargoScreen({ navigation }: any) {
   const { user } = useAppSelector((state) => state.auth);
@@ -180,8 +188,9 @@ export default function MyCargoScreen({ navigation }: any) {
           data={filteredListings}
           keyExtractor={(item) => item._id || item.id}
           contentContainerStyle={styles.list}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
+          numColumns={NUM_COLUMNS}
+          key={NUM_COLUMNS}
+          columnWrapperStyle={NUM_COLUMNS > 1 ? styles.row : undefined}
           renderItem={({ item, index }) => {
             // Calculate distance and pricing
             const pickupLat = item.location?.latitude || -1.9536;
@@ -450,7 +459,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardWrapper: {
-    width: '45%',
+    width: NUM_COLUMNS === 1 ? '100%' : width < 375 ? '100%' : '48%',
+    marginBottom: NUM_COLUMNS === 1 ? 12 : 0,
   },
   cropHeader: {
     flexDirection: 'row',

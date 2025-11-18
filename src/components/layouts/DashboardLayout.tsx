@@ -17,7 +17,9 @@ import { logout } from '../../store/slices/authSlice';
 
 const { width, height } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
-const SIDEBAR_WIDTH = 80;
+const isMobile = width < 768;
+const isSmallMobile = width < 375;
+const SIDEBAR_WIDTH = isMobile ? (isSmallMobile ? 60 : 70) : 80;
 
 interface SidebarNav {
   icon: string;
@@ -52,6 +54,7 @@ export default function DashboardLayout({
   const { theme } = useTheme();
   const dispatch = useAppDispatch();
   const [expandedNav, setExpandedNav] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(isMobile);
 
   const handleNavigation = (nav: SidebarNav) => {
     if (nav.screen && navigation) {
@@ -62,11 +65,15 @@ export default function DashboardLayout({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, width: '100%', height: '100%' }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Sidebar */}
-      <View style={[styles.sidebar, { backgroundColor: sidebarColor }]}>
+      <View style={[
+        styles.sidebar,
+        { backgroundColor: sidebarColor, width: SIDEBAR_WIDTH },
+        isMobile && styles.sidebarMobile
+      ]}>
         <TouchableOpacity
-          style={styles.sidebarHeader}
+          style={[styles.sidebarHeader, isMobile && styles.sidebarHeaderMobile]}
           onPress={() => {
             if (navigation?.canGoBack?.()) {
               navigation.goBack();
@@ -78,10 +85,10 @@ export default function DashboardLayout({
         >
           <Image
             source={require('../../../assets/images/logos/logo.png')}
-            style={styles.logo}
+            style={[styles.logo, isMobile && styles.logoMobile]}
             resizeMode="contain"
           />
-          {isWeb && (
+          {!isMobile && isWeb && (
             <View style={[styles.roleBadge, { backgroundColor: accentColor }]}>
               <Ionicons name={userRole === 'shipper' ? 'cube' : 'car'} size={12} color="#FFF" />
             </View>
@@ -92,43 +99,56 @@ export default function DashboardLayout({
           {sidebarNav.map((nav, idx) => (
             <TouchableOpacity
               key={idx}
-              style={styles.sidebarIconBtn}
+              style={[styles.sidebarIconBtn, isMobile && styles.sidebarIconBtnMobile]}
               onPress={() => handleNavigation(nav)}
               activeOpacity={0.7}
             >
-              <Ionicons name={nav.icon as any} size={28} color="#93C5FD" />
+              <Ionicons
+                name={nav.icon as any}
+                size={isMobile ? (isSmallMobile ? 20 : 24) : 28}
+                color="#93C5FD"
+              />
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.sidebarFooter}>
-          <ThemeToggle />
+          {!isSmallMobile && <ThemeToggle />}
           <TouchableOpacity
-            style={styles.logoutIcon}
+            style={[styles.logoutIcon, isMobile && styles.logoutIconMobile]}
             onPress={() => dispatch(logout())}
             activeOpacity={0.7}
           >
-            <Ionicons name="log-out" size={24} color="#EF4444" />
+            <Ionicons
+              name="log-out"
+              size={isMobile ? 20 : 24}
+              color="#EF4444"
+            />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Main Content */}
-      <ImageBackground
-        source={backgroundImage}
-        style={[styles.mainContent, { flex: 1, width: width - SIDEBAR_WIDTH }]}
-        imageStyle={styles.backgroundImage}
-      >
-        <View style={[styles.backgroundOverlay, { backgroundColor: theme.background + 'E6' }]} />
-        
-        <ScrollView 
-          style={styles.contentScroll}
-          contentContainerStyle={contentPadding ? styles.contentPadding : undefined}
-          showsVerticalScrollIndicator={true}
+      <View style={styles.mainContent}>
+        <ImageBackground
+          source={backgroundImage}
+          style={styles.backgroundContainer}
+          imageStyle={styles.backgroundImage}
         >
-          {children}
-        </ScrollView>
-      </ImageBackground>
+          <View style={[styles.backgroundOverlay, { backgroundColor: theme.background + 'E6' }]} />
+
+          <ScrollView
+            style={styles.contentScroll}
+            contentContainerStyle={[
+              contentPadding && styles.contentPadding,
+              isMobile && contentPadding && styles.contentPaddingMobile
+            ]}
+            showsVerticalScrollIndicator={true}
+          >
+            {children}
+          </ScrollView>
+        </ImageBackground>
+      </View>
     </View>
   );
 }
@@ -140,7 +160,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   sidebar: {
-    width: SIDEBAR_WIDTH,
     paddingTop: Platform.OS === 'ios' ? 60 : 20,
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -150,6 +169,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: '100%',
   },
+  sidebarMobile: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
   sidebarHeader: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -158,10 +182,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     transition: 'all 0.2s ease',
   },
+  sidebarHeaderMobile: {
+    marginBottom: 12,
+    padding: 4,
+  },
   logo: {
     width: 50,
     height: 50,
     borderRadius: 12,
+  },
+  logoMobile: {
+    width: isSmallMobile ? 35 : 40,
+    height: isSmallMobile ? 35 : 40,
+    borderRadius: 8,
   },
   roleBadge: {
     marginTop: 8,
@@ -184,6 +217,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
+  sidebarIconBtnMobile: {
+    width: isSmallMobile ? 40 : 48,
+    height: isSmallMobile ? 40 : 48,
+    borderRadius: 8,
+  },
   sidebarFooter: {
     alignItems: 'center',
     gap: 12,
@@ -195,8 +233,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logoutIconMobile: {
+    width: isSmallMobile ? 36 : 40,
+    height: isSmallMobile ? 36 : 40,
+    borderRadius: 8,
+  },
   mainContent: {
     flex: 1,
+  },
+  backgroundContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   backgroundImage: {
     opacity: 0.35,
@@ -213,5 +261,9 @@ const styles = StyleSheet.create({
   contentPadding: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  contentPaddingMobile: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
 });
