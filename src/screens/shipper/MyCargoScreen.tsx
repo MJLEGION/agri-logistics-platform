@@ -22,10 +22,10 @@ import { logger } from '../../utils/logger';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 const { width } = Dimensions.get('window');
+const isMobileView = width < 768;
 const getNumColumns = () => {
-  if (width < 375) return 1; // Small mobile - single column
-  if (width < 768) return 2; // Regular mobile - 2 columns
-  return 2; // Tablets and above - 2 columns
+  if (width < 768) return 1; // All mobile devices - single column for better readability
+  return 2; // Tablets and desktop - 2 columns
 };
 const NUM_COLUMNS = getNumColumns();
 
@@ -450,8 +450,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   list: {
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingHorizontal: isMobileView ? 12 : 16,
+    paddingVertical: isMobileView ? 12 : 15,
+    paddingBottom: isMobileView ? 24 : 15,
   },
   row: {
     justifyContent: 'flex-start',
@@ -459,8 +460,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardWrapper: {
-    width: NUM_COLUMNS === 1 ? '100%' : width < 375 ? '100%' : '48%',
-    marginBottom: NUM_COLUMNS === 1 ? 12 : 0,
+    width: NUM_COLUMNS === 1 ? '100%' : '48%',
+    marginBottom: isMobileView ? 16 : (NUM_COLUMNS === 1 ? 12 : 0),
   },
   cropHeader: {
     flexDirection: 'row',
