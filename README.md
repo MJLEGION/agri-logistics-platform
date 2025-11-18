@@ -603,24 +603,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Michael George**
 
 - GitHub: MJLEGION (https://github.com/MJLEGION/agri-logistics-platform.git)
-   Backend (https://github.com/MJLEGION/agri-logistics-backend.git)
-- Email: m.george@alustudent.com
+-  Backend (https://github.com/MJLEGION/agri-logistics-backend.git)
+- Email:( m.george@alustudent.com)
+-  Production link: https://www.agrilogistics.online/ 
+-  video link : https://photos.app.goo.gl/sJvqZ59FbUcx3WEj8
+  
 
----
-
-## Acknowledgments
-
-- Built with [Expo](https://expo.dev/)
-- UI components from [React Native Paper](https://reactnativepaper.com/)
-- Icons from [Expo Vector Icons](https://icons.expo.fyi/)
-- Inspired by the need to digitize Rwanda's agricultural supply chain
-
----
-
-<div align="center">
-
-**Made with love for Rwanda's Agricultural Community**
-
-Star this repo if you find it helpful!
-
-</div>
