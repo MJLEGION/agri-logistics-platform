@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Dimensions,
   Platform,
@@ -66,70 +67,113 @@ export default function DashboardLayout({
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Sidebar */}
-      <View style={[
-        styles.sidebar,
-        { backgroundColor: sidebarColor, width: SIDEBAR_WIDTH },
-        isMobile && styles.sidebarMobile
-      ]}>
-        <TouchableOpacity
-          style={[styles.sidebarHeader, isMobile && styles.sidebarHeaderMobile]}
-          onPress={() => {
-            if (navigation?.canGoBack?.()) {
-              navigation.goBack();
-            } else if (navigation) {
-              navigation.navigate('Home');
-            }
-          }}
-          activeOpacity={0.7}
-        >
+      {/* Mobile Header with Hamburger Menu */}
+      {isMobile && (
+        <View style={[styles.mobileHeader, { backgroundColor: sidebarColor }]}>
+          <TouchableOpacity
+            onPress={() => setSidebarCollapsed(!sidebarCollapsed)}
+            style={styles.hamburgerButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="menu" size={24} color="#FFF" />
+          </TouchableOpacity>
           <Image
             source={require('../../../assets/images/logos/logo.png')}
-            style={[styles.logo, isMobile && styles.logoMobile]}
+            style={styles.mobileHeaderLogo}
             resizeMode="contain"
           />
-          {!isMobile && isWeb && (
-            <View style={[styles.roleBadge, { backgroundColor: accentColor }]}>
-              <Ionicons name={userRole === 'shipper' ? 'cube' : 'car'} size={12} color="#FFF" />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.sidebarNav}>
-          {sidebarNav.map((nav, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[styles.sidebarIconBtn, isMobile && styles.sidebarIconBtnMobile]}
-              onPress={() => handleNavigation(nav)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={nav.icon as any}
-                size={isMobile ? (isSmallMobile ? 20 : 24) : 28}
-                color="#93C5FD"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.sidebarFooter}>
-          {!isSmallMobile && <ThemeToggle />}
           <TouchableOpacity
-            style={[styles.logoutIcon, isMobile && styles.logoutIconMobile]}
+            style={styles.mobileHeaderLogout}
             onPress={() => dispatch(logout())}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name="log-out"
-              size={isMobile ? 20 : 24}
-              color="#EF4444"
-            />
+            <Ionicons name="log-out" size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
-      </View>
+      )}
+
+      {/* Sidebar - Hidden on mobile by default, overlay when shown */}
+      {(!isMobile || !sidebarCollapsed) && (
+        <>
+          {isMobile && !sidebarCollapsed && (
+            <TouchableOpacity
+              style={styles.sidebarOverlay}
+              onPress={() => setSidebarCollapsed(true)}
+              activeOpacity={1}
+            />
+          )}
+          <View style={[
+            styles.sidebar,
+            { backgroundColor: sidebarColor },
+            isMobile && styles.sidebarMobile,
+            isMobile && !sidebarCollapsed && styles.sidebarMobileOpen
+          ]}>
+            {!isMobile && (
+              <TouchableOpacity
+                style={styles.sidebarHeader}
+                onPress={() => {
+                  if (navigation?.canGoBack?.()) {
+                    navigation.goBack();
+                  } else if (navigation) {
+                    navigation.navigate('Home');
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Image
+                  source={require('../../../assets/images/logos/logo.png')}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+                {isWeb && (
+                  <View style={[styles.roleBadge, { backgroundColor: accentColor }]}>
+                    <Ionicons name={userRole === 'shipper' ? 'cube' : 'car'} size={12} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+
+            <View style={styles.sidebarNav}>
+              {sidebarNav.map((nav, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.sidebarIconBtn, isMobile && styles.sidebarIconBtnMobile]}
+                  onPress={() => {
+                    handleNavigation(nav);
+                    if (isMobile) setSidebarCollapsed(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={nav.icon as any}
+                    size={isMobile ? 24 : 28}
+                    color="#93C5FD"
+                  />
+                  {isMobile && (
+                    <Text style={styles.navLabel}>{nav.label}</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {!isMobile && (
+              <View style={styles.sidebarFooter}>
+                <ThemeToggle />
+                <TouchableOpacity
+                  style={styles.logoutIcon}
+                  onPress={() => dispatch(logout())}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="log-out" size={24} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </>
+      )}
 
       {/* Main Content */}
-      <View style={styles.mainContent}>
+      <View style={[styles.mainContent, isMobile && styles.mainContentMobile]}>
         <ImageBackground
           source={backgroundImage}
           style={styles.backgroundContainer}
@@ -156,10 +200,38 @@ export default function DashboardLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: isMobile ? 'column' : 'row',
     width: '100%',
   },
+  mobileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'ios' ? 50 : 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+    zIndex: 100,
+  },
+  hamburgerButton: {
+    padding: 8,
+  },
+  mobileHeaderLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  mobileHeaderLogout: {
+    padding: 8,
+  },
+  sidebarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 998,
+  },
   sidebar: {
+    width: SIDEBAR_WIDTH,
     paddingTop: Platform.OS === 'ios' ? 60 : 20,
     paddingVertical: 12,
     paddingHorizontal: 8,
@@ -170,9 +242,22 @@ const styles = StyleSheet.create({
     minHeight: '100%',
   },
   sidebarMobile: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 12,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    position: 'absolute',
+    left: -280,
+    top: 0,
+    bottom: 0,
+    width: 250,
+    zIndex: 999,
+    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 16,
+  },
+  sidebarMobileOpen: {
+    left: 0,
   },
   sidebarHeader: {
     alignItems: 'center',
@@ -180,21 +265,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 8,
     borderRadius: 16,
-    transition: 'all 0.2s ease',
-  },
-  sidebarHeaderMobile: {
-    marginBottom: 12,
-    padding: 4,
   },
   logo: {
     width: 50,
     height: 50,
     borderRadius: 12,
-  },
-  logoMobile: {
-    width: isSmallMobile ? 35 : 40,
-    height: isSmallMobile ? 35 : 40,
-    borderRadius: 8,
   },
   roleBadge: {
     marginTop: 8,
@@ -205,22 +280,29 @@ const styles = StyleSheet.create({
   sidebarNav: {
     flex: 1,
     justifyContent: 'flex-start',
-    alignItems: 'center',
+    alignItems: isMobile ? 'flex-start' : 'center',
     paddingVertical: 12,
-    gap: 20,
+    gap: isMobile ? 8 : 20,
+    width: '100%',
   },
   sidebarIconBtn: {
-    width: 56,
+    width: isMobile ? '100%' : 56,
     height: 56,
     borderRadius: 12,
-    justifyContent: 'center',
+    flexDirection: isMobile ? 'row' : 'column',
+    justifyContent: isMobile ? 'flex-start' : 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    paddingHorizontal: isMobile ? 16 : 0,
+    gap: isMobile ? 12 : 0,
   },
   sidebarIconBtnMobile: {
-    width: isSmallMobile ? 40 : 48,
-    height: isSmallMobile ? 40 : 48,
-    borderRadius: 8,
+    height: 48,
+  },
+  navLabel: {
+    color: '#93C5FD',
+    fontSize: 16,
+    fontWeight: '500',
   },
   sidebarFooter: {
     alignItems: 'center',
@@ -233,13 +315,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoutIconMobile: {
-    width: isSmallMobile ? 36 : 40,
-    height: isSmallMobile ? 36 : 40,
-    borderRadius: 8,
-  },
   mainContent: {
     flex: 1,
+  },
+  mainContentMobile: {
+    width: '100%',
   },
   backgroundContainer: {
     flex: 1,
