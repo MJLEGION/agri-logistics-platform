@@ -274,6 +274,14 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
+            onPress={() => navigation.navigate('TransporterRatings')}
+          >
+            <Ionicons name="star-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Ratings</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('TripHistory')}
           >
             <Ionicons name="time-outline" size={24} color="#93C5FD" />
