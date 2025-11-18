@@ -252,44 +252,42 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('AvailableLoads')}
           >
-            <Ionicons name="briefcase-outline" size={28} color="#93C5FD" />
+            <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Available Loads</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('ActiveTrips')}
           >
-            <Ionicons name="navigate-outline" size={28} color="#93C5FD" />
+            <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Active Trips</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('EarningsDashboard')}
           >
-            <Ionicons name="cash-outline" size={28} color="#93C5FD" />
+            <Ionicons name="cash-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Earnings</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('TripHistory')}
           >
-            <Ionicons name="time-outline" size={28} color="#93C5FD" />
+            <Ionicons name="time-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>History</Text>
           </TouchableOpacity>
 
           <View style={styles.sidebarDivider} />
 
           <TouchableOpacity
-            style={[styles.sidebarIconBtn, styles.sidebarPrimaryBtn]}
-            onPress={() => navigation.navigate('AvailableLoads')}
-          >
-            <Ionicons name="add-circle" size={28} color="#FFF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={styles.sidebarIconBtn}
             onPress={() => navigation.navigate('ProfileSettings')}
           >
-            <Ionicons name="settings-outline" size={28} color="#93C5FD" />
+            <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+            <Text style={styles.navLabel}>Settings</Text>
           </TouchableOpacity>
         </View>
 
@@ -299,7 +297,8 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             style={styles.logoutIcon}
             onPress={() => dispatch(logout())}
           >
-            <Ionicons name="log-out" size={24} color="#EF4444" />
+            <Ionicons name="log-out" size={20} color="#EF4444" />
+            <Text style={styles.logoutLabel}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -555,7 +554,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   );
 }
 
-const SIDEBAR_WIDTH = 80;
+const SIDEBAR_WIDTH = 100;
 const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
 const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
 
@@ -592,12 +591,21 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   sidebarIconBtn: {
-    width: 56,
-    height: 56,
+    width: '100%',
+    minHeight: 64,
     borderRadius: 12,
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
+    paddingVertical: 8,
+    gap: 4,
+  },
+  navLabel: {
+    color: '#93C5FD',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   sidebarPrimaryBtn: {
     backgroundColor: '#3B82F6',
@@ -627,11 +635,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   logoutIcon: {
-    width: 48,
-    height: 48,
+    width: '100%',
+    minHeight: 56,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'column',
+    gap: 4,
+    paddingVertical: 8,
+  },
+  logoutLabel: {
+    color: '#EF4444',
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   mainContent: {
     flex: 1,
