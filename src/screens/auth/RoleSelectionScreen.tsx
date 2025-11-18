@@ -25,6 +25,7 @@ import Button from '../../components/Button';
 import Divider from '../../components/Divider';
 
 const { width, height } = Dimensions.get('window');
+const isMobile = width < 768;
 
 export default function RoleSelectionScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -498,11 +499,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingTop: isMobile ? 50 : 60,
+    paddingBottom: isMobile ? 30 : 40,
+    paddingHorizontal: isMobile ? 16 : 24,
+    borderBottomLeftRadius: isMobile ? 24 : 32,
+    borderBottomRightRadius: isMobile ? 24 : 32,
   },
   headerTop: {
     flexDirection: 'row',
@@ -540,17 +541,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   rolesContainer: {
-    flexDirection: 'row',
-    padding: 24,
-    gap: 16,
-    maxWidth: 900,
+    flexDirection: isMobile ? 'column' : 'row',
+    padding: isMobile ? 16 : 24,
+    gap: isMobile ? 20 : 16,
+    maxWidth: isMobile ? '100%' : 900,
     width: '100%',
     alignSelf: 'center',
     justifyContent: 'center',
   },
   roleCardWrapper: {
     flex: 1,
-    maxWidth: 400,
+    maxWidth: isMobile ? '100%' : 400,
+    width: isMobile ? '100%' : 'auto',
   },
   roleCard: {
     padding: 0,
@@ -571,7 +573,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   roleContent: {
-    padding: 16,
+    padding: isMobile ? 20 : 16,
   },
   roleTitle: {
     fontSize: 20,
@@ -602,7 +604,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: isMobile ? 14 : 12,
     borderRadius: 10,
     gap: 6,
   },
@@ -616,7 +618,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 24,
+    paddingHorizontal: isMobile ? 16 : 24,
     marginTop: 8,
     maxWidth: 500,
     alignSelf: 'center',
@@ -630,7 +632,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footer: {
-    padding: 24,
+    padding: isMobile ? 16 : 24,
     paddingTop: 16,
     alignItems: 'center',
     maxWidth: 500,
