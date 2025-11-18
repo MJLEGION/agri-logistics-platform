@@ -15,7 +15,8 @@ import addressReducer from './slices/addressSlice';
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth', 'cargo', 'address'],
+  whitelist: ['auth'], // Only persist auth - user data should be fetched fresh on login
+  blacklist: ['cargo', 'orders', 'transporters', 'trips', 'matching'], // Never persist user-specific data
 };
 
 const rootReducer = combineReducers({

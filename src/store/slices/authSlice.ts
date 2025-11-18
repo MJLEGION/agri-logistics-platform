@@ -14,8 +14,11 @@ interface AuthState {
 
 export const register = createAsyncThunk<any, RegisterData, { rejectValue: string }>(
   'auth/register',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, dispatch }) => {
     try {
+      // Clear all old user data before registering
+      dispatch(clearCargo());
+      dispatch(clearOrders());
       return await authService.register(userData);
     } catch (error: any) {
       return rejectWithValue(error.message || error.response?.data?.message || 'Registration failed');
@@ -25,8 +28,11 @@ export const register = createAsyncThunk<any, RegisterData, { rejectValue: strin
 
 export const login = createAsyncThunk<any, LoginCredentials, { rejectValue: string }>(
   'auth/login',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue, dispatch }) => {
     try {
+      // Clear all old user data before logging in
+      dispatch(clearCargo());
+      dispatch(clearOrders());
       return await authService.login(credentials);
     } catch (error: any) {
       return rejectWithValue(error.message || error.response?.data?.message || 'Login failed');
