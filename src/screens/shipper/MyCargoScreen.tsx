@@ -445,8 +445,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   row: {
-    justifyContent: 'space-evenly',
+    justifyContent: 'flex-start',
     marginBottom: 12,
+    gap: 12,
   },
   cardWrapper: {
     width: '45%',

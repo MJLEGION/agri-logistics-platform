@@ -65,7 +65,17 @@ export default function DashboardLayout({
     <View style={[styles.container, { backgroundColor: theme.background, width: '100%', height: '100%' }]}>
       {/* Sidebar */}
       <View style={[styles.sidebar, { backgroundColor: sidebarColor }]}>
-        <View style={styles.sidebarHeader}>
+        <TouchableOpacity
+          style={styles.sidebarHeader}
+          onPress={() => {
+            if (navigation?.canGoBack?.()) {
+              navigation.goBack();
+            } else if (navigation) {
+              navigation.navigate('Home');
+            }
+          }}
+          activeOpacity={0.7}
+        >
           <Image
             source={require('../../../assets/images/logos/logo.png')}
             style={styles.logo}
@@ -76,7 +86,7 @@ export default function DashboardLayout({
               <Ionicons name={userRole === 'shipper' ? 'cube' : 'car'} size={12} color="#FFF" />
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.sidebarNav}>
           {sidebarNav.map((nav, idx) => (
@@ -144,6 +154,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    padding: 8,
+    borderRadius: 16,
+    transition: 'all 0.2s ease',
   },
   logo: {
     width: 50,
@@ -184,7 +197,6 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    width: '100%',
   },
   backgroundImage: {
     opacity: 0.35,

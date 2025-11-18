@@ -11,6 +11,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { validateTextField, validatePositiveNumber, validatePrice, validateFutureDate } from '../../utils/formValidation';
 import { SavedAddress } from '../../services/addressService';
 import { showToast } from '../../services/toastService';
+import { ResponsiveValues } from '../../utils/responsiveStyles';
+import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 // Simple Calendar Component for Web
 const Calendar = ({ date, onChange, theme }: any) => {
@@ -259,22 +261,24 @@ export default function ListCargoScreen({ navigation }: any) {
     }
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView>
-        <View style={[styles.header, { backgroundColor: theme.primary }]}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            accessible={true}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            accessibilityHint="Navigate to previous screen"
-          >
-            <Text style={[styles.backButton, { color: theme.card }]}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: theme.card }]}>List New Cargo</Text>
-        </View>
+  const sidebarNav = [
+    { icon: 'cube-outline', label: 'My Cargo', screen: 'MyCargo' },
+    { icon: 'list-outline', label: 'Active Orders', screen: 'ShipperActiveOrders' },
+    { icon: 'add-circle-outline', label: 'List Cargo', screen: 'ListCargo' },
+  ];
 
+  return (
+    <DashboardLayout
+      title="List New Cargo"
+      sidebarColor="#0F172A"
+      accentColor="#10B981"
+      backgroundImage={require('../../../assets/images/backimages/shipper.jpg')}
+      sidebarNav={sidebarNav}
+      userRole="shipper"
+      navigation={navigation}
+      contentPadding={false}
+    >
+      <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
         <View style={styles.form}>
           <Animated.View style={animations.getFloatingCardStyle(0)}>
             <Text style={[styles.label, { color: theme.text }]}>Cargo Name *</Text>
@@ -586,7 +590,7 @@ export default function ListCargoScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </DashboardLayout>
   );
 }
 
@@ -594,66 +598,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    paddingTop: 50,
-  },
-  backButton: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
   form: {
-    padding: 20,
+    padding: ResponsiveValues.paddingMedium,
   },
   label: {
-    fontSize: 16,
+    fontSize: ResponsiveValues.fontMedium,
     fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 15,
+    marginBottom: ResponsiveValues.marginSmall,
+    marginTop: ResponsiveValues.marginLarge,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
+    borderRadius: ResponsiveValues.radiusMedium,
+    padding: ResponsiveValues.inputPadding,
+    fontSize: ResponsiveValues.fontMedium,
+    height: ResponsiveValues.inputHeight,
   },
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: ResponsiveValues.gapMedium,
   },
   quantityInput: {
     flex: 1,
   },
   unitSelector: {
     flexDirection: 'row',
-    gap: 5,
+    gap: ResponsiveValues.gapSmall,
   },
   unitButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: ResponsiveValues.paddingMedium,
+    paddingVertical: ResponsiveValues.paddingSmall,
+    borderRadius: ResponsiveValues.radiusMedium,
     borderWidth: 1,
+    minHeight: ResponsiveValues.inputHeight,
+    justifyContent: 'center',
   },
   unitText: {
     fontWeight: '600',
+    fontSize: ResponsiveValues.fontSmall,
   },
   hint: {
-    fontSize: 12,
-    marginTop: 10,
+    fontSize: ResponsiveValues.fontXSmall,
+    marginTop: ResponsiveValues.marginMedium,
   },
   submitButton: {
-    padding: 16,
-    borderRadius: 8,
+    padding: ResponsiveValues.paddingMedium,
+    borderRadius: ResponsiveValues.radiusMedium,
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: ResponsiveValues.marginXLarge,
+    marginBottom: ResponsiveValues.marginLarge,
+    height: ResponsiveValues.buttonHeightLarge,
+    justifyContent: 'center',
   },
   submitText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: ResponsiveValues.fontMedium,
     fontWeight: 'bold',
   },
   modalOverlay: {
@@ -661,12 +660,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: ResponsiveValues.paddingMedium,
   },
   modalContent: {
-    borderRadius: 12,
-    padding: 20,
-    width: '80%',
-    maxWidth: 400,
+    borderRadius: ResponsiveValues.radiusLarge,
+    padding: ResponsiveValues.paddingMedium,
+    width: '100%',
+    maxWidth: ResponsiveValues.modalMaxWidth,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -674,46 +674,48 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: ResponsiveValues.fontLarge,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: ResponsiveValues.marginMedium,
     textAlign: 'center',
   },
   datePickerContainer: {
-    marginVertical: 15,
+    marginVertical: ResponsiveValues.marginMedium,
     alignItems: 'center',
     width: '100%',
   },
   calendar: {
-    padding: 10,
+    padding: ResponsiveValues.paddingSmall,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: ResponsiveValues.radiusMedium,
   },
   calendarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
-    paddingHorizontal: 5,
+    marginBottom: ResponsiveValues.marginMedium,
+    paddingHorizontal: ResponsiveValues.paddingSmall,
   },
   monthButton: {
-    padding: 8,
-    width: 36,
+    padding: ResponsiveValues.paddingSmall,
+    width: 40,
+    height: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   monthYear: {
-    fontSize: 16,
+    fontSize: ResponsiveValues.fontMedium,
     fontWeight: 'bold',
   },
   weekDays: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: ResponsiveValues.marginMedium,
   },
   weekDay: {
     flex: 1,
     textAlign: 'center',
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: ResponsiveValues.fontXSmall,
   },
   daysGrid: {
     flexDirection: 'row',
@@ -724,96 +726,104 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4,
-    marginBottom: 4,
+    borderRadius: ResponsiveValues.radiusSmall,
+    marginBottom: ResponsiveValues.marginSmall,
   },
   dayText: {
-    fontSize: 14,
+    fontSize: ResponsiveValues.fontSmall,
     fontWeight: '500',
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: ResponsiveValues.gapMedium,
+    marginTop: ResponsiveValues.marginLarge,
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: ResponsiveValues.paddingSmall,
+    borderRadius: ResponsiveValues.radiusMedium,
     alignItems: 'center',
     borderWidth: 1,
+    height: ResponsiveValues.buttonHeightMedium,
+    justifyContent: 'center',
   },
   modalButtonText: {
-    fontSize: 16,
+    fontSize: ResponsiveValues.fontMedium,
     fontWeight: '600',
   },
   selectedAddressBox: {
     borderWidth: 2,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: ResponsiveValues.radiusMedium,
+    padding: ResponsiveValues.paddingSmall,
+    marginBottom: ResponsiveValues.marginSmall,
   },
   selectedAddressContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: ResponsiveValues.gapMedium,
   },
   selectedAddressLabel: {
-    fontSize: 14,
+    fontSize: ResponsiveValues.fontSmall,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: ResponsiveValues.marginXSmall,
   },
   selectedAddressText: {
-    fontSize: 12,
+    fontSize: ResponsiveValues.fontXSmall,
   },
   selectAddressButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: ResponsiveValues.gapMedium,
   },
   selectAddressText: {
-    fontSize: 14,
+    fontSize: ResponsiveValues.fontSmall,
   },
   changeButton: {
-    marginTop: 8,
-    padding: 10,
-    borderRadius: 6,
+    marginTop: ResponsiveValues.marginSmall,
+    paddingVertical: ResponsiveValues.paddingSmall,
+    paddingHorizontal: ResponsiveValues.paddingMedium,
+    borderRadius: ResponsiveValues.radiusSmall,
     alignItems: 'center',
+    minHeight: ResponsiveValues.buttonHeightSmall,
+    justifyContent: 'center',
   },
   changeButtonText: {
-    fontSize: 13,
+    fontSize: ResponsiveValues.fontXSmall,
     fontWeight: '600',
   },
   emptyAddresses: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: ResponsiveValues.paddingLarge,
   },
   emptyText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: ResponsiveValues.marginMedium,
+    fontSize: ResponsiveValues.fontSmall,
   },
   addAddressButton: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
+    marginTop: ResponsiveValues.marginMedium,
+    paddingHorizontal: ResponsiveValues.paddingMedium,
+    paddingVertical: ResponsiveValues.paddingSmall,
+    borderRadius: ResponsiveValues.radiusSmall,
+    minHeight: ResponsiveValues.buttonHeightMedium,
+    justifyContent: 'center',
   },
   addressOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
+    gap: ResponsiveValues.gapMedium,
+    paddingVertical: ResponsiveValues.paddingSmall,
+    paddingHorizontal: ResponsiveValues.paddingMedium,
     borderBottomWidth: 1,
     borderColor: '#f0f0f0',
   },
   addressOptionLabel: {
-    fontSize: 14,
+    fontSize: ResponsiveValues.fontSmall,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: ResponsiveValues.marginXSmall,
   },
   addressOptionText: {
-    fontSize: 12,
+    fontSize: ResponsiveValues.fontXSmall,
   },
 });

@@ -1,4 +1,4 @@
-# 🌾 Agri-Logistics Platform
+# Agri-Logistics Platform
 
 <div align="center">
 
@@ -13,71 +13,71 @@
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Features](#-features)
-- [Tech Stack](#️-tech-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Environment Setup](#environment-setup)
   - [Running the Application](#running-the-application)
-- [User Roles & Workflows](#-user-roles--workflows)
-- [Screenshots](#-screenshots)
-- [Development](#-development)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [User Roles & Workflows](#user-roles--workflows)
+- [Screenshots](#screenshots)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## 🌍 Overview
+## Overview
 
 The **Agri-Logistics Platform** is a comprehensive mobile application designed to digitize and streamline the agricultural supply chain in Rwanda. By connecting **farmers**, **buyers**, and **transporters** on a single platform, we aim to:
 
-- ✅ Reduce post-harvest losses
-- ✅ Improve market access for smallholder farmers
-- ✅ Optimize logistics and transportation
-- ✅ Increase transparency in agricultural trade
-- ✅ Enable real-time tracking and communication
+- Reduce post-harvest losses
+- Improve market access for smallholder farmers
+- Optimize logistics and transportation
+- Increase transparency in agricultural trade
+- Enable real-time tracking and communication
 
 This platform empowers farmers to list their produce, buyers to discover and order crops, and transporters to manage deliveries efficiently—all through an intuitive, mobile-first interface.
 
 ---
 
-## ✨ Features
+## Features
 
-### 🔐 **Authentication & Role Management**
+### **Authentication & Role Management**
 
 - Secure user registration and login
 - Three distinct user roles: **Farmer**, **Buyer**, **Transporter**
 - Role-based navigation and access control
 - Seamless role switching for testing and multi-role users
 
-### 👨‍🌾 **Farmer Features**
+### **Farmer Features**
 
 - **List Crops**: Add produce with details (name, quantity, unit, price, harvest date)
 - **Manage Listings**: Edit or delete crop listings
 - **View Orders**: Track active orders and order history
 - **Dashboard**: Overview of listed crops and pending orders
 
-### 🛒 **Buyer Features**
+### **Buyer Features**
 
 - **Browse Crops**: Discover available produce with filtering options
 - **Place Orders**: Submit orders with quantity and delivery details
 - **Order Tracking**: Monitor order status (pending, accepted, in-progress, completed)
 - **Dashboard**: Quick access to recent listings and order summary
 
-### 🚚 **Transporter Features**
+### **Transporter Features**
 
 - **Available Loads**: View and accept delivery requests
 - **Active Trips**: Manage ongoing deliveries
 - **Trip Tracking**: Update delivery status in real-time
 - **Dashboard**: Overview of available and active trips
 
-### 🎨 **UI/UX Highlights**
+### **UI/UX Highlights**
 
 - Vibrant agricultural theme with green and earth tones
 - Material Design components via React Native Paper
@@ -87,7 +87,7 @@ This platform empowers farmers to list their produce, buyers to discover and ord
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### **Frontend**
 
@@ -125,7 +125,7 @@ This platform empowers farmers to list their produce, buyers to discover and ord
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 agri-logistics-platform/
@@ -176,7 +176,7 @@ agri-logistics-platform/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -278,7 +278,7 @@ npm run web
 
 ---
 
-## 🖥️ Backend Setup
+## Backend Setup
 
 This application requires a Node.js + Express + MongoDB backend to function properly.
 
@@ -338,7 +338,7 @@ After seeding, you can use these credentials to test the application:
 
 ---
 
-## 📦 Building for Production
+## Building for Production
 
 ### Build Android APK
 
@@ -386,7 +386,7 @@ expo build:ios
 
 ---
 
-## 🧪 Testing Guide
+## Testing Guide
 
 ### Manual Testing Workflow
 
@@ -433,9 +433,18 @@ expo build:ios
 
 ---
 
-## 👥 User Roles & Workflows
 
-### 🌾 **Farmer Workflow**
+
+```
+[Login Screen]  [Role Selection]  [Farmer Dashboard]
+[Browse Crops]  [Place Order]     [Active Trips]
+```
+
+---
+
+## User Roles & Workflows
+
+### **Farmer Workflow**
 
 1. **Register/Login** as a Farmer
 2. **Navigate to "List Crop"** to add new produce
@@ -445,7 +454,7 @@ expo build:ios
 6. **Check "Active Orders"** to see buyer orders
 7. **Track order status** through completion
 
-### 🛒 **Buyer Workflow**
+### **Buyer Workflow**
 
 1. **Register/Login** as a Buyer
 2. **Browse available crops** on the home screen
@@ -455,7 +464,7 @@ expo build:ios
 6. **Track orders** in "My Orders" screen
 7. **View order history** and status updates
 
-### 🚚 **Transporter Workflow**
+### **Transporter Workflow**
 
 1. **Register/Login** as a Transporter
 2. **View "Available Loads"** for delivery requests
@@ -466,18 +475,7 @@ expo build:ios
 
 ---
 
-## 📱 Screenshots
-
-> **Note**: Add screenshots of your app here when creating your demo video
-
-```
-[Login Screen]  [Role Selection]  [Farmer Dashboard]
-[Browse Crops]  [Place Order]     [Active Trips]
-```
-
----
-
-## 💻 Development
+## Development
 
 ### **TypeScript Configuration**
 
@@ -490,13 +488,13 @@ The project uses strict TypeScript settings for type safety. Key configurations:
 ### **Redux Store Pattern**
 
 ```typescript
-// ✅ Correct: Use typed hooks
+// Correct: Use typed hooks
 import { useAppDispatch, useAppSelector } from "../../store";
 
 const dispatch = useAppDispatch();
 const { crops } = useAppSelector((state) => state.crops);
 
-// ❌ Incorrect: Don't use raw Redux hooks
+// Incorrect: Don't use raw Redux hooks
 import { useDispatch, useSelector } from "react-redux";
 ```
 
@@ -519,7 +517,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### **Common Issues**
 
@@ -578,49 +576,11 @@ npm run ios
 
 ---
 
-## 🎥 Demo Video Tips
 
-When creating your demo video, consider showcasing:
-
-1. **App Launch & Authentication**
-
-   - Show the landing/role selection screen
-   - Demonstrate registration and login
-
-2. **Farmer Features**
-
-   - List a new crop
-   - Edit an existing listing
-   - View active orders
-
-3. **Buyer Features**
-
-   - Browse available crops
-   - Place an order
-   - Track order status
-
-4. **Transporter Features**
-
-   - View available loads
-   - Accept a delivery
-   - Update trip status
-
-5. **UI/UX Highlights**
-
-   - Smooth navigation
-   - Responsive design
-   - Theme consistency
-   - Error handling
-
-6. **Technical Highlights**
-   - TypeScript type safety
-   - Redux state management
-   - Role-based access control
-   - Real-time updates
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -632,22 +592,23 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Michael George**
 
 - GitHub: MJLEGION (https://github.com/MJLEGION/agri-logistics-platform.git)
+   Backend (https://github.com/MJLEGION/agri-logistics-backend.git)
 - Email: m.george@alustudent.com
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with [Expo](https://expo.dev/)
 - UI components from [React Native Paper](https://reactnativepaper.com/)
@@ -658,8 +619,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ for Rwanda's Agricultural Community**
+**Made with love for Rwanda's Agricultural Community**
 
-⭐ Star this repo if you find it helpful!
+Star this repo if you find it helpful!
 
 </div>

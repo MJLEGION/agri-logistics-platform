@@ -108,18 +108,33 @@ export default function ShipperTrackingDashboard({ navigation }: any) {
         name: item.name || 'Unknown Item',
         image: item.image || item.imageUrl,
         destination: {
-          address: item.destination?.address || item.location?.address || 'Destination',
-          coordinates: item.destination?.coordinates,
+          address: item.destination?.address || 'Destination',
+          coordinates: item.destination
+            ? {
+                latitude: item.destination.latitude,
+                longitude: item.destination.longitude,
+              }
+            : undefined,
           status: destinationStatus,
         },
         inTransit: {
           address: item.currentLocation?.address || 'In Transit',
-          coordinates: item.currentLocation?.coordinates,
+          coordinates: item.currentLocation
+            ? {
+                latitude: item.currentLocation.latitude,
+                longitude: item.currentLocation.longitude,
+              }
+            : undefined,
           status: inTransitStatus,
         },
         shippingCenter: {
-          address: item.origin?.address || item.location?.address || 'Origin',
-          coordinates: item.origin?.coordinates || item.location?.coordinates,
+          address: item.location?.address || 'Origin',
+          coordinates: item.location
+            ? {
+                latitude: item.location.latitude,
+                longitude: item.location.longitude,
+              }
+            : undefined,
           status: shippingCenterStatus,
         },
         courier: {
