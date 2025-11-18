@@ -11,9 +11,14 @@ interface CargoState {
 // Async thunks
 export const fetchCargo = createAsyncThunk<Cargo[], void, { rejectValue: string }>(
   'cargo/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      return await cargoService.getAllCargo();
+      const state = getState() as any;
+      const userId = state.auth?.user?._id || state.auth?.user?.id;
+      if (!userId) {
+        return rejectWithValue('User not authenticated');
+      }
+      return await cargoService.getCargoByUserId(userId);
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch cargo');
     }
