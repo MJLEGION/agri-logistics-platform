@@ -14,6 +14,7 @@ import {
   Linking,
   TextInput,
   ImageBackground,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +28,8 @@ import { logout } from '../../store/slices/authSlice';
 import SearchBar from '../../components/SearchBar';
 import TrackingMapView from '../shipper/TrackingMapView';
 
-const { width, height } = Dimensions.get('window');
+// Get static dimensions for StyleSheet (used for initial layout)
+const { width: staticWidth, height: staticHeight } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
 interface TripItem {
@@ -63,11 +65,16 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { width, height } = useWindowDimensions();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TripItem | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isSmallMobile = width < 420;
 
   useEffect(() => {
     dispatch(fetchCargo());
@@ -236,9 +243,10 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Dark Sidebar - Transporter (Blue Theme) */}
-      <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
+    <View style={[styles.container, { backgroundColor: theme.background, flexDirection: isMobile ? 'column' : 'row' }]}>
+      {/* Dark Sidebar - Transporter (Blue Theme) - Hidden on mobile */}
+      {!isMobile && (
+        <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
         <View style={styles.sidebarHeader}>
           <Image
             source={require('../../../assets/images/logos/logo.png')}
@@ -315,6 +323,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
+      )}
 
       {/* Main Content */}
       <ImageBackground
@@ -568,13 +577,13 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
 }
 
 const SIDEBAR_WIDTH = 100;
-const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
-const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
+const LEFT_PANEL_WIDTH = isWeb ? 350 : staticWidth * 0.6;
+const RIGHT_PANEL_WIDTH = isWeb ? 320 : staticWidth * 0.5;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    // flexDirection is now dynamic - set inline based on isMobile
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
