@@ -14,6 +14,7 @@ import {
   Linking,
   TextInput,
   ImageBackground,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -29,7 +30,8 @@ import { ShipperHomeScreenProps } from '../../types';
 import SearchBar from '../../components/SearchBar';
 import TrackingMapView from './TrackingMapView';
 
-const { width, height } = Dimensions.get('window');
+// Get static dimensions for StyleSheet (used for initial layout)
+const { width: staticWidth, height: staticHeight } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
 interface TrackingItem {
@@ -66,11 +68,16 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { width, height } = useWindowDimensions();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TrackingItem | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isSmallMobile = width < 420;
 
   useEffect(() => {
     dispatch(fetchCargo());
@@ -228,74 +235,76 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Dark Sidebar */}
-      <View style={[styles.sidebar, { backgroundColor: '#1F2937' }]}>
-        <View style={styles.sidebarHeader}>
-          <Image
-            source={require('../../../assets/images/logos/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+    <View style={[styles.container, { backgroundColor: theme.background, flexDirection: isMobile ? 'column' : 'row' }]}>
+      {/* Dark Sidebar - Hidden on mobile */}
+      {!isMobile && (
+        <View style={[styles.sidebar, { backgroundColor: '#1F2937' }]}>
+          <View style={styles.sidebarHeader}>
+            <Image
+              source={require('../../../assets/images/logos/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
+          <View style={styles.sidebarNav}>
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('MyCargo')}
+            >
+              <Ionicons name="cube-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('shipper.myCargo')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('ShipperActiveOrders')}
+            >
+              <Ionicons name="list-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('shipper.activeShipments')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('RateTransporter')}
+            >
+              <Ionicons name="star-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('ListCargo')}
+            >
+              <Ionicons name="add-circle-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('shipper.listCargo')}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.sidebarDivider} />
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('ProfileSettings')}
+            >
+              <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('common.settings')}</Text>
+            </TouchableOpacity>
+
+            <LanguageSwitcher showLabel={false} size="small" />
+          </View>
+
+          <View style={styles.sidebarFooter}>
+            <ThemeToggle />
+            <TouchableOpacity
+              style={styles.logoutIcon}
+              onPress={() => dispatch(logout())}
+            >
+              <Ionicons name="log-out" size={20} color="#EF4444" />
+              <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <View style={styles.sidebarNav}>
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('MyCargo')}
-          >
-            <Ionicons name="cube-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('shipper.myCargo')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ShipperActiveOrders')}
-          >
-            <Ionicons name="list-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('shipper.activeShipments')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('RateTransporter')}
-          >
-            <Ionicons name="star-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ListCargo')}
-          >
-            <Ionicons name="add-circle-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('shipper.listCargo')}</Text>
-          </TouchableOpacity>
-
-          <View style={styles.sidebarDivider} />
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ProfileSettings')}
-          >
-            <Ionicons name="settings-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('common.settings')}</Text>
-          </TouchableOpacity>
-
-          <LanguageSwitcher showLabel={false} size="small" />
-        </View>
-
-        <View style={styles.sidebarFooter}>
-          <ThemeToggle />
-          <TouchableOpacity
-            style={styles.logoutIcon}
-            onPress={() => dispatch(logout())}
-          >
-            <Ionicons name="log-out" size={20} color="#EF4444" />
-            <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      )}
 
       {/* Main Content */}
       <ImageBackground
@@ -549,13 +558,13 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
 }
 
 const SIDEBAR_WIDTH = 100;
-const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
-const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
+const LEFT_PANEL_WIDTH = isWeb ? 350 : staticWidth * 0.6;
+const RIGHT_PANEL_WIDTH = isWeb ? 320 : staticWidth * 0.5;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    // flexDirection is now dynamic - set inline based on isMobile
   },
   sidebar: {
     width: SIDEBAR_WIDTH,

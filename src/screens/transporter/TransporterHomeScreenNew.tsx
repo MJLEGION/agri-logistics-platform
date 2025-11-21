@@ -14,6 +14,7 @@ import {
   Linking,
   TextInput,
   ImageBackground,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,7 +28,8 @@ import { logout } from '../../store/slices/authSlice';
 import SearchBar from '../../components/SearchBar';
 import TrackingMapView from '../shipper/TrackingMapView';
 
-const { width, height } = Dimensions.get('window');
+// Get static dimensions for StyleSheet (used for initial layout)
+const { width: staticWidth, height: staticHeight } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
 interface TripItem {
@@ -63,11 +65,16 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { width, height } = useWindowDimensions();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TripItem | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+
+  // Responsive breakpoints
+  const isMobile = width <= 768;
+  const isSmallMobile = width < 420;
 
   useEffect(() => {
     dispatch(fetchCargo());
@@ -236,85 +243,87 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Dark Sidebar - Transporter (Blue Theme) */}
-      <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
-        <View style={styles.sidebarHeader}>
-          <Image
-            source={require('../../../assets/images/logos/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>Transporter</Text>
+    <View style={[styles.container, { backgroundColor: theme.background, flexDirection: isMobile ? 'column' : 'row' }]}>
+      {/* Dark Sidebar - Transporter (Blue Theme) - Hidden on mobile */}
+      {!isMobile && (
+        <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
+          <View style={styles.sidebarHeader}>
+            <Image
+              source={require('../../../assets/images/logos/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>Transporter</Text>
+            </View>
+          </View>
+
+          <View style={styles.sidebarNav}>
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('AvailableLoads')}
+            >
+              <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('transporter.availableLoads')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('ActiveTrips')}
+            >
+              <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('transporter.activeDeliveries')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('EarningsDashboard')}
+            >
+              <Ionicons name="cash-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('transporter.earnings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('TransporterRatings')}
+            >
+              <Ionicons name="star-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('TripHistory')}
+            >
+              <Ionicons name="time-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('shipper.completedShipments')}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.sidebarDivider} />
+
+            <TouchableOpacity
+              style={styles.sidebarIconBtn}
+              onPress={() => navigation.navigate('ProfileSettings')}
+            >
+              <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+              <Text style={styles.navLabel}>{t('common.settings')}</Text>
+            </TouchableOpacity>
+
+            <LanguageSwitcher showLabel={false} size="small" />
+          </View>
+
+          <View style={styles.sidebarFooter}>
+            <ThemeToggle />
+            <TouchableOpacity
+              style={styles.logoutIcon}
+              onPress={() => dispatch(logout())}
+            >
+              <Ionicons name="log-out" size={20} color="#EF4444" />
+              <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.sidebarNav}>
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('AvailableLoads')}
-          >
-            <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('transporter.availableLoads')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ActiveTrips')}
-          >
-            <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('transporter.activeDeliveries')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('EarningsDashboard')}
-          >
-            <Ionicons name="cash-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('transporter.earnings')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('TransporterRatings')}
-          >
-            <Ionicons name="star-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('TripHistory')}
-          >
-            <Ionicons name="time-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('shipper.completedShipments')}</Text>
-          </TouchableOpacity>
-
-          <View style={styles.sidebarDivider} />
-
-          <TouchableOpacity
-            style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ProfileSettings')}
-          >
-            <Ionicons name="settings-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>{t('common.settings')}</Text>
-          </TouchableOpacity>
-
-          <LanguageSwitcher showLabel={false} size="small" />
-        </View>
-
-        <View style={styles.sidebarFooter}>
-          <ThemeToggle />
-          <TouchableOpacity
-            style={styles.logoutIcon}
-            onPress={() => dispatch(logout())}
-          >
-            <Ionicons name="log-out" size={20} color="#EF4444" />
-            <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      )}
 
       {/* Main Content */}
       <ImageBackground
@@ -568,13 +577,13 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
 }
 
 const SIDEBAR_WIDTH = 100;
-const LEFT_PANEL_WIDTH = isWeb ? 350 : width * 0.6;
-const RIGHT_PANEL_WIDTH = isWeb ? 320 : width * 0.5;
+const LEFT_PANEL_WIDTH = isWeb ? 350 : staticWidth * 0.6;
+const RIGHT_PANEL_WIDTH = isWeb ? 320 : staticWidth * 0.5;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    // flexDirection is now dynamic - set inline based on isMobile
   },
   sidebar: {
     width: SIDEBAR_WIDTH,
