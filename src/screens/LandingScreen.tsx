@@ -10,7 +10,7 @@ import {
   Image,
   Platform,
   Animated,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,12 +24,11 @@ import LanguageSwitcher from '../components/LanguageSwitcher';
 import HowItWorksCard from '../components/HowItWorksCard';
 import { howItWorks } from '../data/howItWorks';
 
-const { width, height } = Dimensions.get('window');
-
 export default function LandingScreen({ navigation }: any) {
   const { theme, isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const scrollViewRef = useRef<ScrollView>(null);
+  const { width, height } = useWindowDimensions();
 
   // Animation refs
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -117,11 +116,59 @@ export default function LandingScreen({ navigation }: any) {
     { number: '98%', label: 'Customer Satisfaction' },
   ];
 
+  // Responsive styles based on window dimensions
+  const isMobile = width <= 768;
+  const isSmallMobile = width < 375;
+
+  const responsiveStyles = {
+    navbar: {
+      paddingHorizontal: isMobile ? 16 : 60,
+    },
+    navbarContent: {
+      flexDirection: 'row' as const,
+      flexWrap: isMobile ? 'wrap' as const : 'nowrap' as const,
+    },
+    navMenu: {
+      display: isMobile ? 'none' : 'flex',
+    },
+    navActions: {
+      flexDirection: 'row' as const,
+      gap: isSmallMobile ? 4 : 8,
+      marginLeft: isMobile ? 'auto' : 0,
+    },
+    navLoginButton: {
+      display: isMobile ? 'none' : 'flex',
+    },
+    navTalkButton: {
+      paddingHorizontal: isSmallMobile ? 12 : 16,
+      paddingVertical: isSmallMobile ? 7 : 9,
+      display: 'flex' as const,
+    },
+    hero: {
+      minHeight: isMobile ? (isSmallMobile ? 550 : 600) : height,
+    },
+    modernHeroTitle: {
+      fontSize: isMobile ? (isSmallMobile ? 28 : 32) : 52,
+      lineHeight: isMobile ? (isSmallMobile ? 36 : 40) : 62,
+      marginBottom: isSmallMobile ? 12 : 16,
+    },
+    modernHeroSubtitle: {
+      fontSize: isSmallMobile ? 14 : (isMobile ? 16 : 18),
+      lineHeight: isSmallMobile ? 20 : (isMobile ? 24 : 28),
+      marginBottom: isSmallMobile ? 20 : 24,
+    },
+    modernCTAButton: {
+      paddingHorizontal: isSmallMobile ? 20 : 24,
+      paddingVertical: isSmallMobile ? 12 : 14,
+      alignSelf: isSmallMobile ? 'stretch' as const : 'flex-start' as const,
+    },
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Navigation Bar - Modern Design */}
-      <View style={[styles.navbar, { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderBottomColor: 'transparent' }]}>
-        <View style={styles.navbarContent}>
+      <View style={[styles.navbar, responsiveStyles.navbar, { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderBottomColor: 'transparent' }]}>
+        <View style={[styles.navbarContent, responsiveStyles.navbarContent]}>
           {/* Logo */}
           <View style={styles.navLogo}>
             <View style={[styles.navLogoIcon, { backgroundColor: '#27AE60' }]}>
@@ -131,7 +178,7 @@ export default function LandingScreen({ navigation }: any) {
           </View>
 
           {/* Nav Menu Items */}
-          <View style={styles.navMenu}>
+          <View style={[styles.navMenu, responsiveStyles.navMenu]}>
             <TouchableOpacity
               style={styles.navMenuItem}
               onPress={() => navigation.navigate('About')}
@@ -147,21 +194,21 @@ export default function LandingScreen({ navigation }: any) {
           </View>
 
           {/* Nav Actions */}
-          <View style={styles.navActions}>
+          <View style={[styles.navActions, responsiveStyles.navActions]}>
             <LanguageSwitcher showLabel={false} size="small" />
             <TouchableOpacity
-              style={styles.navLoginButton}
+              style={[styles.navLoginButton, responsiveStyles.navLoginButton]}
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.7}
             >
               <Text style={styles.navLoginText}>{t('landing.login')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.navTalkButton}
+              style={[styles.navTalkButton, responsiveStyles.navTalkButton]}
               onPress={() => navigation.navigate('RoleSelection')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.navButtonText, { color: '#2d3748' }]}>{t('landing.getStartedFree')}</Text>
+              <Text style={[styles.navButtonText, { color: '#2d3748', fontSize: isSmallMobile ? 12 : 13 }]}>{t('landing.getStartedFree')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -169,7 +216,7 @@ export default function LandingScreen({ navigation }: any) {
 
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Hero Section - Modern Gradient Design */}
-        <View style={styles.hero}>
+        <View style={[styles.hero, responsiveStyles.hero]}>
           {/* Background Image with Gradient Overlay */}
           <Image
             source={require('../../assets/trucker-2946821.jpg')}
@@ -189,11 +236,11 @@ export default function LandingScreen({ navigation }: any) {
           <View style={styles.heroContainer}>
             {/* Left Content */}
             <Animated.View style={[styles.heroLeftContent, { opacity: fadeAnim }]}>
-              <Text style={styles.modernHeroTitle}>
+              <Text style={[styles.modernHeroTitle, responsiveStyles.modernHeroTitle]}>
                 {t('landing.heroTitle')}
               </Text>
 
-              <Text style={styles.modernHeroSubtitle}>
+              <Text style={[styles.modernHeroSubtitle, responsiveStyles.modernHeroSubtitle]}>
                 {t('landing.heroSubtitle')}
               </Text>
 
@@ -215,7 +262,7 @@ export default function LandingScreen({ navigation }: any) {
 
               {/* CTA Button */}
               <TouchableOpacity
-                style={styles.modernCTAButton}
+                style={[styles.modernCTAButton, responsiveStyles.modernCTAButton]}
                 onPress={() => navigation.navigate('RoleSelection')}
                 activeOpacity={0.8}
               >
