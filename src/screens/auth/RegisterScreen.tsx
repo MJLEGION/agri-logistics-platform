@@ -17,10 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { register } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useAppDispatch, useAppSelector } from '../../store';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import ModernButton from '../../components/ModernButton';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 import Toast, { useToast } from '../../components/Toast';
 import ProgressBar from '../../components/ProgressBar';
 import { ModernColors, ModernGradients, Typography, Spacing, BorderRadius, Shadows } from '../../config/ModernDesignSystem';
@@ -31,6 +33,7 @@ export default function RegisterScreen({ route, navigation }: any) {
   const { role } = route.params;
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const { toast, showError, showSuccess, showWarning, hideToast } = useToast();
 
@@ -38,6 +41,7 @@ export default function RegisterScreen({ route, navigation }: any) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [errors, setErrors] = useState({
     name: '',
     phone: '',
@@ -166,34 +170,39 @@ export default function RegisterScreen({ route, navigation }: any) {
     const newErrors = { name: '', phone: '', password: '', confirmPassword: '' };
 
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('validation.fullNameRequired');
       valid = false;
     } else if (name.trim().length < 3) {
-      newErrors.name = 'Name must be at least 3 characters';
+      newErrors.name = t('validation.fullNameRequired');
       valid = false;
     }
 
     if (!phone) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = t('validation.phoneNumberRequired');
       valid = false;
     } else if (phone.length < 10) {
-      newErrors.phone = 'Please enter a valid phone number';
+      newErrors.phone = t('validation.phoneNumberInvalid');
       valid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.passwordRequired');
       valid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('validation.passwordTooShort');
       valid = false;
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('validation.passwordRequired');
       valid = false;
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('validation.passwordsDoNotMatch');
+      valid = false;
+    }
+
+    if (!termsAccepted) {
+      showWarning(t('validation.termsRequired'));
       valid = false;
     }
 
@@ -252,7 +261,7 @@ export default function RegisterScreen({ route, navigation }: any) {
       setShowConfetti(true);
       confettiRef.current?.start();
 
-      showSuccess('Account created successfully!');
+      showSuccess(t('messages.registerSuccess'));
 
       // Navigate to profile completion screen
       setTimeout(() => {
@@ -260,7 +269,7 @@ export default function RegisterScreen({ route, navigation }: any) {
       }, 1500);
     } catch (err: any) {
       console.error('Registration failed:', err);
-      const errorMessage = err || 'Could not register. Please check your connection and try again.';
+      const errorMessage = err || t('messages.registerError');
       showError(errorMessage);
     }
   };
@@ -316,12 +325,15 @@ export default function RegisterScreen({ route, navigation }: any) {
               />
             </View>
 
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View style={styles.headerTopBar}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <LanguageSwitcher showLabel={false} size="small" />
+            </View>
 
             <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
               <Animated.View
@@ -355,9 +367,9 @@ export default function RegisterScreen({ route, navigation }: any) {
               >
                 <Ionicons name={getRoleIcon() as any} size={48} color="#FFFFFF" />
               </Animated.View>
-              <Text style={styles.headerTitle}>Create Account</Text>
+              <Text style={styles.headerTitle}>{t('auth.registerTitle')}</Text>
               <Text style={styles.headerSubtitle}>
-                Register as {role.charAt(0).toUpperCase() + role.slice(1)}
+                {t('auth.selectRole')}: {role.charAt(0).toUpperCase() + role.slice(1)}
               </Text>
             </Animated.View>
           </LinearGradient>
@@ -385,8 +397,8 @@ export default function RegisterScreen({ route, navigation }: any) {
               }}
             >
               <Input
-                label="Full Name"
-                placeholder="Enter your full name"
+                label={t('common.fullName')}
+                placeholder={t('auth.fullNamePlaceholder')}
                 value={name}
                 onChangeText={(text) => {
                   setName(text);
@@ -412,8 +424,8 @@ export default function RegisterScreen({ route, navigation }: any) {
               }}
             >
               <Input
-                label="Phone Number"
-                placeholder="+250 XXX XXX XXX"
+                label={t('common.phoneNumber')}
+                placeholder={t('auth.phoneNumberPlaceholder')}
                 value={phone}
                 onChangeText={(text) => {
                   setPhone(text);
@@ -440,8 +452,8 @@ export default function RegisterScreen({ route, navigation }: any) {
               }}
             >
               <Input
-                label="Password"
-                placeholder="Create a password"
+                label={t('common.password')}
+                placeholder={t('auth.passwordPlaceholder')}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -450,7 +462,7 @@ export default function RegisterScreen({ route, navigation }: any) {
                 secureTextEntry
                 icon="lock-closed-outline"
                 error={errors.password}
-                helperText="Must be at least 6 characters"
+                helperText={t('validation.passwordTooShort')}
               />
             </Animated.View>
 
@@ -468,8 +480,8 @@ export default function RegisterScreen({ route, navigation }: any) {
               }}
             >
               <Input
-                label="Confirm Password"
-                placeholder="Re-enter your password"
+                label={t('common.confirmPassword')}
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 value={confirmPassword}
                 onChangeText={(text) => {
                   setConfirmPassword(text);
@@ -490,8 +502,33 @@ export default function RegisterScreen({ route, navigation }: any) {
               </Text>
             </View>
 
+            {/* Terms and Conditions Checkbox */}
+            <TouchableOpacity
+              style={styles.termsContainer}
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, { borderColor: termsAccepted ? getRoleColor() : theme.border }]}>
+                {termsAccepted && (
+                  <Ionicons name="checkmark" size={18} color={getRoleColor()} />
+                )}
+              </View>
+              <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+                {t('auth.agreeToTerms')}{' '}
+                <Text
+                  style={[styles.termsLink, { color: theme.primary }]}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    navigation.navigate('TermsAndConditions');
+                  }}
+                >
+                  {t('auth.termsAndConditions')}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
             <Button
-              title="Create Account"
+              title={t('auth.registerTitle')}
               onPress={handleRegister}
               loading={isLoading}
               disabled={isLoading}
@@ -502,10 +539,10 @@ export default function RegisterScreen({ route, navigation }: any) {
 
             <View style={styles.loginContainer}>
               <Text style={[styles.loginText, { color: theme.textSecondary }]}>
-                Already have an account?{' '}
+                {t('auth.haveAccount')}{' '}
               </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={[styles.loginLink, { color: theme.primary }]}>Sign In</Text>
+                <Text style={[styles.loginLink, { color: theme.primary }]}>{t('auth.signIn')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -556,6 +593,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
+  headerTopBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -563,7 +606,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   headerContent: {
     alignItems: 'center',
@@ -621,6 +663,29 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 18,
+  },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 12,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  termsLink: {
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   loginContainer: {
     flexDirection: 'row',

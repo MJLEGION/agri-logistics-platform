@@ -18,7 +18,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { fetchCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logout } from '../../store/slices/authSlice';
@@ -60,6 +62,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const { cargo, isLoading: cargoLoading } = useAppSelector((state) => state.cargo);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TripItem | null>(null);
@@ -253,7 +256,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('AvailableLoads')}
           >
             <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Available Loads</Text>
+            <Text style={styles.navLabel}>{t('transporter.availableLoads')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -261,7 +264,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('ActiveTrips')}
           >
             <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Active Trips</Text>
+            <Text style={styles.navLabel}>{t('transporter.activeDeliveries')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -269,7 +272,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('EarningsDashboard')}
           >
             <Ionicons name="cash-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Earnings</Text>
+            <Text style={styles.navLabel}>{t('transporter.earnings')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -277,7 +280,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('TransporterRatings')}
           >
             <Ionicons name="star-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Ratings</Text>
+            <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -285,7 +288,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('TripHistory')}
           >
             <Ionicons name="time-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>History</Text>
+            <Text style={styles.navLabel}>{t('shipper.completedShipments')}</Text>
           </TouchableOpacity>
 
           <View style={styles.sidebarDivider} />
@@ -295,8 +298,10 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => navigation.navigate('ProfileSettings')}
           >
             <Ionicons name="settings-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Settings</Text>
+            <Text style={styles.navLabel}>{t('common.settings')}</Text>
           </TouchableOpacity>
+
+          <LanguageSwitcher showLabel={false} size="small" />
         </View>
 
         <View style={styles.sidebarFooter}>
@@ -306,7 +311,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             onPress={() => dispatch(logout())}
           >
             <Ionicons name="log-out" size={20} color="#EF4444" />
-            <Text style={styles.logoutLabel}>Logout</Text>
+            <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -325,10 +330,10 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
           <View style={[styles.welcomeBanner, { backgroundColor: '#3B82F6' + '20' }]}>
             <View>
               <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-                Welcome back!
+                {t('common.welcomeBack')}!
               </Text>
               <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
-                You have {filteredItems.length} active trip{filteredItems.length !== 1 ? 's' : ''}
+                {filteredItems.length} {t('transporter.activeDeliveries').toLowerCase()}
               </Text>
             </View>
             <View style={styles.welcomeIcon}>
@@ -342,25 +347,25 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {inProgressTrips.length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>In Transit</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('shipper.inTransit')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {deliveredTrips.length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Delivered</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('shipper.delivered')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {activeTrips.filter(t => t.status === 'matched').length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Matched</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('transporter.available')}</Text>
             </View>
           </View>
 
           <View style={styles.panelHeader}>
             <Text style={[styles.panelTitle, { color: theme.text }]}>
-              Active Trips ({filteredItems.length})
+              {t('transporter.activeDeliveries')} ({filteredItems.length})
             </Text>
           </View>
 
@@ -368,7 +373,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
             <Ionicons name="search" size={18} color={theme.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Search trip..."
+              placeholder={t('common.search') + '...'}
               placeholderTextColor={theme.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}

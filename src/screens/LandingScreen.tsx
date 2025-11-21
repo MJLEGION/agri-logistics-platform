@@ -15,9 +15,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import Button from '../components/Button';
 import ServiceCard from '../components/ServiceCard';
 import Testimonial from '../components/Testimonial';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 import HowItWorksCard from '../components/HowItWorksCard';
 import { howItWorks } from '../data/howItWorks';
@@ -26,6 +28,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function LandingScreen({ navigation }: any) {
   const { theme, isDark, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Animation refs
@@ -65,18 +68,18 @@ export default function LandingScreen({ navigation }: any) {
   const services = [
     {
       icon: 'leaf',
-      title: 'Direct Shipping for Farmers',
-      description: 'Connect directly with transporters to ship your produce efficiently across Rwanda.',
+      title: t('landing.service1Title'),
+      description: t('landing.service1Description'),
     },
     {
       icon: 'cube',
-      title: 'Verified Transporters',
-      description: 'All transporters on our platform are vetted to ensure safe and reliable delivery of your cargo.',
+      title: t('landing.service2Title'),
+      description: t('landing.service2Description'),
     },
     {
       icon: 'car',
-      title: 'Full-Service Logistics',
-      description: 'Efficient delivery operations with the most affordable rates in the industry.',
+      title: t('landing.service3Title'),
+      description: t('landing.service3Description'),
     },
   ];
 
@@ -133,31 +136,32 @@ export default function LandingScreen({ navigation }: any) {
               style={styles.navMenuItem}
               onPress={() => navigation.navigate('About')}
             >
-              <Text style={styles.navMenuText}>About</Text>
+              <Text style={styles.navMenuText}>{t('landing.about')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.navMenuItem}
               onPress={() => navigation.navigate('Pricing')}
             >
-              <Text style={styles.navMenuText}>Pricing</Text>
+              <Text style={styles.navMenuText}>{t('landing.pricing')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Nav Actions */}
           <View style={styles.navActions}>
+            <LanguageSwitcher showLabel={false} size="small" />
             <TouchableOpacity
               style={styles.navLoginButton}
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.7}
             >
-              <Text style={styles.navLoginText}>Login</Text>
+              <Text style={styles.navLoginText}>{t('landing.login')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.navTalkButton}
               onPress={() => navigation.navigate('RoleSelection')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.navButtonText, { color: '#2d3748' }]}>Get started free</Text>
+              <Text style={[styles.navButtonText, { color: '#2d3748' }]}>{t('landing.getStartedFree')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -186,26 +190,26 @@ export default function LandingScreen({ navigation }: any) {
             {/* Left Content */}
             <Animated.View style={[styles.heroLeftContent, { opacity: fadeAnim }]}>
               <Text style={styles.modernHeroTitle}>
-                The intuitive logistics{'\n'}platform for fast-growing agricultural businesses
+                {t('landing.heroTitle')}
               </Text>
 
               <Text style={styles.modernHeroSubtitle}>
-                Streamline your cargo shipping with AgriLogistics' smart matching, real-time tracking, and transparent pricing platform
+                {t('landing.heroSubtitle')}
               </Text>
 
               {/* Feature Highlights */}
               <View style={styles.featureHighlights}>
                 <View style={styles.featureItem}>
                   <Ionicons name="flash" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>Instant transporter matching</Text>
+                  <Text style={styles.featureItemText}>{t('landing.instantMatching')}</Text>
                 </View>
                 <View style={styles.featureItem}>
                   <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>Secure escrow payments</Text>
+                  <Text style={styles.featureItemText}>{t('landing.securePayments')}</Text>
                 </View>
                 <View style={styles.featureItem}>
                   <Ionicons name="trending-up" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>Optimize your routes</Text>
+                  <Text style={styles.featureItemText}>{t('landing.optimizeRoutes')}</Text>
                 </View>
               </View>
 
@@ -215,7 +219,7 @@ export default function LandingScreen({ navigation }: any) {
                 onPress={() => navigation.navigate('RoleSelection')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modernCTAText}>Get started free</Text>
+                <Text style={styles.modernCTAText}>{t('landing.getStartedFree')}</Text>
               </TouchableOpacity>
 
               {/* Rating & Trust Indicators */}
@@ -226,9 +230,9 @@ export default function LandingScreen({ navigation }: any) {
                       <Ionicons key={star} name="star" size={14} color="#FFA500" />
                     ))}
                   </View>
-                  <Text style={styles.ratingText}>4.9/5.0 RATING</Text>
+                  <Text style={styles.ratingText}>{t('landing.rating')}</Text>
                 </View>
-                <Text style={styles.noCreditCard}>no credit card required</Text>
+                <Text style={styles.noCreditCard}>{t('landing.noCreditCard')}</Text>
               </View>
             </Animated.View>
 
@@ -299,10 +303,10 @@ export default function LandingScreen({ navigation }: any) {
         <View style={styles.modernServicesSection}>
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
-              How We Serve You
+              {t('landing.howWeServe')}
             </Text>
             <Text style={styles.modernSectionSubtitle}>
-              Professional agricultural logistics for every stakeholder
+              {t('landing.servicesSubtitle')}
             </Text>
           </View>
 
@@ -327,7 +331,7 @@ export default function LandingScreen({ navigation }: any) {
         <View style={styles.modernWhoWeServeSection}>
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
-              Who We Serve
+              {t('landing.whoWeServe')}
             </Text>
           </View>
 
@@ -343,22 +347,22 @@ export default function LandingScreen({ navigation }: any) {
                   <Ionicons name="leaf" size={32} color="#FFFFFF" />
                 </View>
               </View>
-              <Text style={styles.modernRoleTitle}>Farmers</Text>
+              <Text style={styles.modernRoleTitle}>{t('landing.farmers')}</Text>
               <Text style={styles.modernRoleDescription}>
-                List your cargo and connect with reliable transporters nationwide.
+                {t('landing.farmersDescription')}
               </Text>
               <View style={styles.modernRoleFeatures}>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#10797D" />
-                  <Text style={styles.modernFeatureText}>Easy cargo listing</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.easyListing')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#10797D" />
-                  <Text style={styles.modernFeatureText}>Reliable transport</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.reliableTransport')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#10797D" />
-                  <Text style={styles.modernFeatureText}>Fair pricing</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.fairPricing')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -374,22 +378,22 @@ export default function LandingScreen({ navigation }: any) {
                   <Ionicons name="car" size={32} color="#FFFFFF" />
                 </View>
               </View>
-              <Text style={styles.modernRoleTitle}>Transporters</Text>
+              <Text style={styles.modernRoleTitle}>{t('landing.transporters')}</Text>
               <Text style={styles.modernRoleDescription}>
-                Find loads, optimize routes, and maximize earnings efficiently
+                {t('landing.transportersDescription')}
               </Text>
               <View style={styles.modernRoleFeatures}>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
-                  <Text style={styles.modernFeatureText}>Available loads</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.availableLoadsFeature')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
-                  <Text style={styles.modernFeatureText}>Route optimization</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.routeOptimization')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
                   <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
-                  <Text style={styles.modernFeatureText}>Best rates</Text>
+                  <Text style={styles.modernFeatureText}>{t('landing.bestRates')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -400,10 +404,10 @@ export default function LandingScreen({ navigation }: any) {
         <View style={styles.modernTestimonialsSection}>
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
-              What Our Users Say
+              {t('landing.whatUsersSay')}
             </Text>
             <Text style={styles.modernSectionSubtitle}>
-              Trusted by farmers and transporters across Rwanda
+              {t('landing.usersSaySubtitle')}
             </Text>
           </View>
 
@@ -436,10 +440,10 @@ export default function LandingScreen({ navigation }: any) {
         <View style={styles.modernHowItWorksSection}>
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
-              How AgriLogistics Works
+              {t('landing.howItWorksTitle')}
             </Text>
             <Text style={styles.modernSectionSubtitle}>
-              Simple, transparent process connecting shippers with transporters
+              {t('landing.howItWorksSubtitle')}
             </Text>
           </View>
 
@@ -476,17 +480,17 @@ export default function LandingScreen({ navigation }: any) {
               </View>
             </View>
             <Text style={styles.modernCTATitle}>
-              Ready to Transform Your Agricultural Business?
+              {t('landing.ctaTitle')}
             </Text>
             <Text style={styles.modernCTASubtitle}>
-              Join thousands of shippers and transporters already using our platform
+              {t('landing.ctaSubtitle')}
             </Text>
             <TouchableOpacity
               style={styles.modernCTAPrimaryButton}
               onPress={() => navigation.navigate('RoleSelection')}
               activeOpacity={0.8}
             >
-              <Text style={styles.modernCTAPrimaryButtonText}>Get Started Today</Text>
+              <Text style={styles.modernCTAPrimaryButtonText}>{t('landing.getStartedToday')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -505,7 +509,7 @@ export default function LandingScreen({ navigation }: any) {
                 </Text>
               </View>
               <Text style={[styles.footerBrandTagline, { color: theme.textSecondary }]}>
-                Connecting Rwanda's agricultural ecosystem
+                {t('landing.connectingRwanda')}
               </Text>
             </View>
 
@@ -513,35 +517,39 @@ export default function LandingScreen({ navigation }: any) {
             <View style={styles.footerLinksGrid}>
               {/* Platform Column */}
               <View style={styles.footerColumn}>
-                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Platform</Text>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>{t('landing.platform')}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
-                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Shippers</Text>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.forShippers')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => navigation.navigate('RoleSelection')}>
-                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>For Transporters</Text>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.forTransporters')}</Text>
                 </TouchableOpacity>
               </View>
 
               {/* Company Column */}
               <View style={styles.footerColumn}>
-                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Company</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>About Us</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Contact</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Careers</Text>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>{t('landing.company')}</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('About')}>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.aboutUs')}</Text>
+                </TouchableOpacity>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.contact')}</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.careers')}</Text>
               </View>
 
               {/* Support Column */}
               <View style={styles.footerColumn}>
-                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>Support</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Help Center</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Terms of Service</Text>
-                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>Privacy Policy</Text>
+                <Text style={[styles.footerColumnTitle, { color: theme.text }]}>{t('landing.support')}</Text>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.helpCenter')}</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('TermsAndConditions')}>
+                  <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.termsOfService')}</Text>
+                </TouchableOpacity>
+                <Text style={[styles.footerLink, { color: theme.textSecondary }]}>{t('landing.privacyPolicy')}</Text>
               </View>
             </View>
 
             {/* Footer Social */}
             <View style={styles.footerSocial}>
-              <Text style={[styles.footerSocialTitle, { color: theme.text }]}>Connect With Us</Text>
+              <Text style={[styles.footerSocialTitle, { color: theme.text }]}>{t('landing.connectWithUs')}</Text>
               <View style={styles.footerSocialIcons}>
                 <TouchableOpacity style={[styles.socialIcon, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   <Ionicons name="logo-facebook" size={20} color={theme.primary} />
@@ -561,10 +569,10 @@ export default function LandingScreen({ navigation }: any) {
             {/* Footer Bottom */}
             <View style={[styles.footerBottom, { borderTopColor: theme.border }]}>
               <Text style={[styles.footerCopyright, { color: theme.textSecondary }]}>
-                © 2024 AgriLogistics Platform. All rights reserved.
+                {t('landing.allRightsReserved')}
               </Text>
               <Text style={[styles.footerMade, { color: theme.textSecondary }]}>
-                Made with ❤️ in Rwanda 🇷🇼
+                {t('landing.madeInRwanda')}
               </Text>
             </View>
           </View>

@@ -18,7 +18,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -63,6 +65,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
   const { orders } = useAppSelector((state) => state.orders);
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<TrackingItem | null>(null);
@@ -187,7 +190,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
               <Text style={styles.statusText}>
-                {item.status === 'delivered' ? 'Delivered' : item.status === 'in_transit' ? 'In Transit' : 'Pending'}
+                {item.status === 'delivered' ? t('shipper.delivered') : item.status === 'in_transit' ? t('shipper.inTransit') : t('shipper.pending')}
               </Text>
             </View>
           </View>
@@ -202,11 +205,11 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
           {isExpanded && (
             <View style={styles.expandedContent}>
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Transporter</Text>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>{t('auth.transporter')}</Text>
                 <Text style={[styles.detailValue, { color: theme.text }]}>{item.transporter.name}</Text>
               </View>
               <View style={styles.detailRow}>
-                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Price</Text>
+                <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>{t('common.price')}</Text>
                 <Text style={[styles.detailValue, { color: theme.text }]}>${item.price}</Text>
               </View>
             </View>
@@ -242,7 +245,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => navigation.navigate('MyCargo')}
           >
             <Ionicons name="cube-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>My Cargo</Text>
+            <Text style={styles.navLabel}>{t('shipper.myCargo')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -250,7 +253,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => navigation.navigate('ShipperActiveOrders')}
           >
             <Ionicons name="list-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Active Orders</Text>
+            <Text style={styles.navLabel}>{t('shipper.activeShipments')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -258,7 +261,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => navigation.navigate('RateTransporter')}
           >
             <Ionicons name="star-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Ratings</Text>
+            <Text style={styles.navLabel}>{t('transporter.ratings')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -266,7 +269,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => navigation.navigate('ListCargo')}
           >
             <Ionicons name="add-circle-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>List Cargo</Text>
+            <Text style={styles.navLabel}>{t('shipper.listCargo')}</Text>
           </TouchableOpacity>
 
           <View style={styles.sidebarDivider} />
@@ -276,8 +279,10 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => navigation.navigate('ProfileSettings')}
           >
             <Ionicons name="settings-outline" size={24} color="#93C5FD" />
-            <Text style={styles.navLabel}>Settings</Text>
+            <Text style={styles.navLabel}>{t('common.settings')}</Text>
           </TouchableOpacity>
+
+          <LanguageSwitcher showLabel={false} size="small" />
         </View>
 
         <View style={styles.sidebarFooter}>
@@ -287,7 +292,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             onPress={() => dispatch(logout())}
           >
             <Ionicons name="log-out" size={20} color="#EF4444" />
-            <Text style={styles.logoutLabel}>Logout</Text>
+            <Text style={styles.logoutLabel}>{t('common.logout')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -306,10 +311,10 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
           <View style={[styles.welcomeBanner, { backgroundColor: theme.primary + '15' }]}>
             <View>
               <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-                Welcome back!
+                {t('common.welcomeBack')}!
               </Text>
               <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
-                You have {filteredItems.length} active shipment{filteredItems.length !== 1 ? 's' : ''}
+                {filteredItems.length} {t('shipper.activeShipments').toLowerCase()}
               </Text>
             </View>
             <View style={styles.welcomeIcon}>
@@ -323,25 +328,25 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {filteredItems.filter(i => i.status === 'in_transit').length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>In Transit</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('shipper.inTransit')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {filteredItems.filter(i => i.status === 'delivered').length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Delivered</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('shipper.delivered')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: theme.text }]}>
                 {filteredItems.filter(i => i.status === 'pending').length}
               </Text>
-              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Pending</Text>
+              <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{t('shipper.pending')}</Text>
             </View>
           </View>
 
           <View style={styles.panelHeader}>
             <Text style={[styles.panelTitle, { color: theme.text }]}>
-              Tracking List ({filteredItems.length})
+              {t('shipper.recentShipments')} ({filteredItems.length})
             </Text>
           </View>
 

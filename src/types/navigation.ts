@@ -6,6 +6,9 @@ export type RootStackParamList = {
   // Auth Stack
   Auth: undefined;
   Landing: undefined;
+  About: undefined;
+  Pricing: undefined;
+  TermsAndConditions: undefined;
   RoleSelection: undefined;
   Login: undefined;
   Register: undefined;

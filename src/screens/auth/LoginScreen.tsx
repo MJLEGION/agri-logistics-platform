@@ -27,8 +27,10 @@ import ModernButton from '../../components/ModernButton';
 import Divider from '../../components/Divider';
 import Toast, { useToast } from '../../components/Toast';
 import Card from '../../components/Card';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 import { UserRole, LoginScreenProps } from '../../types';
 import { Colors, Gradients, Typography, Spacing, BorderRadius, Shadows } from '../../config/designSystem';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,6 +74,7 @@ const ROLE_INFO: Record<
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const dispatch = useAppDispatch();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const { toast, showError, showSuccess, hideToast } = useToast();
 
@@ -167,18 +170,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     const newErrors = { phone: '', password: '' };
 
     if (!phone) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.phone = t('validation.phoneNumberRequired');
       valid = false;
     } else if (phone.length < 10) {
-      newErrors.phone = 'Please enter a valid phone number';
+      newErrors.phone = t('validation.phoneNumberInvalid');
       valid = false;
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validation.passwordRequired');
       valid = false;
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('validation.passwordTooShort');
       valid = false;
     }
 
@@ -256,10 +259,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       setShowConfetti(true);
       confettiRef.current?.start();
 
-      showSuccess('Login successful!');
+      showSuccess(t('messages.loginSuccess'));
       // Navigation happens automatically based on user's role
     } catch (err: any) {
-      showError(err || 'Invalid credentials. Please try again.');
+      showError(err || t('messages.loginError'));
     }
   };
 
@@ -321,16 +324,19 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               />
             </View>
 
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              accessibilityHint="Navigate to previous screen"
-            >
-              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+            <View style={styles.headerTopBar}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                accessibilityHint="Navigate to previous screen"
+              >
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <LanguageSwitcher showLabel={false} size="small" />
+            </View>
 
             <Animated.View style={[styles.headerContent, { opacity: fadeAnim }]}>
               <Image
@@ -338,14 +344,14 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 style={styles.logoImage}
                 resizeMode="contain"
               />
-              <Text style={styles.headerTitle}>Welcome Back</Text>
-              <Text style={styles.headerSubtitle}>Sign in to your account</Text>
+              <Text style={styles.headerTitle}>{t('common.welcome')}</Text>
+              <Text style={styles.headerSubtitle}>{t('auth.loginTitle')}</Text>
             </Animated.View>
           </LinearGradient>
 
           {/* Role Selection */}
           <View style={[styles.roleSelectionContainer, { backgroundColor: theme.background }]}>
-            <Text style={[styles.roleSelectionLabel, { color: theme.text }]}>Select Your Role</Text>
+            <Text style={[styles.roleSelectionLabel, { color: theme.text }]}>{t('auth.selectRole')}</Text>
             <View style={styles.roleButtonsContainer}>
               {(['shipper', 'transporter'] as UserRole[]).map((role, index) => {
                 const isSelected = selectedRole === role;
@@ -446,13 +452,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             >
               <Ionicons name="flash" size={16} color={theme.primary} />
               <Text style={[styles.demoButtonText, { color: theme.primary }]}>
-                Use Demo Credentials ({DEMO_CREDENTIALS[selectedRole].phone})
+                {t('auth.orUseDemo')} ({DEMO_CREDENTIALS[selectedRole].phone})
               </Text>
             </TouchableOpacity>
 
             <Input
-              label="Phone Number"
-              placeholder="+250 XXX XXX XXX"
+              label={t('common.phoneNumber')}
+              placeholder={t('auth.phoneNumberPlaceholder')}
               value={phone}
               onChangeText={(text) => {
                 setPhone(text);
@@ -465,8 +471,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             />
 
             <Input
-              label="Password"
-              placeholder="Enter your password"
+              label={t('common.password')}
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
@@ -485,12 +491,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               accessibilityHint="Reset your password"
             >
               <Text style={[styles.forgotPasswordText, { color: theme.primary }]}>
-                Forgot Password?
+                {t('auth.forgotPassword')}
               </Text>
             </TouchableOpacity>
 
             <Button
-              title="Sign In"
+              title={t('auth.signIn')}
               onPress={handleLogin}
               loading={isLoading}
               disabled={isLoading}
@@ -505,7 +511,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
             <View style={styles.registerContainer}>
               <Text style={[styles.registerText, { color: theme.textSecondary }]}>
-                Don't have an account?{' '}
+                {t('auth.noAccount')}{' '}
               </Text>
               <TouchableOpacity
                 onPress={() => navigation.navigate('RoleSelection')}
@@ -515,7 +521,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 accessibilityHint="Navigate to registration screen"
               >
                 <Text style={[styles.registerLink, { color: theme.primary }]}>
-                  Create Account
+                  {t('auth.signUp')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -633,6 +639,12 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
   },
+  headerTopBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -640,7 +652,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   headerContent: {
     alignItems: 'center',

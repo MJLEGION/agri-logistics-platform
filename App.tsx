@@ -1,10 +1,12 @@
 // App.tsx
+import './src/i18n'; // Import i18n FIRST to ensure initialization happens before any component uses it
 import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { store, persistor } from './src/store';
 import { ThemeProvider } from './src/contexts/ThemeContext';
+import { LanguageProvider } from './src/contexts/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { OfflineBanner } from './src/components/OfflineBanner';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -59,7 +61,9 @@ export default function App() {
       <Provider store={store}>
         <PersistGate loading={<SplashScreen />} persistor={persistor}>
           <ThemeProvider>
-            <AppContent />
+            <LanguageProvider>
+              <AppContent />
+            </LanguageProvider>
           </ThemeProvider>
         </PersistGate>
       </Provider>
