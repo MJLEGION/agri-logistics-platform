@@ -122,49 +122,64 @@ export default function LandingScreen({ navigation }: any) {
 
   // Responsive styles based on window dimensions
   const isMobile = width <= 768;
-  const isSmallMobile = width < 375;
+  const isSmallMobile = width < 420; // Increased threshold for better mobile experience
 
   const responsiveStyles = {
     navbar: {
-      paddingHorizontal: isMobile ? 16 : 60,
+      paddingHorizontal: isMobile ? 20 : 60,
+      paddingTop: Platform.OS === 'ios' ? 50 : 24,
+      paddingBottom: isMobile ? 20 : 16,
     },
     navbarContent: {
       flexDirection: 'row' as const,
       flexWrap: isMobile ? 'wrap' as const : 'nowrap' as const,
+    },
+    navLogo: {
+      transform: isMobile ? [{ scale: 1.1 }] : [{ scale: 1 }],
     },
     navMenu: {
       display: isMobile ? 'none' : 'flex',
     },
     navActions: {
       flexDirection: 'row' as const,
-      gap: isSmallMobile ? 4 : 8,
+      gap: isSmallMobile ? 8 : 10,
       marginLeft: isMobile ? 'auto' : 0,
     },
     navLoginButton: {
       display: isMobile ? 'none' : 'flex',
     },
     navTalkButton: {
-      paddingHorizontal: isSmallMobile ? 12 : 16,
-      paddingVertical: isSmallMobile ? 7 : 9,
+      paddingHorizontal: isSmallMobile ? 18 : 20,
+      paddingVertical: isSmallMobile ? 10 : 11,
       display: 'flex' as const,
     },
+    navButtonText: {
+      fontSize: isSmallMobile ? 14 : 15,
+    },
     hero: {
-      minHeight: isMobile ? (isSmallMobile ? 550 : 600) : height,
+      minHeight: isMobile ? (isSmallMobile ? 650 : 700) : height,
+      paddingHorizontal: isSmallMobile ? 20 : 24,
     },
     modernHeroTitle: {
-      fontSize: isMobile ? (isSmallMobile ? 28 : 32) : 52,
-      lineHeight: isMobile ? (isSmallMobile ? 36 : 40) : 62,
-      marginBottom: isSmallMobile ? 12 : 16,
+      fontSize: isMobile ? (isSmallMobile ? 36 : 40) : 52,
+      lineHeight: isMobile ? (isSmallMobile ? 44 : 48) : 62,
+      marginBottom: isSmallMobile ? 16 : 20,
     },
     modernHeroSubtitle: {
-      fontSize: isSmallMobile ? 14 : (isMobile ? 16 : 18),
-      lineHeight: isSmallMobile ? 20 : (isMobile ? 24 : 28),
-      marginBottom: isSmallMobile ? 20 : 24,
+      fontSize: isSmallMobile ? 16 : (isMobile ? 18 : 20),
+      lineHeight: isSmallMobile ? 24 : (isMobile ? 28 : 32),
+      marginBottom: isSmallMobile ? 24 : 28,
+    },
+    featureItemText: {
+      fontSize: isSmallMobile ? 15 : 16,
     },
     modernCTAButton: {
-      paddingHorizontal: isSmallMobile ? 20 : 24,
-      paddingVertical: isSmallMobile ? 12 : 14,
+      paddingHorizontal: isSmallMobile ? 28 : 32,
+      paddingVertical: isSmallMobile ? 16 : 18,
       alignSelf: isSmallMobile ? 'stretch' as const : 'flex-start' as const,
+    },
+    modernCTAText: {
+      fontSize: isSmallMobile ? 17 : 18,
     },
   };
 
@@ -174,11 +189,11 @@ export default function LandingScreen({ navigation }: any) {
       <View style={[styles.navbar, responsiveStyles.navbar, { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderBottomColor: 'transparent' }]}>
         <View style={[styles.navbarContent, responsiveStyles.navbarContent]}>
           {/* Logo */}
-          <View style={styles.navLogo}>
+          <View style={[styles.navLogo, responsiveStyles.navLogo]}>
             <View style={[styles.navLogoIcon, { backgroundColor: '#27AE60' }]}>
-              <Ionicons name="leaf" size={20} color="#FFFFFF" />
+              <Ionicons name="leaf" size={isMobile ? 24 : 20} color="#FFFFFF" />
             </View>
-            <Text style={[styles.navLogoText, { color: '#1a1a1a', fontWeight: '700' }]}>agrilogistics.</Text>
+            <Text style={[styles.navLogoText, { color: '#1a1a1a', fontWeight: '700', fontSize: isMobile ? 19 : 17 }]}>agrilogistics.</Text>
           </View>
 
           {/* Nav Menu Items */}
@@ -212,7 +227,7 @@ export default function LandingScreen({ navigation }: any) {
               onPress={() => navigation.navigate('RoleSelection')}
               activeOpacity={0.7}
             >
-              <Text style={[styles.navButtonText, { color: '#2d3748', fontSize: isSmallMobile ? 12 : 13 }]}>{t('landing.getStartedFree')}</Text>
+              <Text style={[styles.navButtonText, responsiveStyles.navButtonText, { color: '#2d3748' }]}>{t('landing.getStartedFree')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -251,16 +266,16 @@ export default function LandingScreen({ navigation }: any) {
               {/* Feature Highlights */}
               <View style={styles.featureHighlights}>
                 <View style={styles.featureItem}>
-                  <Ionicons name="flash" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>{t('landing.instantMatching')}</Text>
+                  <Ionicons name="flash" size={isMobile ? 18 : 16} color="#FFFFFF" />
+                  <Text style={[styles.featureItemText, responsiveStyles.featureItemText]}>{t('landing.instantMatching')}</Text>
                 </View>
                 <View style={styles.featureItem}>
-                  <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>{t('landing.securePayments')}</Text>
+                  <Ionicons name="shield-checkmark" size={isMobile ? 18 : 16} color="#FFFFFF" />
+                  <Text style={[styles.featureItemText, responsiveStyles.featureItemText]}>{t('landing.securePayments')}</Text>
                 </View>
                 <View style={styles.featureItem}>
-                  <Ionicons name="trending-up" size={16} color="#FFFFFF" />
-                  <Text style={styles.featureItemText}>{t('landing.optimizeRoutes')}</Text>
+                  <Ionicons name="trending-up" size={isMobile ? 18 : 16} color="#FFFFFF" />
+                  <Text style={[styles.featureItemText, responsiveStyles.featureItemText]}>{t('landing.optimizeRoutes')}</Text>
                 </View>
               </View>
 
@@ -270,7 +285,7 @@ export default function LandingScreen({ navigation }: any) {
                 onPress={() => navigation.navigate('RoleSelection')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.modernCTAText}>{t('landing.getStartedFree')}</Text>
+                <Text style={[styles.modernCTAText, responsiveStyles.modernCTAText]}>{t('landing.getStartedFree')}</Text>
               </TouchableOpacity>
 
               {/* Rating & Trust Indicators */}
