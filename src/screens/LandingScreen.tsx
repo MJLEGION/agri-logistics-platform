@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
   },
   // Hero Section - Modern Design
   hero: {
-    minHeight: staticWidth > 768 ? height : (staticWidth < 375 ? 550 : 600),
+    minHeight: staticWidth > 768 ? staticHeight : (staticWidth < 375 ? 550 : 600),
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1612,7 +1612,7 @@ const styles = StyleSheet.create({
   circle3: {
     width: 150,
     height: 150,
-    top: height / 2 - 75,
+    top: staticHeight / 2 - 75,
     right: -75,
   },
 });
