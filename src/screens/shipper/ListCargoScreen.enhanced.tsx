@@ -109,10 +109,13 @@ const Calendar = ({ date, onChange, theme }: any) => {
 };
 
 export default function ListCargoScreen({ navigation }: any) {
+  console.log('📦 ListCargoScreen loaded');
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { isLoading } = useAppSelector((state) => state.cargo);
   const { theme } = useTheme();
+
+  console.log('👤 Current user:', { userId: user?._id || user?.id, userName: user?.name, role: user?.role });
   
   // Form state
   const [cargoName, setCargoName] = useState('');
@@ -304,9 +307,18 @@ export default function ListCargoScreen({ navigation }: any) {
   }, []);
 
   const handleSubmit = async () => {
-    
+    console.log('📝 Form submission started');
+    console.log('📋 Form values:', {
+      cargoName,
+      quantity,
+      destinationAddress,
+      readyDate: readyDate.toISOString(),
+      userId: user?._id || user?.id
+    });
+
     // Validation
     if (!cargoName || !quantity || !readyDate || !destinationAddress) {
+      console.error('❌ Validation failed - missing required fields');
       showToast.error('Please fill all required fields including destination');
       return;
     }

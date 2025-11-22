@@ -301,6 +301,7 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
             <TouchableOpacity
               style={styles.mobileMenuItem}
               onPress={() => {
+                console.log('🚀 Navigating to ListCargo screen...');
                 navigation.navigate('ListCargo');
                 setMobileMenuOpen(false);
               }}
@@ -374,7 +375,10 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
 
           <TouchableOpacity
             style={styles.sidebarIconBtn}
-            onPress={() => navigation.navigate('ListCargo')}
+            onPress={() => {
+              console.log('🚀 Navigating to ListCargo screen (from desktop sidebar)...');
+              navigation.navigate('ListCargo');
+            }}
           >
             <Ionicons name="add-circle-outline" size={24} color="#93C5FD" />
             <Text style={styles.navLabel}>{t('shipper.listCargo')}</Text>
