@@ -71,6 +71,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const [selectedItem, setSelectedItem] = useState<TripItem | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Responsive breakpoints
   const isMobile = width <= 768;
@@ -244,7 +245,114 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background, flexDirection: isMobile ? 'column' : 'row' }]}>
-      {/* Dark Sidebar - Transporter (Blue Theme) - Hidden on mobile */}
+      {/* Mobile Header */}
+      {isMobile && (
+        <View style={[styles.mobileHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+          <TouchableOpacity
+            style={styles.hamburgerButton}
+            onPress={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Ionicons name={mobileMenuOpen ? "close" : "menu"} size={28} color={theme.text} />
+          </TouchableOpacity>
+          <Image
+            source={require('../../../assets/images/logos/logo.png')}
+            style={styles.mobileHeaderLogo}
+            resizeMode="contain"
+          />
+          <View style={styles.mobileHeaderActions}>
+            <LanguageSwitcher showLabel={false} size="small" />
+            <ThemeToggle />
+          </View>
+        </View>
+      )}
+
+      {/* Mobile Navigation Menu */}
+      {isMobile && mobileMenuOpen && (
+        <View style={[styles.mobileMenu, { backgroundColor: '#0F172A' }]}>
+          <ScrollView>
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('AvailableLoads');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="briefcase-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('transporter.availableLoads')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('ActiveTrips');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="navigate-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('transporter.activeDeliveries')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('EarningsDashboard');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="cash-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('transporter.earnings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('TransporterRatings');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="star-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('transporter.ratings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('TripHistory');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="time-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('shipper.completedShipments')}</Text>
+            </TouchableOpacity>
+
+            <View style={styles.mobileMenuDivider} />
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                navigation.navigate('ProfileSettings');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="settings-outline" size={24} color="#93C5FD" />
+              <Text style={styles.mobileMenuText}>{t('common.settings')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.mobileMenuItem}
+              onPress={() => {
+                dispatch(logout());
+                setMobileMenuOpen(false);
+              }}
+            >
+              <Ionicons name="log-out" size={24} color="#EF4444" />
+              <Text style={[styles.mobileMenuText, { color: '#EF4444' }]}>{t('common.logout')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Desktop Sidebar - Transporter (Blue Theme) - Hidden on mobile */}
       {!isMobile && (
         <View style={[styles.sidebar, { backgroundColor: '#0F172A' }]}>
         <View style={styles.sidebarHeader}>
@@ -328,13 +436,13 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
       {/* Main Content */}
       <ImageBackground
         source={require('../../../assets/images/backimages/transporter.jpg')}
-        style={styles.mainContent}
+        style={[styles.mainContent, { flexDirection: isMobile ? 'column' : 'row' }]}
         imageStyle={styles.backgroundImage}
       >
         <View style={[styles.backgroundOverlay, { backgroundColor: theme.background + 'E6' }]} />
-        
+
         {/* Left Panel - Trips List */}
-        <View style={[styles.leftPanel, { backgroundColor: theme.card }]}>
+        <View style={[styles.leftPanel, { backgroundColor: theme.card, width: isMobile ? '100%' : LEFT_PANEL_WIDTH, borderRightWidth: isMobile ? 0 : 1 }]}>
           {/* Welcome Banner */}
           <View style={[styles.welcomeBanner, { backgroundColor: '#3B82F6' + '20' }]}>
             <View>
@@ -475,7 +583,7 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
 
         {/* Right Panel - Detail Item */}
         {selectedItem && (
-          <View style={[styles.rightPanel, { backgroundColor: theme.card }]}>
+          <View style={[styles.rightPanel, { backgroundColor: theme.card, width: isMobile ? '100%' : RIGHT_PANEL_WIDTH }]}>
             <View style={styles.detailHeader}>
               <Text style={[styles.detailTitle, { color: theme.text }]}>
                 Trip Details
@@ -1015,5 +1123,57 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Mobile Header
+  mobileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    zIndex: 100,
+  },
+  hamburgerButton: {
+    padding: 8,
+  },
+  mobileHeaderLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+  },
+  mobileHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  // Mobile Menu
+  mobileMenu: {
+    maxHeight: '80%',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 99,
+  },
+  mobileMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  mobileMenuText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  mobileMenuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 8,
   },
 });
