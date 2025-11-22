@@ -225,17 +225,35 @@ export const deleteCargo = async (id: string, userId?: string): Promise<void> =>
  */
 export const getCargoByUserId = async (userId: string): Promise<Cargo[]> => {
   try {
+    console.log('📡 cargoService: Fetching cargo for user:', userId);
     logger.info('Fetching cargo by user ID', { userId });
     const response = await api.get<BackendCropResponse>(`/crops/user/${userId}`);
+
+    console.log('📡 cargoService: Backend response:', {
+      status: response.status,
+      hasData: !!response.data,
+      dataKeys: Object.keys(response.data || {})
+    });
 
     const cropsData = response.data.data || response.data;
     const cropsArray = Array.isArray(cropsData) ? cropsData : [];
 
+    console.log('📡 cargoService: Parsed crops:', {
+      count: cropsArray.length,
+      crops: cropsArray.map(c => ({ id: c._id, farmerId: c.farmerId, name: c.name }))
+    });
+
     logger.debug('Cargo fetched successfully', { userId, count: cropsArray.length });
 
     // Map backend crops to frontend cargo format
-    return cropsArray.map(mapBackendCropToCargo);
+    const mappedCargo = cropsArray.map(mapBackendCropToCargo);
+    console.log('📡 cargoService: Mapped to frontend format:', {
+      count: mappedCargo.length,
+      cargo: mappedCargo.map(c => ({ id: c._id, shipperId: c.shipperId, name: c.name }))
+    });
+    return mappedCargo;
   } catch (error: any) {
+    console.error('❌ cargoService: Failed to fetch cargo:', error);
     const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch cargo';
     logger.error('Failed to fetch cargo by user ID', error);
     throw new Error(errorMessage);

@@ -45,12 +45,14 @@ export default function MyCargoScreen({ navigation }: any) {
 
   // Fetch cargo on screen mount
   useEffect(() => {
+    console.log('🔄 MyCargoScreen: Fetching cargo on mount...');
     dispatch(fetchCargo());
   }, [dispatch]);
 
   // Refetch cargo when screen comes into focus (after creating new cargo)
   useFocusEffect(
     React.useCallback(() => {
+      console.log('🔄 MyCargoScreen: Refetching cargo (screen focused)...');
       dispatch(fetchCargo());
     }, [dispatch])
   );
@@ -59,6 +61,13 @@ export default function MyCargoScreen({ navigation }: any) {
     const shipperId = typeof item.shipperId === 'string' ? item.shipperId : item.shipperId?._id;
     return shipperId === user?._id || shipperId === user?.id;
   }) : [];
+
+  console.log('📊 MyCargoScreen: Cargo state:', {
+    totalCargoInState: Array.isArray(cargo) ? cargo.length : 0,
+    myListingsCount: myListings.length,
+    currentUserId: user?._id || user?.id,
+    allCargoIds: Array.isArray(cargo) ? cargo.map(c => ({ id: c._id || c.id, shipperId: c.shipperId })) : []
+  });
 
   // Filter by search query
   const filteredListings = searchQuery.trim()

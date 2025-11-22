@@ -15,11 +15,19 @@ export const fetchCargo = createAsyncThunk<Cargo[], void, { rejectValue: string 
     try {
       const state = getState() as any;
       const userId = state.auth?.user?._id || state.auth?.user?.id;
+      console.log('🔍 cargoSlice: Fetching cargo for user:', userId);
       if (!userId) {
+        console.error('❌ cargoSlice: No user ID found');
         return rejectWithValue('User not authenticated');
       }
-      return await cargoService.getCargoByUserId(userId);
+      const result = await cargoService.getCargoByUserId(userId);
+      console.log('✅ cargoSlice: Fetched cargo from backend:', {
+        count: result.length,
+        cargoIds: result.map(c => ({ id: c._id || c.id, shipperId: c.shipperId, name: c.name }))
+      });
+      return result;
     } catch (error: any) {
+      console.error('❌ cargoSlice: Failed to fetch cargo:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch cargo');
     }
   }
