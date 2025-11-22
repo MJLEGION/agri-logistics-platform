@@ -80,6 +80,9 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
   const isMobile = width <= 768;
   const isSmallMobile = width < 420;
 
+  // Debug log to verify responsive detection
+  console.log('ShipperHome - Screen width:', width, 'isMobile:', isMobile);
+
   useEffect(() => {
     dispatch(fetchCargo());
     dispatch(fetchOrders());

@@ -77,6 +77,9 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
   const isMobile = width <= 768;
   const isSmallMobile = width < 420;
 
+  // Debug log to verify responsive detection
+  console.log('TransporterHome - Screen width:', width, 'isMobile:', isMobile);
+
   useEffect(() => {
     dispatch(fetchCargo());
   }, [dispatch]);
