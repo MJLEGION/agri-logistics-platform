@@ -56,10 +56,9 @@ export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
       // Clear all user data before logging out
       dispatch(clearCargo());
       dispatch(clearOrders());
-      // Clear all AsyncStorage to remove any cached data
+      // Clear ALL AsyncStorage including persist keys to prevent stuck loading states
       const keys = await AsyncStorage.getAllKeys();
-      const dataKeys = keys.filter(key => !key.includes('persist:'));
-      await AsyncStorage.multiRemove(dataKeys);
+      await AsyncStorage.multiRemove(keys);
       await authService.logout();
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
@@ -87,6 +86,13 @@ const authSlice = createSlice({
       };
       state.token = action.payload.token;
       state.isAuthenticated = true;
+    },
+    resetAuthState: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.isLoading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -133,6 +139,7 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(logout.fulfilled, (state) => {
+        // Completely reset auth state to prevent stuck loading states
         state.isLoading = false;
         state.user = null;
         state.token = null;
@@ -146,5 +153,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials } = authSlice.actions;
+export const { setCredentials, resetAuthState } = authSlice.actions;
 export default authSlice.reducer;
