@@ -532,8 +532,8 @@ export default function ShipperHomeScreenNew({ navigation }: ShipperHomeScreenPr
           )}
         </View>
 
-        {/* Center - Map */}
-        {isWeb && (
+        {/* Center - Map - Hidden on mobile */}
+        {isWeb && !isMobile && (
           <View style={styles.mapContainer}>
             {selectedItem ? (
               <TrackingMapView

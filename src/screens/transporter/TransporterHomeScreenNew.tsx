@@ -562,8 +562,8 @@ export default function TransporterHomeScreenNew({ navigation }: any) {
           )}
         </View>
 
-        {/* Center - Map */}
-        {isWeb && (
+        {/* Center - Map - Hidden on mobile */}
+        {isWeb && !isMobile && (
           <View style={styles.mapContainer}>
             {selectedItem ? (
               <TrackingMapView
