@@ -18,7 +18,7 @@ import {
   getTripsByPeriod,
 } from '../../logistics/utils/tripCalculations';
 import { fetchAllTrips } from '../../logistics/store/tripsSlice';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import PaymentModal from '../../components/PaymentModal';
 import { showToast } from '../../services/toastService';
 import DashboardLayout from '../../components/layouts/DashboardLayout';

@@ -308,7 +308,7 @@ export default function AvailableLoadsScreen({ navigation }: any) {
 
       // Refresh data immediately after accepting
       await dispatch(fetchTrips() as any);
-      await dispatch(fetchCargo() as any);
+      await dispatch(fetchAllCargo() as any);
       await dispatch(fetchOrders() as any);
 
       const successMessage = isCargo

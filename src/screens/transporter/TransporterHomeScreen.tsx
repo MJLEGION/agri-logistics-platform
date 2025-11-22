@@ -14,7 +14,7 @@ import Button from '../../components/Button';
 import ListItem from '../../components/ListItem';
 import Divider from '../../components/Divider';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { calculateDistance as calcDistance } from '../../services/routeOptimizationService';

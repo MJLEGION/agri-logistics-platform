@@ -27,7 +27,7 @@ import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import Chip from '../../components/Chip';
 import Toast, { useToast } from '../../components/Toast';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
 
 type TripStatus = 'all' | 'completed' | 'cancelled';

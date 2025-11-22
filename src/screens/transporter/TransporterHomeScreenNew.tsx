@@ -22,7 +22,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import SearchBar from '../../components/SearchBar';

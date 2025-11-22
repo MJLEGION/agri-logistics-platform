@@ -22,7 +22,7 @@ import { logout } from '../../store/slices/authSlice';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ThemeToggle } from '../../components/common/ThemeToggle';
 import { fetchAllOrders } from '../../store/slices/ordersSlice';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import { fetchTransporterTrips } from '../../logistics/store/tripsSlice';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { findBestMatches, calculateDailyEarningPotential } from '../../services/loadMatchingService';

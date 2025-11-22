@@ -11,7 +11,7 @@ import {
   completeTrip,
 } from '../../logistics/store/tripsSlice';
 import { fetchOrders, updateOrder } from '../../store/slices/ordersSlice';
-import { fetchCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo as fetchCargo } from '../../store/slices/cargoSlice';
 import * as cargoService from '../../services/cargoService';
 import { getActiveTripsForTransporter } from '../../logistics/utils/tripCalculations';
 import { distanceService } from '../../services/distanceService';
