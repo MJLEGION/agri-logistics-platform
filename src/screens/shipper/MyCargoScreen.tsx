@@ -153,6 +153,11 @@ export default function MyCargoScreen({ navigation }: any) {
     );
   }
 
+  const handleRefresh = () => {
+    console.log('🔄 Manual refresh triggered');
+    dispatch(fetchCargo());
+  };
+
   return (
     <DashboardLayout
       title={`My Cargo (${myListings.length})`}
@@ -165,16 +170,36 @@ export default function MyCargoScreen({ navigation }: any) {
       contentPadding={false}
     >
 
-      {myListings.length > 0 && (
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, gap: 12 }}>
+        {/* Debug Refresh Button */}
+        <TouchableOpacity
+          onPress={handleRefresh}
+          style={{
+            backgroundColor: theme.primary,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
+        >
+          <Ionicons name="refresh" size={20} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '600' }}>
+            Refresh Cargo List (Debug)
+          </Text>
+        </TouchableOpacity>
+
+        {myListings.length > 0 && (
           <SearchBar
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search cargo by name, location, or status..."
             variant="filled"
           />
-        </View>
-      )}
+        )}
+      </View>
 
       {myListings.length === 0 ? (
         <EmptyState
