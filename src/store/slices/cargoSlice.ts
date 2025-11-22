@@ -9,6 +9,7 @@ interface CargoState {
 }
 
 // Async thunks
+// Fetch cargo for current user (shipper's own cargo)
 export const fetchCargo = createAsyncThunk<Cargo[], void, { rejectValue: string }>(
   'cargo/fetchAll',
   async (_, { rejectWithValue, getState }) => {
@@ -30,6 +31,25 @@ export const fetchCargo = createAsyncThunk<Cargo[], void, { rejectValue: string 
     } catch (error: any) {
       console.error('❌ cargoSlice: Failed to fetch cargo:', error);
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch cargo');
+    }
+  }
+);
+
+// Fetch ALL cargo (for transporters to see available loads)
+export const fetchAllCargo = createAsyncThunk<Cargo[], void, { rejectValue: string }>(
+  'cargo/fetchAllCargo',
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log('🔍 cargoSlice: Fetching ALL cargo for transporters...');
+      const result = await cargoService.getAllCargo();
+      console.log('✅ cargoSlice: Fetched all cargo:', {
+        count: result.length,
+        cargoIds: result.map(c => ({ id: c._id || c.id, shipperId: c.shipperId, name: c.name, status: c.status }))
+      });
+      return result;
+    } catch (error: any) {
+      console.error('❌ cargoSlice: Failed to fetch all cargo:', error);
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch all cargo');
     }
   }
 );
@@ -136,6 +156,21 @@ const cargoSlice = createSlice({
       .addCase(fetchCargo.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || 'Failed to fetch cargo';
+      })
+      // Fetch ALL cargo (for transporters)
+      .addCase(fetchAllCargo.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAllCargo.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Ensure cargo is always an array
+        state.cargo = Array.isArray(action.payload) ? action.payload : [];
+        console.log('✅ All cargo fetched, state.cargo is now:', state.cargo.length, 'items');
+      })
+      .addCase(fetchAllCargo.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || 'Failed to fetch all cargo';
       })
       // Create cargo
       .addCase(createCargo.pending, (state) => {

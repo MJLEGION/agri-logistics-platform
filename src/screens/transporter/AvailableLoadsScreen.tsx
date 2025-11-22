@@ -22,7 +22,7 @@ import {
   fetchTrips,
   acceptTrip,
 } from '../../logistics/store/tripsSlice';
-import { fetchCargo, updateCargo } from '../../store/slices/cargoSlice';
+import { fetchAllCargo, updateCargo } from '../../store/slices/cargoSlice';
 import * as cargoService from '../../services/cargoService';
 import { fetchOrders } from '../../store/slices/ordersSlice';
 import { getPendingTripsForTransporter } from '../../logistics/utils/tripCalculations';
@@ -169,9 +169,11 @@ export default function AvailableLoadsScreen({ navigation }: any) {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('🔄 AvailableLoadsScreen: Fetching trips and ALL cargo...');
         await dispatch(fetchTrips() as any);
-        await dispatch(fetchCargo() as any);
-              } catch (error) {
+        await dispatch(fetchAllCargo() as any);
+        console.log('✅ AvailableLoadsScreen: Data loaded');
+      } catch (error) {
         console.error('❌ AvailableLoadsScreen: Error loading data:', error);
       }
     };
@@ -183,8 +185,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
     setRefreshing(true);
     try {
       await dispatch(fetchTrips() as any);
-      await dispatch(fetchCargo() as any);
-          } catch (error) {
+      await dispatch(fetchAllCargo() as any);
+    } catch (error) {
       console.error('❌ AvailableLoadsScreen: Error during refresh:', error);
     }
     setRefreshing(false);
@@ -196,8 +198,8 @@ export default function AvailableLoadsScreen({ navigation }: any) {
       const refreshData = async () => {
         try {
           await dispatch(fetchTrips() as any);
-          await dispatch(fetchCargo() as any);
-                  } catch (error) {
+          await dispatch(fetchAllCargo() as any);
+        } catch (error) {
           console.error('❌ AvailableLoadsScreen: Error during auto-refresh:', error);
         }
       };
