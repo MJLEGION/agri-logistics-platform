@@ -37,12 +37,12 @@ const { width, height } = Dimensions.get('window');
 // Demo credentials for testing
 const DEMO_CREDENTIALS: Record<UserRole, { phone: string; password: string; name: string }> = {
   shipper: {
-    phone: '0788111111',
+    phone: '+250788111111',
     password: 'password123',
     name: 'Test Shipper (John Farmer)',
   },
   transporter: {
-    phone: '0789222222',
+    phone: '+250789222222',
     password: 'password123',
     name: 'Test Transporter (Mike)',
   },
@@ -458,7 +458,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
             <Input
               label={t('common.phoneNumber')}
-              placeholder={t('auth.phoneNumberPlaceholder')}
+              placeholder="+250788123456 or +234801234567"
               value={phone}
               onChangeText={(text) => {
                 setPhone(text);

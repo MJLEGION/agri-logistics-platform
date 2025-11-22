@@ -425,7 +425,7 @@ export default function RegisterScreen({ route, navigation }: any) {
             >
               <Input
                 label={t('common.phoneNumber')}
-                placeholder={t('auth.phoneNumberPlaceholder')}
+                placeholder="+250788123456 or +234801234567"
                 value={phone}
                 onChangeText={(text) => {
                   setPhone(text);
