@@ -11,8 +11,10 @@ import ListItem from '../../components/ListItem';
 import Badge from '../../components/Badge';
 import EmptyState from '../../components/EmptyState';
 import RateTransporterModal from '../../components/RateTransporterModal';
+import PaymentModal from '../../components/PaymentModal';
 import Toast, { useToast } from '../../components/Toast';
 import * as backendRatingService from '../../services/backendRatingService';
+import * as cargoService from '../../services/cargoService';
 import { logger } from '../../utils/logger';
 import { fetchCargo } from '../../store/slices/cargoSlice';
 import DashboardLayout from '../../components/layouts/DashboardLayout';
@@ -25,6 +27,7 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const { toast, showSuccess, showError, hideToast } = useToast();
   const animations = useScreenAnimations(6);
@@ -75,6 +78,8 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
             quantity: `${cargoItem.quantity} ${cargoItem.unit}`,
             deliveryLocation: cargoItem.destination || { address: cargoItem.location?.address },
             transporterId: cargoItem.transporterId,
+            shippingCost: cargoItem.shippingCost || 0,
+            paymentStatus: cargoItem.paymentStatus,
             createdAt: cargoItem.createdAt,
             updatedAt: cargoItem.updatedAt,
           }))
@@ -155,6 +160,11 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
     setRatingModalVisible(true);
   };
 
+  const handleOpenPaymentModal = (order: any) => {
+    setSelectedOrder(order);
+    setPaymentModalVisible(true);
+  };
+
   const handleSubmitRating = async (rating: number, comment: string) => {
     try {
       if (!selectedOrder?.transporterId) {
@@ -182,6 +192,44 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
       const errorMessage = error?.message || 'Failed to submit rating. Please try again.';
       showError(errorMessage);
     }
+  };
+
+  const handlePaymentSuccess = async (transactionId: string, referenceId: string) => {
+    try {
+      if (!selectedOrder) return;
+
+      logger.info('Payment successful, updating cargo status', {
+        cargoId: selectedOrder._id || selectedOrder.id,
+        transactionId,
+        referenceId,
+      });
+
+      // Update cargo with payment details
+      await cargoService.updateCargo(selectedOrder._id || selectedOrder.id, {
+        paymentStatus: 'paid',
+        paymentDetails: {
+          transactionId,
+          referenceId,
+          paidAt: new Date().toISOString(),
+          amount: selectedOrder.shippingCost || 0,
+        },
+      });
+
+      // Refresh cargo list
+      await dispatch(fetchCargo() as any);
+
+      showSuccess('Payment completed successfully! The transporter has been notified.');
+      setPaymentModalVisible(false);
+      setSelectedOrder(null);
+    } catch (error: any) {
+      logger.error('Failed to update payment status', error);
+      showError('Payment succeeded but failed to update status. Please contact support.');
+    }
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentModalVisible(false);
+    setSelectedOrder(null);
   };
 
   const sidebarNav = [
@@ -256,6 +304,18 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
                     // navigation.navigate('OrderDetails', { orderId: item._id || item.id })
                   }}
                 />
+                {/* Show "Pay Now" button for delivered orders that haven't been paid */}
+                {item.status === 'delivered' && item.transporterId && item.paymentStatus !== 'paid' && (
+                  <TouchableOpacity
+                    style={[styles.rateButton, { backgroundColor: '#F59E0B' }]}
+                    onPress={() => handleOpenPaymentModal(item)}
+                  >
+                    <Ionicons name="card-outline" size={16} color="#fff" />
+                    <Text style={styles.rateButtonText}>
+                      Pay Now {item.shippingCost ? `(${item.shippingCost.toLocaleString()} RWF)` : ''}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 {/* Show "Rate Transporter" button for completed/delivered orders */}
                 {(item.status === 'completed' || item.status === 'delivered') && item.transporterId && (
                   <TouchableOpacity
@@ -269,6 +329,20 @@ export default function ShipperActiveOrdersScreen({ navigation }: any) {
               </View>
             </Animated.View>
           )}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {selectedOrder && (
+        <PaymentModal
+          visible={paymentModalVisible}
+          amount={selectedOrder.shippingCost || 0}
+          orderId={selectedOrder._id || selectedOrder.id}
+          userEmail={user?.email || user?.phone || 'user@agri-logistics.com'}
+          userName={user?.name || 'User'}
+          purpose="shipping"
+          onSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
         />
       )}
 
