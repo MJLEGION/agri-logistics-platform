@@ -137,13 +137,23 @@ const RateTransporterScreen = ({ navigation }: any) => {
 
     setIsSubmitting(true);
     try {
+      console.log('🌟 RATING SUBMISSION:', {
+        ratedUserId: selectedOrder.transporterId,
+        tripId: selectedOrder.id,
+        rating,
+        comment,
+        transporterName: selectedOrder.transporterName,
+      });
+
       // Submit rating to backend API
-      await backendRatingService.createRating({
+      const result = await backendRatingService.createRating({
         ratedUserId: selectedOrder.transporterId,
         tripId: selectedOrder.id,
         rating,
         comment,
       });
+
+      console.log('✅ RATING CREATED:', result);
 
       logger.info('Rating submitted successfully', {
         orderId: selectedOrder.id,

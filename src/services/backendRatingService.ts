@@ -57,15 +57,22 @@ export interface TransporterStats {
  */
 export const createRating = async (ratingData: RatingData): Promise<Rating> => {
   try {
+    console.log('📡 backendRatingService: Creating rating with data:', ratingData);
     logger.info('Creating rating', { transporterId: ratingData.ratedUserId });
 
     const response = await api.post<BackendRatingResponse>('/ratings', ratingData);
+
+    console.log('📡 backendRatingService: Backend response:', {
+      status: response.status,
+      data: response.data
+    });
 
     const ratingResult = response.data.data || response.data;
     if (!ratingResult || !ratingResult._id) {
       throw new Error('Failed to create rating - no data returned');
     }
 
+    console.log('✅ backendRatingService: Rating created successfully:', ratingResult);
     logger.info('Rating created successfully');
     return ratingResult;
   } catch (error: any) {
@@ -113,12 +120,23 @@ export const createRating = async (ratingData: RatingData): Promise<Rating> => {
  */
 export const getTransporterRatings = async (transporterId: string): Promise<Rating[]> => {
   try {
+    console.log('📡 backendRatingService: Fetching ratings for transporter:', transporterId);
     logger.info('Fetching transporter ratings', { transporterId });
 
     const response = await api.get<BackendRatingResponse>(`/ratings/user/${transporterId}`);
 
+    console.log('📡 backendRatingService: Ratings response:', {
+      status: response.status,
+      data: response.data
+    });
+
     const ratingsData = response.data.data || response.data;
     const ratingsArray = Array.isArray(ratingsData) ? ratingsData : [];
+
+    console.log('📡 backendRatingService: Parsed ratings:', {
+      count: ratingsArray.length,
+      ratings: ratingsArray
+    });
 
     logger.debug('Transporter ratings fetched', { count: ratingsArray.length });
     
