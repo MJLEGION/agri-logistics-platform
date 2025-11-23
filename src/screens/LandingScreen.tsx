@@ -37,6 +37,7 @@ export default function LandingScreen({ navigation }: any) {
   // Animation refs
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Start animations
@@ -66,6 +67,43 @@ export default function LandingScreen({ navigation }: any) {
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
+  });
+
+  // Parallax effects
+  const heroParallax = scrollY.interpolate({
+    inputRange: [0, 500],
+    outputRange: [0, -150],
+    extrapolate: 'clamp',
+  });
+
+  const heroOpacity = scrollY.interpolate({
+    inputRange: [0, 300],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const dashboardParallax = scrollY.interpolate({
+    inputRange: [0, 500],
+    outputRange: [0, -100],
+    extrapolate: 'clamp',
+  });
+
+  const servicesParallax = scrollY.interpolate({
+    inputRange: [400, 1000],
+    outputRange: [50, -50],
+    extrapolate: 'clamp',
+  });
+
+  const testimonialsParallax = scrollY.interpolate({
+    inputRange: [1200, 1800],
+    outputRange: [50, -50],
+    extrapolate: 'clamp',
+  });
+
+  const ctaParallax = scrollY.interpolate({
+    inputRange: [2000, 2600],
+    outputRange: [80, -40],
+    extrapolate: 'clamp',
   });
 
   const services = [
@@ -233,28 +271,50 @@ export default function LandingScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        ref={scrollViewRef}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Hero Section - Modern Gradient Design */}
         <View style={[styles.hero, responsiveStyles.hero]}>
           {/* Background Image with Gradient Overlay */}
-          <Image
+          <Animated.Image
             source={require('../../assets/trucker-2946821.jpg')}
-            style={[StyleSheet.absoluteFillObject, { width: '100%', height: '100%' }]}
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                width: '100%',
+                height: '100%',
+                transform: [{ translateY: heroParallax }],
+              },
+            ]}
             resizeMode="cover"
           />
-          <LinearGradient
-            colors={['rgba(128, 239, 128, 0.60)',
-                     'rgba(128, 239, 128, 0.55)',
-                     'rgba(128, 239, 128, 0.50)',
-                     'rgba(128, 239, 128, 0.45)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroBackground}
-          />
+          <Animated.View
+            style={[
+              styles.heroBackground,
+              { transform: [{ translateY: heroParallax }] },
+            ]}
+          >
+            <LinearGradient
+              colors={['rgba(128, 239, 128, 0.60)',
+                       'rgba(128, 239, 128, 0.55)',
+                       'rgba(128, 239, 128, 0.50)',
+                       'rgba(128, 239, 128, 0.45)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+            />
+          </Animated.View>
 
           <View style={styles.heroContainer}>
             {/* Left Content */}
-            <Animated.View style={[styles.heroLeftContent, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.heroLeftContent, { opacity: Animated.multiply(fadeAnim, heroOpacity) }]}>
               <Text style={[styles.modernHeroTitle, responsiveStyles.modernHeroTitle]}>
                 {t('landing.heroTitle')}
               </Text>
@@ -303,7 +363,12 @@ export default function LandingScreen({ navigation }: any) {
             </Animated.View>
 
             {/* Right Content - Dashboard Preview */}
-            <View style={styles.heroRightContent}>
+            <Animated.View
+              style={[
+                styles.heroRightContent,
+                { transform: [{ translateY: dashboardParallax }] },
+              ]}
+            >
               <View style={styles.dashboardMockup}>
                 {/* Profile Cards */}
                 <View style={styles.profileCard1}>
@@ -359,14 +424,19 @@ export default function LandingScreen({ navigation }: any) {
                   </View>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           </View>
         </View>
 
 
 
         {/* Services Section - Modern Design */}
-        <View style={styles.modernServicesSection}>
+        <Animated.View
+          style={[
+            styles.modernServicesSection,
+            { transform: [{ translateY: servicesParallax }] },
+          ]}
+        >
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
               {t('landing.howWeServe')}
@@ -391,7 +461,7 @@ export default function LandingScreen({ navigation }: any) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* Who We Serve Section - Modern Design */}
         <View style={styles.modernWhoWeServeSection}>
@@ -467,7 +537,12 @@ export default function LandingScreen({ navigation }: any) {
         </View>
 
         {/* Testimonials Section - Modern Design */}
-        <View style={styles.modernTestimonialsSection}>
+        <Animated.View
+          style={[
+            styles.modernTestimonialsSection,
+            { transform: [{ translateY: testimonialsParallax }] },
+          ]}
+        >
           <View style={styles.modernSectionHeader}>
             <Text style={styles.modernSectionTitle}>
               {t('landing.whatUsersSay')}
@@ -500,7 +575,7 @@ export default function LandingScreen({ navigation }: any) {
               </View>
             ))}
           </View>
-        </View>
+        </Animated.View>
 
         {/* How It Works Section - Modern Design */}
         <View style={styles.modernHowItWorksSection}>
@@ -538,7 +613,12 @@ export default function LandingScreen({ navigation }: any) {
         </View>
 
         {/* CTA Section - Modern Design */}
-        <View style={styles.modernCTASection}>
+        <Animated.View
+          style={[
+            styles.modernCTASection,
+            { transform: [{ translateY: ctaParallax }] },
+          ]}
+        >
           <View style={styles.modernCTAContainer}>
             <View style={styles.modernCTAIconWrapper}>
               <View style={styles.modernCTAIconBg}>
@@ -559,7 +639,7 @@ export default function LandingScreen({ navigation }: any) {
               <Text style={styles.modernCTAPrimaryButtonText}>{t('landing.getStartedToday')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Footer */}
         <View style={[styles.footer, { backgroundColor: theme.backgroundAlt, borderTopColor: theme.border }]}>
@@ -643,7 +723,7 @@ export default function LandingScreen({ navigation }: any) {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
