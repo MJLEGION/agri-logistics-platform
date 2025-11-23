@@ -21,8 +21,9 @@ export const register = createAsyncThunk<any, RegisterData, { rejectValue: strin
       dispatch(clearCargo());
       dispatch(clearOrders());
       // Clear all AsyncStorage to remove any cached data
+      // BUT preserve local_ratings so ratings persist across sessions
       const keys = await AsyncStorage.getAllKeys();
-      const dataKeys = keys.filter(key => !key.includes('persist:'));
+      const dataKeys = keys.filter(key => !key.includes('persist:') && key !== 'local_ratings');
       await AsyncStorage.multiRemove(dataKeys);
       return await authService.register(userData);
     } catch (error: any) {
@@ -39,8 +40,9 @@ export const login = createAsyncThunk<any, LoginCredentials, { rejectValue: stri
       dispatch(clearCargo());
       dispatch(clearOrders());
       // Clear all AsyncStorage to remove any cached data
+      // BUT preserve local_ratings so ratings persist across sessions
       const keys = await AsyncStorage.getAllKeys();
-      const dataKeys = keys.filter(key => !key.includes('persist:'));
+      const dataKeys = keys.filter(key => !key.includes('persist:') && key !== 'local_ratings');
       await AsyncStorage.multiRemove(dataKeys);
       return await authService.login(credentials);
     } catch (error: any) {
