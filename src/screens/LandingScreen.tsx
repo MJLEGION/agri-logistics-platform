@@ -276,7 +276,7 @@ export default function LandingScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
+          { useNativeDriver: false }
         )}
         scrollEventThrottle={16}
       >
@@ -314,7 +314,9 @@ export default function LandingScreen({ navigation }: any) {
 
           <View style={styles.heroContainer}>
             {/* Left Content */}
-            <Animated.View style={[styles.heroLeftContent, { opacity: Animated.multiply(fadeAnim, heroOpacity) }]}>
+            <Animated.View style={[styles.heroLeftContent, {
+              opacity: Animated.multiply(fadeAnim, heroOpacity)
+            }]}>
               <Text style={[styles.modernHeroTitle, responsiveStyles.modernHeroTitle]}>
                 {t('landing.heroTitle')}
               </Text>
