@@ -21,7 +21,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'document-text',
       title: 'END-USER LICENSE AGREEMENT (EULA)',
-      color: '#10797D',
+      color: '#64748b',
       content: [
         'Last Updated: November 2025',
         '',
@@ -35,7 +35,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'people',
       title: 'User Accounts & Responsibilities',
-      color: '#F59E0B',
+      color: '#64748b',
       content: [
         'Farmers: You are responsible for the accuracy of crop listings (weight, type, location). False listings may result in account suspension.',
         '',
@@ -45,7 +45,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'close-circle',
       title: 'Prohibited Activities',
-      color: '#EF4444',
+      color: '#64748b',
       content: [
         'You agree not to:',
         '• Reverse engineer, decompile, or attempt to derive the source code of the Application.',
@@ -56,7 +56,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'warning',
       title: 'Limitation of Liability',
-      color: '#DC2626',
+      color: '#64748b',
       content: [
         'To the maximum extent permitted by applicable law, in no event shall the Developer be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of crops, loss of profits, or business interruption) arising out of the use of or inability to use the Application.',
         '',
@@ -66,7 +66,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'close-circle',
       title: 'Termination',
-      color: '#DC2626',
+      color: '#64748b',
       content: [
         'This Agreement is effective until terminated by you or the Developer. Your rights under this Agreement will terminate automatically without notice if you fail to comply with any term(s) of this Agreement.',
       ],
@@ -74,7 +74,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'lock-closed',
       title: 'PRIVACY POLICY',
-      color: '#6366F1',
+      color: '#64748b',
       content: [
         'Last Updated: November 2025',
         '',
@@ -92,7 +92,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'shield-checkmark',
       title: 'How We Use Your Information',
-      color: '#27AE60',
+      color: '#64748b',
       content: [
         '• To facilitate the connection between Farmers and Transporters.',
         '• To calculate shipping costs and optimized routes.',
@@ -103,7 +103,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'server',
       title: 'Data Storage and Security',
-      color: '#8B5CF6',
+      color: '#64748b',
       content: [
         'Offline Data: Some data is stored locally on your device via IndexedDB/SQLite for offline access.',
         '',
@@ -115,7 +115,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'share-social',
       title: 'Sharing of Your Information',
-      color: '#EC4899',
+      color: '#64748b',
       content: [
         'We do not sell your personal information. We may share data with:',
         '',
@@ -127,7 +127,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'lock-closed',
       title: 'COPYRIGHT NOTICE',
-      color: '#06B6D4',
+      color: '#64748b',
       content: [
         '© 2025 Michael George. All Rights Reserved.',
         '',
@@ -139,7 +139,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'layers',
       title: 'Third-Party Assets',
-      color: '#F59E0B',
+      color: '#64748b',
       content: [
         '• Map data is provided by OpenStreetMap under the ODbL license.',
         '• Payment processing is provided by MTN Mobile Money.',
@@ -149,7 +149,7 @@ export default function TermsAndConditionsScreen({ navigation }: any) {
     {
       icon: 'mail',
       title: 'Contact Information',
-      color: '#10797D',
+      color: '#64748b',
       content: [
         'For questions about these Terms or licensing inquiries, please contact:',
         '',

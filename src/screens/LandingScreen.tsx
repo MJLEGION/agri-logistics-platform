@@ -381,7 +381,7 @@ export default function LandingScreen({ navigation }: any) {
               <View key={index} style={styles.modernServiceCard}>
                 <View style={styles.serviceIconWrapper}>
                   <View style={[styles.serviceIconBg, {
-                    backgroundColor: index === 0 ? '#10797D' : index === 1 ? '#6366F1' : '#F59E0B'
+                    backgroundColor: '#64748b'
                   }]}>
                     <Ionicons name={service.icon as any} size={24} color="#FFFFFF" />
                   </View>
@@ -409,7 +409,7 @@ export default function LandingScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <View style={styles.modernRoleIconWrapper}>
-                <View style={[styles.modernRoleIcon, { backgroundColor: '#10797D' }]}>
+                <View style={[styles.modernRoleIcon, { backgroundColor: '#64748b' }]}>
                   <Ionicons name="leaf" size={32} color="#FFFFFF" />
                 </View>
               </View>
@@ -419,15 +419,15 @@ export default function LandingScreen({ navigation }: any) {
               </Text>
               <View style={styles.modernRoleFeatures}>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.easyListing')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.reliableTransport')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#10797D" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.fairPricing')}</Text>
                 </View>
               </View>
@@ -440,7 +440,7 @@ export default function LandingScreen({ navigation }: any) {
               activeOpacity={0.8}
             >
               <View style={styles.modernRoleIconWrapper}>
-                <View style={[styles.modernRoleIcon, { backgroundColor: '#6366F1' }]}>
+                <View style={[styles.modernRoleIcon, { backgroundColor: '#64748b' }]}>
                   <Ionicons name="car" size={32} color="#FFFFFF" />
                 </View>
               </View>
@@ -450,15 +450,15 @@ export default function LandingScreen({ navigation }: any) {
               </Text>
               <View style={styles.modernRoleFeatures}>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.availableLoadsFeature')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.routeOptimization')}</Text>
                 </View>
                 <View style={styles.modernFeatureRow}>
-                  <Ionicons name="checkmark-circle" size={18} color="#6366F1" />
+                  <Ionicons name="checkmark-circle" size={18} color="#64748b" />
                   <Text style={styles.modernFeatureText}>{t('landing.bestRates')}</Text>
                 </View>
               </View>
@@ -804,12 +804,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   modernCTAButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#64748b',
     paddingHorizontal: staticWidth < 375 ? 20 : 24,
     paddingVertical: staticWidth < 375 ? 12 : 14,
     borderRadius: 8,
     alignSelf: staticWidth < 375 ? 'stretch' : 'flex-start',
-    shadowColor: '#6366F1',
+    shadowColor: '#64748b',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#64748b',
   },
   activityCard: {
     position: 'absolute',
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
     width: staticWidth < 375 ? 40 : 48,
     height: staticWidth < 375 ? 40 : 48,
     borderRadius: staticWidth < 375 ? 20 : 24,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#64748b',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1297,7 +1297,7 @@ const styles = StyleSheet.create({
   },
   modernCTAContainer: {
     alignItems: 'center',
-    backgroundColor: '#6366F1',
+    backgroundColor: '#64748b',
     borderRadius: 24,
     padding: staticWidth > 768 ? 60 : (staticWidth < 375 ? 24 : 32),
     maxWidth: 800,
@@ -1348,7 +1348,7 @@ const styles = StyleSheet.create({
   modernCTAPrimaryButtonText: {
     fontSize: staticWidth < 375 ? 15 : 17,
     fontWeight: '700',
-    color: '#6366F1',
+    color: '#64748b',
     textAlign: 'center',
   },
   heroStats: {
