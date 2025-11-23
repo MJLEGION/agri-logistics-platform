@@ -57,8 +57,10 @@ export const logout = createAsyncThunk<void, void, { rejectValue: string }>(
       dispatch(clearCargo());
       dispatch(clearOrders());
       // Clear ALL AsyncStorage including persist keys to prevent stuck loading states
+      // BUT preserve local_ratings so ratings persist across sessions
       const keys = await AsyncStorage.getAllKeys();
-      await AsyncStorage.multiRemove(keys);
+      const keysToRemove = keys.filter(key => key !== 'local_ratings');
+      await AsyncStorage.multiRemove(keysToRemove);
       await authService.logout();
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
