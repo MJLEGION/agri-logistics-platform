@@ -801,19 +801,24 @@ export default function ListCargoScreen({ navigation }: any) {
                         }]}
                         value={hourText}
                         onChangeText={(text) => {
-                          setHourText(text);
-                          const hour = parseInt(text, 10);
-                          if (!isNaN(hour) && hour >= 1 && hour <= 12) {
-                            const newTime = new Date(tempTime);
-                            const isPM = tempTime.getHours() >= 12;
-                            newTime.setHours(hour === 12 ? (isPM ? 12 : 0) : (isPM ? hour + 12 : hour));
-                            setTempTime(newTime);
+                          // Allow empty string or valid numeric input
+                          if (text === '' || /^\d{0,2}$/.test(text)) {
+                            setHourText(text);
+                            const hour = parseInt(text, 10);
+                            if (!isNaN(hour) && hour >= 1 && hour <= 12) {
+                              const newTime = new Date(tempTime);
+                              const isPM = tempTime.getHours() >= 12;
+                              newTime.setHours(hour === 12 ? (isPM ? 12 : 0) : (isPM ? hour + 12 : hour));
+                              setTempTime(newTime);
+                            }
                           }
                         }}
                         keyboardType="numeric"
                         maxLength={2}
                         placeholder="12"
                         placeholderTextColor={theme.textSecondary}
+                        editable={true}
+                        selectTextOnFocus={true}
                       />
                       <Text style={[styles.timeSeparator, { color: theme.text }]}>:</Text>
                       {/* Minute Input */}
@@ -825,18 +830,23 @@ export default function ListCargoScreen({ navigation }: any) {
                         }]}
                         value={minuteText}
                         onChangeText={(text) => {
-                          setMinuteText(text);
-                          const minute = parseInt(text, 10);
-                          if (!isNaN(minute) && minute >= 0 && minute <= 59) {
-                            const newTime = new Date(tempTime);
-                            newTime.setMinutes(minute);
-                            setTempTime(newTime);
+                          // Allow empty string or valid numeric input
+                          if (text === '' || /^\d{0,2}$/.test(text)) {
+                            setMinuteText(text);
+                            const minute = parseInt(text, 10);
+                            if (!isNaN(minute) && minute >= 0 && minute <= 59) {
+                              const newTime = new Date(tempTime);
+                              newTime.setMinutes(minute);
+                              setTempTime(newTime);
+                            }
                           }
                         }}
                         keyboardType="numeric"
                         maxLength={2}
                         placeholder="00"
                         placeholderTextColor={theme.textSecondary}
+                        editable={true}
+                        selectTextOnFocus={true}
                       />
                       {/* AM/PM Toggle */}
                       <View style={styles.amPmToggle}>
