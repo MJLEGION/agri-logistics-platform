@@ -128,6 +128,8 @@ export default function ListCargoScreen({ navigation }: any) {
   const [pickupTime, setPickupTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempTime, setTempTime] = useState(new Date());
+  const [hourText, setHourText] = useState('');
+  const [minuteText, setMinuteText] = useState('');
 
   // Location state
   const [originAddress, setOriginAddress] = useState('Kigali, Rwanda');
@@ -317,6 +319,8 @@ export default function ListCargoScreen({ navigation }: any) {
 
   const openTimePicker = () => {
     setTempTime(pickupTime);
+    setHourText(String(pickupTime.getHours() % 12 || 12).padStart(2, '0'));
+    setMinuteText(String(pickupTime.getMinutes()).padStart(2, '0'));
     setShowTimePicker(true);
   };
 
@@ -795,8 +799,9 @@ export default function ListCargoScreen({ navigation }: any) {
                           borderColor: theme.border,
                           color: theme.text,
                         }]}
-                        value={String(tempTime.getHours() % 12 || 12).padStart(2, '0')}
+                        value={hourText}
                         onChangeText={(text) => {
+                          setHourText(text);
                           const hour = parseInt(text, 10);
                           if (!isNaN(hour) && hour >= 1 && hour <= 12) {
                             const newTime = new Date(tempTime);
@@ -818,8 +823,9 @@ export default function ListCargoScreen({ navigation }: any) {
                           borderColor: theme.border,
                           color: theme.text,
                         }]}
-                        value={String(tempTime.getMinutes()).padStart(2, '0')}
+                        value={minuteText}
                         onChangeText={(text) => {
+                          setMinuteText(text);
                           const minute = parseInt(text, 10);
                           if (!isNaN(minute) && minute >= 0 && minute <= 59) {
                             const newTime = new Date(tempTime);
@@ -848,6 +854,7 @@ export default function ListCargoScreen({ navigation }: any) {
                               newTime.setHours(tempTime.getHours() - 12);
                             }
                             setTempTime(newTime);
+                            setHourText(String(newTime.getHours() % 12 || 12).padStart(2, '0'));
                           }}
                         >
                           <Text style={[
@@ -869,6 +876,7 @@ export default function ListCargoScreen({ navigation }: any) {
                               newTime.setHours(tempTime.getHours() + 12);
                             }
                             setTempTime(newTime);
+                            setHourText(String(newTime.getHours() % 12 || 12).padStart(2, '0'));
                           }}
                         >
                           <Text style={[
