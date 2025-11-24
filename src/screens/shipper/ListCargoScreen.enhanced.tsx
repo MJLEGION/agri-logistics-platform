@@ -125,6 +125,9 @@ export default function ListCargoScreen({ navigation }: any) {
   const [readyDate, setReadyDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
+  const [pickupTime, setPickupTime] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [tempTime, setTempTime] = useState(new Date());
 
   // Location state
   const [originAddress, setOriginAddress] = useState('Kigali, Rwanda');
@@ -300,6 +303,28 @@ export default function ListCargoScreen({ navigation }: any) {
     setShowDatePicker(false);
   };
 
+  // Time handling
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    if (Platform.OS === 'ios') {
+      setTempTime(selectedTime || tempTime);
+    } else {
+      setShowTimePicker(false);
+      if (selectedTime) {
+        setPickupTime(selectedTime);
+      }
+    }
+  };
+
+  const openTimePicker = () => {
+    setTempTime(pickupTime);
+    setShowTimePicker(true);
+  };
+
+  const confirmTime = () => {
+    setPickupTime(tempTime);
+    setShowTimePicker(false);
+  };
+
   // Form submission
   // Update customOriginAddress when originAddress changes
   useEffect(() => {
@@ -339,6 +364,7 @@ export default function ListCargoScreen({ navigation }: any) {
       unit,
       pricePerUnit: parsedPrice,
       readyDate: readyDate.toISOString().split('T')[0],
+      pickupTime: pickupTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       shipperId: user?._id || user?.id,
       status: 'listed',
       suggestedVehicle: selectedVehicle,
@@ -395,6 +421,7 @@ export default function ListCargoScreen({ navigation }: any) {
           setUnit('kg');
           setPricePerUnit('');
           setReadyDate(new Date());
+          setPickupTime(new Date());
           setDestinationAddress('');
           setDistance(0);
           setShippingCost(0);
@@ -707,13 +734,13 @@ export default function ListCargoScreen({ navigation }: any) {
                     <Calendar date={tempDate} onChange={setTempDate} theme={theme} />
                   </View>
                   <View style={styles.modalButtons}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[styles.modalButton, { borderColor: theme.primary }]}
                       onPress={() => setShowDatePicker(false)}
                     >
                       <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={[styles.modalButton, { backgroundColor: theme.primary }]}
                       onPress={confirmDate}
                     >
@@ -732,6 +759,80 @@ export default function ListCargoScreen({ navigation }: any) {
                 is24Hour={true}
                 display="default"
                 onChange={handleDateChange}
+              />
+            )
+          )}
+
+          {/* Pickup Time */}
+          <Text style={[styles.label, { color: theme.text }]}>Pickup Time *</Text>
+          <TouchableOpacity
+            onPress={openTimePicker}
+            style={[styles.input, {
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              justifyContent: 'center',
+              flexDirection: 'row',
+              alignItems: 'center',
+            }]}
+          >
+            <Ionicons name="time-outline" size={20} color={theme.primary} style={{ marginRight: 8 }} />
+            <Text style={{ color: theme.text }}>
+              {pickupTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+            </Text>
+          </TouchableOpacity>
+
+          {Platform.OS === 'web' ? (
+            <Modal visible={showTimePicker} transparent animationType="fade">
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                  <Text style={[styles.modalTitle, { color: theme.text }]}>Select Pickup Time</Text>
+                  <View style={styles.timePickerContainer}>
+                    <TextInput
+                      style={[styles.timeInput, {
+                        backgroundColor: theme.background,
+                        borderColor: theme.border,
+                        color: theme.text,
+                      }]}
+                      value={tempTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      onChangeText={(text) => {
+                        const [hours, minutes] = text.split(':');
+                        if (hours && minutes) {
+                          const newTime = new Date(tempTime);
+                          newTime.setHours(parseInt(hours, 10));
+                          newTime.setMinutes(parseInt(minutes, 10));
+                          setTempTime(newTime);
+                        }
+                      }}
+                      placeholder="HH:MM"
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                  </View>
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      style={[styles.modalButton, { borderColor: theme.primary }]}
+                      onPress={() => setShowTimePicker(false)}
+                    >
+                      <Text style={[styles.modalButtonText, { color: theme.primary }]}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                      onPress={confirmTime}
+                    >
+                      <Text style={[styles.modalButtonText, { color: theme.card }]}>Confirm</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+          ) : (
+            showTimePicker && (
+              <DateTimePicker
+                testID="nativeTimePicker"
+                value={pickupTime}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={handleTimeChange}
               />
             )
           )}
@@ -1027,6 +1128,20 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  timePickerContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  timeInput: {
+    width: 150,
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   modalButtons: {
     flexDirection: 'row',
