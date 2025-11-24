@@ -801,16 +801,32 @@ export default function ListCargoScreen({ navigation }: any) {
                         }]}
                         value={hourText}
                         onChangeText={(text) => {
-                          // Allow empty string or valid numeric input
-                          if (text === '' || /^\d{0,2}$/.test(text)) {
+                          // Only allow empty string or numbers
+                          if (text === '') {
                             setHourText(text);
-                            const hour = parseInt(text, 10);
-                            if (!isNaN(hour) && hour >= 1 && hour <= 12) {
-                              const newTime = new Date(tempTime);
-                              const isPM = tempTime.getHours() >= 12;
-                              newTime.setHours(hour === 12 ? (isPM ? 12 : 0) : (isPM ? hour + 12 : hour));
-                              setTempTime(newTime);
-                            }
+                            return;
+                          }
+
+                          // Only allow numeric input
+                          if (!/^\d{1,2}$/.test(text)) {
+                            return;
+                          }
+
+                          const hour = parseInt(text, 10);
+
+                          // Restrict to 12-hour format (1-12 only)
+                          if (hour > 12) {
+                            return; // Don't allow values > 12
+                          }
+
+                          setHourText(text);
+
+                          // Update time only if valid
+                          if (hour >= 1 && hour <= 12) {
+                            const newTime = new Date(tempTime);
+                            const isPM = tempTime.getHours() >= 12;
+                            newTime.setHours(hour === 12 ? (isPM ? 12 : 0) : (isPM ? hour + 12 : hour));
+                            setTempTime(newTime);
                           }
                         }}
                         keyboardType="numeric"
@@ -830,15 +846,31 @@ export default function ListCargoScreen({ navigation }: any) {
                         }]}
                         value={minuteText}
                         onChangeText={(text) => {
-                          // Allow empty string or valid numeric input
-                          if (text === '' || /^\d{0,2}$/.test(text)) {
+                          // Only allow empty string or numbers
+                          if (text === '') {
                             setMinuteText(text);
-                            const minute = parseInt(text, 10);
-                            if (!isNaN(minute) && minute >= 0 && minute <= 59) {
-                              const newTime = new Date(tempTime);
-                              newTime.setMinutes(minute);
-                              setTempTime(newTime);
-                            }
+                            return;
+                          }
+
+                          // Only allow numeric input
+                          if (!/^\d{1,2}$/.test(text)) {
+                            return;
+                          }
+
+                          const minute = parseInt(text, 10);
+
+                          // Restrict to valid minutes (0-59 only)
+                          if (minute > 59) {
+                            return; // Don't allow values > 59
+                          }
+
+                          setMinuteText(text);
+
+                          // Update time
+                          if (minute >= 0 && minute <= 59) {
+                            const newTime = new Date(tempTime);
+                            newTime.setMinutes(minute);
+                            setTempTime(newTime);
                           }
                         }}
                         keyboardType="numeric"
