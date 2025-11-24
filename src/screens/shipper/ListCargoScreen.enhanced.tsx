@@ -787,25 +787,97 @@ export default function ListCargoScreen({ navigation }: any) {
                 <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                   <Text style={[styles.modalTitle, { color: theme.text }]}>Select Pickup Time</Text>
                   <View style={styles.timePickerContainer}>
-                    <TextInput
-                      style={[styles.timeInput, {
-                        backgroundColor: theme.background,
-                        borderColor: theme.border,
-                        color: theme.text,
-                      }]}
-                      value={tempTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      onChangeText={(text) => {
-                        const [hours, minutes] = text.split(':');
-                        if (hours && minutes) {
-                          const newTime = new Date(tempTime);
-                          newTime.setHours(parseInt(hours, 10));
-                          newTime.setMinutes(parseInt(minutes, 10));
-                          setTempTime(newTime);
-                        }
-                      }}
-                      placeholder="HH:MM"
-                      placeholderTextColor={theme.textSecondary}
-                    />
+                    <View style={styles.timePickerRow}>
+                      {/* Hour Input */}
+                      <TextInput
+                        style={[styles.timeInputSmall, {
+                          backgroundColor: theme.background,
+                          borderColor: theme.border,
+                          color: theme.text,
+                        }]}
+                        value={String(tempTime.getHours() % 12 || 12).padStart(2, '0')}
+                        onChangeText={(text) => {
+                          const hour = parseInt(text, 10);
+                          if (!isNaN(hour) && hour >= 1 && hour <= 12) {
+                            const newTime = new Date(tempTime);
+                            const isPM = tempTime.getHours() >= 12;
+                            newTime.setHours(hour === 12 ? (isPM ? 12 : 0) : (isPM ? hour + 12 : hour));
+                            setTempTime(newTime);
+                          }
+                        }}
+                        keyboardType="numeric"
+                        maxLength={2}
+                        placeholder="12"
+                        placeholderTextColor={theme.textSecondary}
+                      />
+                      <Text style={[styles.timeSeparator, { color: theme.text }]}>:</Text>
+                      {/* Minute Input */}
+                      <TextInput
+                        style={[styles.timeInputSmall, {
+                          backgroundColor: theme.background,
+                          borderColor: theme.border,
+                          color: theme.text,
+                        }]}
+                        value={String(tempTime.getMinutes()).padStart(2, '0')}
+                        onChangeText={(text) => {
+                          const minute = parseInt(text, 10);
+                          if (!isNaN(minute) && minute >= 0 && minute <= 59) {
+                            const newTime = new Date(tempTime);
+                            newTime.setMinutes(minute);
+                            setTempTime(newTime);
+                          }
+                        }}
+                        keyboardType="numeric"
+                        maxLength={2}
+                        placeholder="00"
+                        placeholderTextColor={theme.textSecondary}
+                      />
+                      {/* AM/PM Toggle */}
+                      <View style={styles.amPmToggle}>
+                        <TouchableOpacity
+                          style={[
+                            styles.amPmButton,
+                            {
+                              backgroundColor: tempTime.getHours() < 12 ? theme.primary : theme.background,
+                              borderColor: theme.border,
+                            }
+                          ]}
+                          onPress={() => {
+                            const newTime = new Date(tempTime);
+                            if (tempTime.getHours() >= 12) {
+                              newTime.setHours(tempTime.getHours() - 12);
+                            }
+                            setTempTime(newTime);
+                          }}
+                        >
+                          <Text style={[
+                            styles.amPmText,
+                            { color: tempTime.getHours() < 12 ? theme.card : theme.text }
+                          ]}>AM</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.amPmButton,
+                            {
+                              backgroundColor: tempTime.getHours() >= 12 ? theme.primary : theme.background,
+                              borderColor: theme.border,
+                            }
+                          ]}
+                          onPress={() => {
+                            const newTime = new Date(tempTime);
+                            if (tempTime.getHours() < 12) {
+                              newTime.setHours(tempTime.getHours() + 12);
+                            }
+                            setTempTime(newTime);
+                          }}
+                        >
+                          <Text style={[
+                            styles.amPmText,
+                            { color: tempTime.getHours() >= 12 ? theme.card : theme.text }
+                          ]}>PM</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
                   <View style={styles.modalButtons}>
                     <TouchableOpacity
@@ -1133,6 +1205,11 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     alignItems: 'center',
   },
+  timePickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   timeInput: {
     width: 150,
     height: 50,
@@ -1142,6 +1219,38 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  timeInputSmall: {
+    width: 60,
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    fontSize: 24,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  timeSeparator: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginHorizontal: 4,
+  },
+  amPmToggle: {
+    flexDirection: 'column',
+    gap: 4,
+    marginLeft: 8,
+  },
+  amPmButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  amPmText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   modalButtons: {
     flexDirection: 'row',
