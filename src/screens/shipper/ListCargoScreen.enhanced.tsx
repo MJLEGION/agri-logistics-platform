@@ -121,7 +121,7 @@ export default function ListCargoScreen({ navigation }: any) {
   const [cargoName, setCargoName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<'kg' | 'tons' | 'bags'>('kg');
-  const [pricePerUnit, setPricePerUnit] = useState('');
+  const [cargoValue, setCargoValue] = useState('');
   const [readyDate, setReadyDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
@@ -354,7 +354,7 @@ export default function ListCargoScreen({ navigation }: any) {
     }
 
     const parsedQuantity = parseFloat(quantity);
-    const parsedPrice = pricePerUnit ? parseFloat(pricePerUnit) : undefined;
+    const parsedValue = cargoValue ? parseFloat(cargoValue) : undefined;
 
     // Production logging disabled
 
@@ -362,7 +362,7 @@ export default function ListCargoScreen({ navigation }: any) {
       name: cargoName,
       quantity: parsedQuantity,
       unit,
-      pricePerUnit: parsedPrice,
+      cargoValue: parsedValue,
       readyDate: readyDate.toISOString().split('T')[0],
       pickupTime: pickupTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       shipperId: user?._id || user?.id,
@@ -419,7 +419,7 @@ export default function ListCargoScreen({ navigation }: any) {
           setCargoName('');
           setQuantity('');
           setUnit('kg');
-          setPricePerUnit('');
+          setCargoValue('');
           setReadyDate(new Date());
           setPickupTime(new Date());
           setDestinationAddress('');
@@ -509,18 +509,18 @@ export default function ListCargoScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Price per Unit */}
-          <Text style={[styles.label, { color: theme.text }]}>Price per Unit (RWF)</Text>
+          {/* Value of Cargo */}
+          <Text style={[styles.label, { color: theme.text }]}>Value of Cargo (RWF)</Text>
           <TextInput
-            style={[styles.input, { 
+            style={[styles.input, {
               backgroundColor: theme.card,
               borderColor: theme.border,
               color: theme.text,
             }]}
-            placeholder="Optional"
+            placeholder="e.g., 500000"
             placeholderTextColor={theme.textSecondary}
-            value={pricePerUnit}
-            onChangeText={setPricePerUnit}
+            value={cargoValue}
+            onChangeText={setCargoValue}
             keyboardType="numeric"
           />
 
